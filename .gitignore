@@ -12,6 +12,7 @@ VERA-PoseBody/
 .DS_Store
 
 # Jupyter
+notebooks/
 .ipynb_checkpoints/
 
 # Data
