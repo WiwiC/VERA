@@ -40,12 +40,13 @@ BASELINE_GESTURE_JITTER_RANGE = 0.5
 
 # Body Sway
 # Normalized by Shoulder Width
-# Scale factor for exp(-sway * scale). Target < 0.2 SW.
-# If sway=0.5 (Distracting), Score ~0.08 (exp(-0.5 * 5))
-BASELINE_BODY_SWAY_SCALE = 5.0
+# Optimal: 0.10 - 0.30 SW (Natural engagement)
+# Gaussian centered at 0.20
+BASELINE_BODY_SWAY_OPTIMAL = 0.20
+BASELINE_BODY_SWAY_VAR     = 0.02
 
 # Posture Openness
-BASELINE_POSTURE_OPTIMAL = 150
+BASELINE_POSTURE_OPTIMAL = 80
 BASELINE_POSTURE_RANGE = 15
 
 
