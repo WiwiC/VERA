@@ -67,10 +67,10 @@ INTERPRETATION_RANGES = {
         {"max": 999, "label": "very_high", "text": "Chaotic, frantic waving.", "coaching": "Slow down. Your hands are moving faster than your audience can follow."}
     ],
     "gesture_jitter": [
-        {"max": 0.20, "label": "very_high", "text": "Strong jitter / instability (Poor). Fidgety, shaky, restless hands.", "coaching": "Plant your hands when not gesturing. Avoid nervous ticks."},
-        {"max": 0.40, "label": "high", "text": "Mild instability (Weak). Occasional shaking or unintentional flicks.", "coaching": "Smooth out your movements. Try to be more deliberate."},
-        {"max": 0.60, "label": "good", "text": "Natural stability (Good). Healthy fluidity — no distracting instability.", "coaching": "Good control. Your hands look steady."},
-        {"max": 999, "label": "optimal", "text": "Extremely stable gestures (Excellent). Smooth, intentional movement without fidgeting.", "coaching": "Excellent stability. You look very composed."}
+        {"max": 0.20, "label": "optimal", "text": "Extremely stable gestures (Excellent). Smooth, intentional movement without fidgeting.", "coaching": "Excellent stability. You look very composed."},
+        {"max": 0.40, "label": "good", "text": "Natural stability (Good). Healthy fluidity — no distracting instability.", "coaching": "Good control. Your hands look steady."},
+        {"max": 0.60, "label": "high", "text": "Mild instability (Weak). Occasional shaking or unintentional flicks.", "coaching": "Smooth out your movements. Try to be more deliberate."},
+        {"max": 999, "label": "very_high", "text": "Strong jitter / instability (Poor). Fidgety, shaky, restless hands.", "coaching": "Plant your hands when not gesturing. Avoid nervous ticks."}
     ],
     "body_sway": [
         {"max": 0.05, "label": "rigid", "text": "Robotically still. Unnatural.", "coaching": "Relax your shoulders. It's okay to shift your weight slightly."},
