@@ -6,8 +6,8 @@ Aggregates metrics, applies sliding windows, computes scores, and generates text
 import numpy as np
 import pandas as pd
 from src.body.config import (
-    BASELINE_GESTURE_MAG_MEAN,
-    BASELINE_GESTURE_MAG_RANGE,
+    BASELINE_GESTURE_MAG_OPTIMAL,
+    BASELINE_GESTURE_MAG_VAR,
     BASELINE_GESTURE_ACTIVITY_OPTIMAL,
     BASELINE_GESTURE_ACTIVITY_VAR,
     BASELINE_GESTURE_JITTER_OPTIMAL,
@@ -39,11 +39,29 @@ def sliding_windows(series, window=5):
 
     return pd.DataFrame(rows)
 
-def get_interpretation(score, metric_type):
+def get_interpretation(score, metric_type, raw_value=None, baseline=None):
     """
     Get the text interpretation for a given score and metric type.
+    Handles both list-based (ranges) and dict-based (directional) interpretations.
     """
     ranges = INTERPRETATION_RANGES.get(metric_type, [])
+
+    # Handle Directional Interpretation (Gaussian)
+    if isinstance(ranges, dict):
+        if score >= 0.6:
+            return ranges["optimal"]
+        elif score >= 0.4:
+            return ranges["good"]
+        else:
+            # Low score: check direction
+            if raw_value is not None and baseline is not None:
+                if raw_value < baseline:
+                    return ranges["low"]
+                else:
+                    return ranges["high"]
+            return ranges["low"] # Default fallback
+
+    # Handle Range-based Interpretation (Sigmoid)
     for low, high, text in ranges:
         if low <= score <= high:
             return text
@@ -89,7 +107,7 @@ def compute_scores(raw_df):
     df_mag_5s["rel_score"] = 1 / (1 + np.exp(-z_mag))
 
     mag_abs = df_mag_5s["value"].mean()
-    abs_mag_score = 1 / (1 + np.exp(-(mag_abs - BASELINE_GESTURE_MAG_MEAN) / BASELINE_GESTURE_MAG_RANGE))
+    abs_mag_score = np.exp(-((mag_abs - BASELINE_GESTURE_MAG_OPTIMAL)**2) / BASELINE_GESTURE_MAG_VAR)
 
     score_mag = 0.5 * abs_mag_score + 0.5 * df_mag_5s["rel_score"].mean()
 
@@ -149,10 +167,10 @@ def compute_scores(raw_df):
         "body_global_interpretation": get_interpretation(global_score, "body_global_score"),
 
         "gesture_magnitude_score": float(score_mag),
-        "gesture_magnitude_interpretation": get_interpretation(score_mag, "gesture_magnitude"),
+        "gesture_magnitude_interpretation": get_interpretation(score_mag, "gesture_magnitude", mag_abs, BASELINE_GESTURE_MAG_OPTIMAL),
 
         "gesture_activity_score": float(score_act),
-        "gesture_activity_interpretation": get_interpretation(score_act, "gesture_activity"),
+        "gesture_activity_interpretation": get_interpretation(score_act, "gesture_activity", act_abs, BASELINE_GESTURE_ACTIVITY_OPTIMAL),
 
         "gesture_jitter_score": float(score_jit),
         "gesture_jitter_interpretation": get_interpretation(score_jit, "gesture_jitter"),
