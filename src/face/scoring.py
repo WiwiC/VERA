@@ -95,7 +95,7 @@ def compute_scores(raw_df):
     # --- HEAD STABILITY ---
     # Relative
     z_head = (df_head_5s["value"] - df_head_5s["value"].mean()) / (df_head_5s["value"].std() + 1e-9)
-    df_head_5s["rel_score"] = 1 / (1 + np.exp(-z_head)) # Normal: Higher speed (up to a point) is better for "nodding"
+    df_head_5s["rel_score"] = 1 / (1 + np.exp(z_head)) # Inverted: Lower speed (relative to mean) is better for stability
 
     # Absolute (Gaussian: Optimal range)
     head_abs = df_head_5s["value"].mean()
@@ -146,7 +146,8 @@ def compute_scores(raw_df):
     mean_head_speed = raw_df["head_speed"].mean()
     mean_gaze_dg = raw_df["gaze_dg"].mean()
 
-    interp_head, coach_head = get_interpretation("head_stability", mean_head_speed)
+    # Use SCORE for interpretation (standardization)
+    interp_head, coach_head = get_interpretation("head_stability", score_head)
 
     # Gaze and Smile use SCORE for buckets (0-1)
     interp_gaze, coach_gaze = get_interpretation("gaze_consistency", score_gaze)

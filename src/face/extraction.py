@@ -95,7 +95,11 @@ def process_video(video_path):
             prev_gaze = gaze_vec
 
             # ----- SMILE ACTIVATION -----
-            smile = compute_smile_activation(lm)
+            raw_smile = compute_smile_activation(lm)
+            if iod > 0:
+                smile = raw_smile / iod
+            else:
+                smile = 0.0
 
         # Append ALL features (even if NaN)
         features.append({

@@ -38,18 +38,20 @@ BASELINE_GAZE_OPTIMAL = 0.00075   # "natural" gaze micro-movement
 BASELINE_GAZE_VAR     = 0.00002  # tolerance
 
 # Smile Activation
-BASELINE_SMILE_OPTIMAL = 0.02
-BASELINE_SMILE_RANGE = 0.01
+# Normalized by IOD (Smile Width / IOD)
+# Optimal: ~0.90 (Smile Width approx equal to IOD)
+BASELINE_SMILE_OPTIMAL = 0.90
+BASELINE_SMILE_RANGE = 0.15
 
 
 # INTERPRETATION RANGES
 
 INTERPRETATION_RANGES = {
     "head_stability": [
-        {"max": 0.1, "label": "rigid", "text": "Stiff neck. Frozen.", "coaching": "Nod slightly to show agreement or emphasis. You look stiff."},
-        {"max": 0.2, "label": "stable", "text": "Very controlled. Serious.", "coaching": "Good control. A bit more movement could make you look warmer."},
-        {"max": 0.5, "label": "optimal", "text": "Highly stable head posture (Excellent). Natural nodding and tilting.", "coaching": "Perfect head engagement. Your nods make you look like an active listener."},
-        {"max": 1.0, "label": "high", "text": "Very active head movement.", "coaching": "High energy. Ensure your head movements are intentional, not random."},
+        {"max": 0.4, "label": "rigid", "text": "Stiff neck. Frozen.", "coaching": "Nod slightly to show agreement or emphasis. You look stiff."},
+        {"max": 0.6, "label": "stable", "text": "Very controlled. Serious.", "coaching": "Good control. A bit more movement could make you look warmer."},
+        {"max": 0.8, "label": "optimal", "text": "Highly stable head posture (Excellent). Natural nodding and tilting.", "coaching": "Perfect head engagement. Your nods make you look like an active listener."},
+        {"max": 0.9, "label": "high", "text": "Very active head movement.", "coaching": "High energy. Ensure your head movements are intentional, not random."},
         {"max": 999, "label": "distracting", "text": "Unstable head movement (Poor). Bobblehead effect.", "coaching": "Keep your head steady. Excessive nodding undermines your authority."}
     ],
     "gaze_consistency": [
