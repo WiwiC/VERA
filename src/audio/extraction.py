@@ -63,6 +63,8 @@ def get_transcription(audio_path):
         print(f"Error in transcription: {e}")
         return 0.0
 
+import scipy.signal
+
 def get_pitch_metrics(y, sr):
     """
     Extract Pitch Mean (Hz) and Pitch Std (Semitones).
@@ -79,6 +81,9 @@ def get_pitch_metrics(y, sr):
 
         if len(f0_voiced) == 0:
             return 0.0, 0.0
+
+        # Apply Median Filtering to smooth outliers
+        f0_voiced = scipy.signal.medfilt(f0_voiced, kernel_size=5)
 
         # Mean Hz (Context)
         mean_hz = float(np.mean(f0_voiced))
@@ -138,7 +143,7 @@ def get_pause_metrics(y, sr):
     Extract Pause Ratio using WebRTCVAD.
     """
     try:
-        vad = webrtcvad.Vad(2) # Mode 2: Aggressive
+        vad = webrtcvad.Vad(1) # Mode 1: Less Aggressive (Better for soft speech)
 
         # Resample to 16kHz for VAD if needed (handled in main process)
         # Frame size must be 10, 20, or 30ms. Let's use 30ms.
