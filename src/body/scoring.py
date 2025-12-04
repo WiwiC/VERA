@@ -133,20 +133,6 @@ def compute_scores(raw_df):
     df_open_5s["rel_score"] = 1 / (1 + np.exp(-z_open))
 
     open_abs = df_open_5s["value"].mean()
-    # Note: Posture Openness in config is currently defined as ranges in INTERPRETATION_RANGES,
-    # but here we need a raw value check for interpretation.
-    # Wait, Posture Openness buckets in config are [max: 20, 40, 60, 999].
-    # But abs_open_score calculation uses BASELINE_POSTURE_OPTIMAL (150).
-    # The buckets in config seem to be for "deviation from optimal" or something else?
-    # Ah, checking config again. The buckets are 20, 40, 60... but optimal is 150?
-    # Let's look at geometry.py. compute_posture_openness returns degrees.
-    # 150 degrees is optimal.
-    # The buckets in my new config were: 20, 40, 60, 999.
-    # This implies 0-20 is closed, 20-40 constricted, 40-60 good, >60 optimal?
-    # But 150 is optimal. So >60 covers 150.
-    # However, if the angle is 180 (arms wide open), that falls in >60.
-    # If angle is 10 (arms crossed), that falls in <20.
-    # So the buckets seem correct for raw degrees if we assume 0 is closed and 180 is open.
 
     abs_open_score = 1 / (1 + np.exp(-(open_abs - BASELINE_POSTURE_OPTIMAL) / BASELINE_POSTURE_RANGE))
 
@@ -178,12 +164,6 @@ def compute_scores(raw_df):
     # Sway is variance of position. Buckets 0.05, 0.1...
     interp_sway, coach_sway = get_interpretation("body_sway", sway_abs)
 
-    # Posture is degrees. Buckets 20, 40, 60...
-    # Wait, if optimal is 150, then 60 is actually quite closed?
-    # Let's re-read the config I just wrote.
-    # max: 20 (closed), 40 (constricted), 60 (good), 999 (optimal).
-    # If I have 150, I fall in 999 (optimal). Correct.
-    # If I have 50, I fall in 60 (good). Correct.
     interp_open, coach_open = get_interpretation("posture_openness", open_abs)
 
     scores = {
