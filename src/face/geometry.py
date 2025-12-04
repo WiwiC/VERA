@@ -21,6 +21,15 @@ def compute_iris_centers(lm):
     right_iris = np.array([lm[473].x, lm[473].y, lm[473].z])
     return (left_iris + right_iris) / 2
 
+def compute_inter_ocular_distance(lm):
+    """
+    Compute the Euclidean distance between left and right irises.
+    Used as a normalization factor (IOD) for scale invariance.
+    """
+    left_iris = np.array([lm[468].x, lm[468].y, lm[468].z])
+    right_iris = np.array([lm[473].x, lm[473].y, lm[473].z])
+    return np.linalg.norm(left_iris - right_iris)
+
 def compute_face_center(lm):
     """
     Compute a stable 3D anchor point on the face, using the nose bridge landmark.

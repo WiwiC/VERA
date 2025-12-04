@@ -39,33 +39,29 @@ def sliding_windows(series, window=5):
 
     return pd.DataFrame(rows)
 
-def get_interpretation(score, metric_type, raw_value=None, baseline=None):
+def get_interpretation(metric_type, raw_value):
     """
-    Get the text interpretation for a given score and metric type.
-    Handles both list-based (ranges) and dict-based (directional) interpretations.
+    Get text interpretation and coaching based on raw value and buckets.
     """
-    ranges = INTERPRETATION_RANGES.get(metric_type, [])
+    buckets = INTERPRETATION_RANGES.get(metric_type, [])
 
-    # Handle Directional Interpretation (Gaussian)
-    if isinstance(ranges, dict):
-        if score >= 0.6:
-            return ranges["optimal"]
-        elif score >= 0.4:
-            return ranges["good"]
-        else:
-            # Low score: check direction
-            if raw_value is not None and baseline is not None:
-                if raw_value < baseline:
-                    return ranges["low"]
-                else:
-                    return ranges["high"]
-            return ranges["low"] # Default fallback
+    # Iterate through buckets to find the matching range
+    for bucket in buckets:
+        if raw_value <= bucket["max"]:
+            return bucket["text"], bucket["coaching"]
 
-    # Handle Range-based Interpretation (Sigmoid)
+    # Fallback (should not happen with max=999)
+    return "Value out of range", "Check your settings."
+
+def get_global_interpretation(score):
+    """
+    Get interpretation for the global score (Range-based).
+    """
+    ranges = INTERPRETATION_RANGES.get("body_global_score", [])
     for low, high, text in ranges:
         if low <= score <= high:
             return text
-    return "Score out of range or undefined."
+    return "Score out of range"
 
 def compute_scores(raw_df):
     """
@@ -81,13 +77,7 @@ def compute_scores(raw_df):
     gesture_mag_1s    = raw_df.groupby("second")["gesture_magnitude"].mean().fillna(0)
     gesture_act_1s    = raw_df.groupby("second")["gesture_activity"].mean().fillna(0)
     gesture_jitter_1s = raw_df.groupby("second")["gesture_activity"].var().fillna(0)
-    body_sway_1s      = raw_df.groupby("second")["body_sway"].var().fillna(0) # Note: Notebook used var() for sway aggregation?
-    # Let's check notebook logic for sway aggregation.
-    # Notebook: body_sway_1s = df.groupby("second")["body_sway"].var().fillna(0)
-    # Wait, sway is speed. Variance of speed? Or mean speed?
-    # Notebook cell 117: body_sway_1s = df.groupby("second")["body_sway"].var().fillna(0)
-    # Okay, sticking to notebook logic.
-
+    body_sway_1s      = raw_df.groupby("second")["body_sway"].var().fillna(0)
     posture_open_1s   = raw_df.groupby("second")["posture_openness"].mean().fillna(0)
 
     # 2. Sliding Windows (5s)
@@ -143,6 +133,21 @@ def compute_scores(raw_df):
     df_open_5s["rel_score"] = 1 / (1 + np.exp(-z_open))
 
     open_abs = df_open_5s["value"].mean()
+    # Note: Posture Openness in config is currently defined as ranges in INTERPRETATION_RANGES,
+    # but here we need a raw value check for interpretation.
+    # Wait, Posture Openness buckets in config are [max: 20, 40, 60, 999].
+    # But abs_open_score calculation uses BASELINE_POSTURE_OPTIMAL (150).
+    # The buckets in config seem to be for "deviation from optimal" or something else?
+    # Ah, checking config again. The buckets are 20, 40, 60... but optimal is 150?
+    # Let's look at geometry.py. compute_posture_openness returns degrees.
+    # 150 degrees is optimal.
+    # The buckets in my new config were: 20, 40, 60, 999.
+    # This implies 0-20 is closed, 20-40 constricted, 40-60 good, >60 optimal?
+    # But 150 is optimal. So >60 covers 150.
+    # However, if the angle is 180 (arms wide open), that falls in >60.
+    # If angle is 10 (arms crossed), that falls in <20.
+    # So the buckets seem correct for raw degrees if we assume 0 is closed and 180 is open.
+
     abs_open_score = 1 / (1 + np.exp(-(open_abs - BASELINE_POSTURE_OPTIMAL) / BASELINE_POSTURE_RANGE))
 
     score_open = 0.5 * abs_open_score + 0.5 * df_open_5s["rel_score"].mean()
@@ -162,24 +167,48 @@ def compute_scores(raw_df):
                          .merge(df_sway_5s, on=["start_sec", "end_sec"])\
                          .merge(df_open_5s, on=["start_sec", "end_sec"])
 
+    # 5. Get Interpretations & Coaching
+    interp_mag, coach_mag = get_interpretation("gesture_magnitude", mag_abs)
+    interp_act, coach_act = get_interpretation("gesture_activity", act_abs)
+
+    # Jitter is variance of activity. The buckets in config are 0.2, 0.4...
+    # jit_abs is mean variance.
+    interp_jit, coach_jit = get_interpretation("gesture_jitter", jit_abs)
+
+    # Sway is variance of position. Buckets 0.05, 0.1...
+    interp_sway, coach_sway = get_interpretation("body_sway", sway_abs)
+
+    # Posture is degrees. Buckets 20, 40, 60...
+    # Wait, if optimal is 150, then 60 is actually quite closed?
+    # Let's re-read the config I just wrote.
+    # max: 20 (closed), 40 (constricted), 60 (good), 999 (optimal).
+    # If I have 150, I fall in 999 (optimal). Correct.
+    # If I have 50, I fall in 60 (good). Correct.
+    interp_open, coach_open = get_interpretation("posture_openness", open_abs)
+
     scores = {
         "body_global_score": float(global_score),
-        "body_global_interpretation": get_interpretation(global_score, "body_global_score"),
+        "body_global_interpretation": get_global_interpretation(global_score),
 
         "gesture_magnitude_score": float(score_mag),
-        "gesture_magnitude_interpretation": get_interpretation(score_mag, "gesture_magnitude", mag_abs, BASELINE_GESTURE_MAG_OPTIMAL),
+        "gesture_magnitude_interpretation": interp_mag,
+        "gesture_magnitude_coaching": coach_mag,
 
         "gesture_activity_score": float(score_act),
-        "gesture_activity_interpretation": get_interpretation(score_act, "gesture_activity", act_abs, BASELINE_GESTURE_ACTIVITY_OPTIMAL),
+        "gesture_activity_interpretation": interp_act,
+        "gesture_activity_coaching": coach_act,
 
         "gesture_jitter_score": float(score_jit),
-        "gesture_jitter_interpretation": get_interpretation(score_jit, "gesture_jitter"),
+        "gesture_jitter_interpretation": interp_jit,
+        "gesture_jitter_coaching": coach_jit,
 
         "body_sway_score": float(score_sway),
-        "body_sway_interpretation": get_interpretation(score_sway, "body_sway"),
+        "body_sway_interpretation": interp_sway,
+        "body_sway_coaching": coach_sway,
 
         "posture_openness_score": float(score_open),
-        "posture_openness_interpretation": get_interpretation(score_open, "posture_openness")
+        "posture_openness_interpretation": interp_open,
+        "posture_openness_coaching": coach_open
     }
 
     return scores, window_df

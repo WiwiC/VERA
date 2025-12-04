@@ -12,7 +12,8 @@ from tqdm import tqdm
 from src.body.geometry import (
     compute_torso_center,
     compute_gesture_magnitude,
-    compute_posture_openness
+    compute_posture_openness,
+    compute_shoulder_width
 )
 
 def process_video(video_path):
@@ -70,8 +71,12 @@ def process_video(video_path):
         if results.pose_landmarks:
             lm = results.pose_landmarks.landmark
 
+            # ----- METRIC 0 : Shoulder Width (Normalization Factor) -----
+            shoulder_width = compute_shoulder_width(lm)
+
             # ----- METRIC 1 : Gesture Magnitude -----
-            gesture_magnitude = compute_gesture_magnitude(lm)
+            # Now returns "Shoulder Width Units" (e.g. 1.5 SW)
+            gesture_magnitude = compute_gesture_magnitude(lm, shoulder_width)
 
             # ----- METRIC 2 : Gesture Activity -----
             L_wr = np.array([lm[15].x, lm[15].y, lm[15].z])
@@ -80,7 +85,13 @@ def process_video(video_path):
             if prev_L_wr is not None:
                 speed_L = np.linalg.norm(L_wr - prev_L_wr)
                 speed_R = np.linalg.norm(R_wr - prev_R_wr)
-                gesture_activity = np.nanmean([speed_L, speed_R])
+                raw_activity = np.nanmean([speed_L, speed_R])
+
+                # Normalize by shoulder width if valid
+                if shoulder_width > 0:
+                    gesture_activity = raw_activity / shoulder_width
+                else:
+                    gesture_activity = 0.0
 
             prev_L_wr = L_wr
             prev_R_wr = R_wr
@@ -88,7 +99,13 @@ def process_video(video_path):
             # ----- METRIC 3 : Body Sway -----
             torso = compute_torso_center(lm)
             if prev_torso is not None:
-                body_sway = np.linalg.norm(torso - prev_torso)
+                raw_sway = np.linalg.norm(torso - prev_torso)
+
+                # Normalize by shoulder width if valid
+                if shoulder_width > 0:
+                    body_sway = raw_sway / shoulder_width
+                else:
+                    body_sway = 0.0
             prev_torso = torso
 
             # ----- METRIC 4 : Posture Openness -----

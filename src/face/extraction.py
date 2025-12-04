@@ -13,7 +13,8 @@ from src.face.geometry import (
     compute_head_center,
     compute_iris_centers,
     compute_face_center,
-    compute_smile_activation
+    compute_smile_activation,
+    compute_inter_ocular_distance
 )
 
 def process_video(video_path):
@@ -67,10 +68,19 @@ def process_video(video_path):
         if results.multi_face_landmarks:
             lm = results.multi_face_landmarks[0].landmark
 
+            # ----- METRIC 0 : IOD (Normalization Factor) -----
+            iod = compute_inter_ocular_distance(lm)
+
             # ----- HEAD STABILITY -----
             head_center = compute_head_center(lm)
             if prev_head_center is not None:
-                head_speed = np.linalg.norm(head_center - prev_head_center)
+                raw_speed = np.linalg.norm(head_center - prev_head_center)
+
+                # Normalize by IOD if valid
+                if iod > 0:
+                    head_speed = raw_speed / iod
+                else:
+                    head_speed = 0.0
             prev_head_center = head_center
 
             # ----- GAZE CONSISTENCY -----
