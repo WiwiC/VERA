@@ -77,7 +77,7 @@ def compute_scores(raw_df):
     gesture_mag_1s    = raw_df.groupby("second")["gesture_magnitude"].mean().fillna(0)
     gesture_act_1s    = raw_df.groupby("second")["gesture_activity"].mean().fillna(0)
     gesture_jitter_1s = raw_df.groupby("second")["gesture_activity"].var().fillna(0)
-    body_sway_1s      = raw_df.groupby("second")["body_sway"].var().fillna(0)
+    body_sway_1s      = raw_df.groupby("second")["body_sway"].mean().fillna(0)
     posture_open_1s   = raw_df.groupby("second")["posture_openness"].mean().fillna(0)
 
     # 2. Sliding Windows (5s)
@@ -94,7 +94,7 @@ def compute_scores(raw_df):
 
     # --- GESTURE MAGNITUDE ---
     z_mag = (df_mag_5s["value"] - df_mag_5s["value"].mean()) / (df_mag_5s["value"].std() + 1e-9)
-    df_mag_5s["rel_score"] = 1 / (1 + np.exp(-z_mag))
+    df_mag_5s["rel_score"] = np.exp(-z_mag**2) # Gaussian: Reward consistency (close to mean), penalize outliers
 
     mag_abs = df_mag_5s["value"].mean()
     abs_mag_score = np.exp(-((mag_abs - BASELINE_GESTURE_MAG_OPTIMAL)**2) / BASELINE_GESTURE_MAG_VAR)
@@ -103,7 +103,7 @@ def compute_scores(raw_df):
 
     # --- GESTURE ACTIVITY ---
     z_act = (df_act_5s["value"] - df_act_5s["value"].mean()) / (df_act_5s["value"].std() + 1e-9)
-    df_act_5s["rel_score"] = 1 / (1 + np.exp(-z_act))
+    df_act_5s["rel_score"] = np.exp(-z_act**2) # Gaussian: Reward consistency
 
     act_abs = df_act_5s["value"].mean()
     abs_act_score = np.exp(-((act_abs - BASELINE_GESTURE_ACTIVITY_OPTIMAL)**2) / BASELINE_GESTURE_ACTIVITY_VAR)
