@@ -8,8 +8,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from src.body.pipeline import run_body_pipeline
 
 def test_pipeline():
-    video_path = "data/raw/TED_young_speaker.mp4"
-    output_dir = "data/processed/test_run_body_TED_young_speaker"
+    video_path = "data/raw/myvideo.mp4"
+    output_dir = "data/processed/test_run_body_myvideo"
 
     # Clean up previous run
     if os.path.exists(output_dir):

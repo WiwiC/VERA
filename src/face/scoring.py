@@ -6,8 +6,8 @@ Aggregates metrics, applies sliding windows, computes scores, and generates text
 import numpy as np
 import pandas as pd
 from src.face.config import (
-    BASELINE_JITTER_OPTIMAL,
-    BASELINE_JITTER_RANGE,
+    BASELINE_HEAD_STABILITY_OPTIMAL,
+    BASELINE_HEAD_STABILITY_VAR,
     BASELINE_GAZE_OPTIMAL,
     BASELINE_GAZE_VAR,
     BASELINE_SMILE_OPTIMAL,
@@ -43,11 +43,29 @@ def sliding_windows(series, window=5):
 
     return pd.DataFrame(rows)
 
-def get_interpretation(score, metric_type):
+def get_interpretation(score, metric_type, raw_value=None, baseline=None):
     """
     Get the text interpretation for a given score and metric type.
+    Handles both list-based (ranges) and dict-based (directional) interpretations.
     """
     ranges = INTERPRETATION_RANGES.get(metric_type, [])
+
+    # Handle Directional Interpretation (Gaussian)
+    if isinstance(ranges, dict):
+        if score >= 0.6:
+            return ranges["optimal"]
+        elif score >= 0.4:
+            return ranges["good"]
+        else:
+            # Low score: check direction
+            if raw_value is not None and baseline is not None:
+                if raw_value < baseline:
+                    return ranges["low"]
+                else:
+                    return ranges["high"]
+            return ranges["low"] # Default fallback
+
+    # Handle Range-based Interpretation (Sigmoid)
     for low, high, text in ranges:
         if low <= score <= high:
             return text
@@ -86,11 +104,11 @@ def compute_scores(raw_df):
     # --- HEAD STABILITY ---
     # Relative
     z_head = (df_head_5s["value"] - df_head_5s["value"].mean()) / (df_head_5s["value"].std() + 1e-9)
-    df_head_5s["rel_score"] = 1 / (1 + np.exp(z_head)) # Inverted: lower jitter is better
+    df_head_5s["rel_score"] = 1 / (1 + np.exp(z_head)) # Inverted: lower jitter is better (consistency)
 
-    # Absolute
+    # Absolute (Gaussian: Optimal range)
     head_abs = df_head_5s["value"].mean()
-    abs_head_score = 1 / (1 + np.exp((head_abs - BASELINE_JITTER_OPTIMAL) / BASELINE_JITTER_RANGE))
+    abs_head_score = np.exp(-((head_abs - BASELINE_HEAD_STABILITY_OPTIMAL)**2) / BASELINE_HEAD_STABILITY_VAR)
 
     # Final
     score_head = 0.5 * abs_head_score + 0.5 * df_head_5s["rel_score"].mean()
@@ -138,7 +156,7 @@ def compute_scores(raw_df):
         "face_global_interpretation": get_interpretation(global_score, "face_global_score"),
 
         "head_stability_score": float(score_head),
-        "head_stability_interpretation": get_interpretation(score_head, "head_stability"),
+        "head_stability_interpretation": get_interpretation(score_head, "head_stability", head_abs, BASELINE_HEAD_STABILITY_OPTIMAL),
 
         "gaze_consistency_score": float(score_gaze),
         "gaze_consistency_interpretation": get_interpretation(score_gaze, "gaze_consistency"),
