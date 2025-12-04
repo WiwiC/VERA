@@ -15,9 +15,19 @@ def compute_torso_center(lm):
     R_hp = np.array([lm[24].x, lm[24].y, lm[24].z])
     return (L_sh + R_sh + L_hp + R_hp) / 4
 
-def compute_gesture_magnitude(lm):
+def compute_shoulder_width(lm):
+    """
+    Compute the Euclidean distance between left and right shoulders.
+    Used as a normalization factor for scale invariance.
+    """
+    L_sh = np.array([lm[11].x, lm[11].y, lm[11].z])
+    R_sh = np.array([lm[12].x, lm[12].y, lm[12].z])
+    return np.linalg.norm(L_sh - R_sh)
+
+def compute_gesture_magnitude(lm, shoulder_width=None):
     """
     Compute the mean distance of wrists from the torso center.
+    If shoulder_width is provided, returns the value in 'Shoulder Width Units'.
     """
     torso = compute_torso_center(lm)
     L_wr = np.array([lm[15].x, lm[15].y, lm[15].z])
@@ -26,7 +36,11 @@ def compute_gesture_magnitude(lm):
     mag_L = np.linalg.norm(L_wr - torso)
     mag_R = np.linalg.norm(R_wr - torso)
 
-    return np.nanmean([mag_L, mag_R])
+    raw_mag = np.nanmean([mag_L, mag_R])
+
+    if shoulder_width and shoulder_width > 0:
+        return raw_mag / shoulder_width
+    return raw_mag
 
 def compute_posture_openness(lm):
     """

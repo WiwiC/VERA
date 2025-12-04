@@ -43,33 +43,29 @@ def sliding_windows(series, window=5):
 
     return pd.DataFrame(rows)
 
-def get_interpretation(score, metric_type, raw_value=None, baseline=None):
+def get_interpretation(metric_type, raw_value):
     """
-    Get the text interpretation for a given score and metric type.
-    Handles both list-based (ranges) and dict-based (directional) interpretations.
+    Get text interpretation and coaching based on raw value and buckets.
     """
-    ranges = INTERPRETATION_RANGES.get(metric_type, [])
+    buckets = INTERPRETATION_RANGES.get(metric_type, [])
 
-    # Handle Directional Interpretation (Gaussian)
-    if isinstance(ranges, dict):
-        if score >= 0.6:
-            return ranges["optimal"]
-        elif score >= 0.4:
-            return ranges["good"]
-        else:
-            # Low score: check direction
-            if raw_value is not None and baseline is not None:
-                if raw_value < baseline:
-                    return ranges["low"]
-                else:
-                    return ranges["high"]
-            return ranges["low"] # Default fallback
+    # Iterate through buckets to find the matching range
+    for bucket in buckets:
+        if raw_value <= bucket["max"]:
+            return bucket["text"], bucket["coaching"]
 
-    # Handle Range-based Interpretation (Sigmoid)
+    # Fallback (should not happen with max=999)
+    return "Value out of range", "Check your settings."
+
+def get_global_interpretation(score):
+    """
+    Get interpretation for the global score (Range-based).
+    """
+    ranges = INTERPRETATION_RANGES.get("face_global_score", [])
     for low, high, text in ranges:
         if low <= score <= high:
             return text
-    return "Score out of range or undefined."
+    return "Score out of range"
 
 def compute_scores(raw_df):
     """
@@ -151,18 +147,71 @@ def compute_scores(raw_df):
     # Merge on start_sec/end_sec
     window_df = df_head_5s.merge(df_gaze_5s, on=["start_sec", "end_sec"]).merge(df_smile_5s, on=["start_sec", "end_sec"])
 
+    # 5. Get Interpretations & Coaching
+    # Note: Head Stability bucket is based on IOD/sec (speed), but head_abs is variance of speed?
+    # Let's check compute_scores aggregation:
+    # jitter_head_1s = raw_df.groupby("second")["head_speed"].var()
+    # So head_abs is mean variance of speed.
+    # But my config buckets are for "head_stability" in IOD/sec (speed).
+    # Wait, the config says: "Optimal: 0.2 - 0.5 IOD/sec (Natural nodding)".
+    # If I am measuring variance, the units are (IOD/sec)^2.
+    # This is a mismatch.
+    # If the config buckets are for SPEED, I should use mean speed, not variance.
+    # But "Stability" implies low variance.
+    # Let's look at the config again.
+    # "Unstable head movement (Poor). Bobblehead effect." -> High speed or high variance?
+    # Usually high speed means moving a lot. High variance means changing speed a lot.
+    # Given the buckets (0.2, 0.5...), these look like Speed values.
+    # Variance would be much smaller (e.g. 0.01).
+    # I should probably use MEAN SPEED for the interpretation bucket check, even if I score on variance?
+    # Or change aggregation to mean?
+    # In body/scoring, I used mean for magnitude/activity, but variance for jitter/sway.
+    # Here, head_stability seems to be treated like jitter (variance).
+    # But the config values (0.35) are definitely speed-scale (0.35 * 6cm = 2cm/sec).
+    # Variance of 0.35 would be huge.
+    # So I suspect I should be aggregating MEAN speed for the interpretation check.
+
+    # Let's calculate mean speed for interpretation purposes
+    # I don't have it in the window df (which has variance).
+    # I can't easily get it without re-aggregating.
+    # However, for now, I will use head_abs (variance) and assume the user meant variance in config?
+    # No, 0.35 variance is impossible for head stability.
+    # The config comment says "Optimal: 0.2 - 0.5 IOD/sec". That is SPEED.
+    # So I should change the aggregation to use MEAN for interpretation?
+    # Or just accept that my scoring uses variance but my interpretation uses speed?
+    # I will calculate mean speed from raw_df just for interpretation if possible.
+    # But compute_scores takes raw_df.
+
+    mean_head_speed = raw_df["head_speed"].mean()
+    mean_gaze_dg = raw_df["gaze_dg"].mean() # Gaze consistency is also variance-based in scoring?
+    # jitter_gaze_1s = var().
+    # Config: "Optimal > 0.8 (Score)". Wait, Gaze interpretation is based on SCORE in the assessment.
+    # But in the config file I wrote: "max: 0.4, 0.7...". These look like scores (0-1).
+    # So for Gaze and Smile, I can use the SCORE.
+    # For Head Stability, the buckets are 0.1, 0.2... which are raw values.
+    # So for Head, I need the raw mean speed.
+
+    interp_head, coach_head = get_interpretation("head_stability", mean_head_speed)
+
+    # Gaze and Smile use SCORE for buckets (0-1)
+    interp_gaze, coach_gaze = get_interpretation("gaze_consistency", score_gaze)
+    interp_smile, coach_smile = get_interpretation("smile_activation", score_smile)
+
     scores = {
         "face_global_score": float(global_score),
-        "face_global_interpretation": get_interpretation(global_score, "face_global_score"),
+        "face_global_interpretation": get_global_interpretation(global_score),
 
         "head_stability_score": float(score_head),
-        "head_stability_interpretation": get_interpretation(score_head, "head_stability", head_abs, BASELINE_HEAD_STABILITY_OPTIMAL),
+        "head_stability_interpretation": interp_head,
+        "head_stability_coaching": coach_head,
 
         "gaze_consistency_score": float(score_gaze),
-        "gaze_consistency_interpretation": get_interpretation(score_gaze, "gaze_consistency"),
+        "gaze_consistency_interpretation": interp_gaze,
+        "gaze_consistency_coaching": coach_gaze,
 
         "smile_activation_score": float(score_smile),
-        "smile_activation_interpretation": get_interpretation(score_smile, "smile_activation")
+        "smile_activation_interpretation": interp_smile,
+        "smile_activation_coaching": coach_smile
     }
 
     return scores, window_df
