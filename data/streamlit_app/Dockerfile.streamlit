@@ -1,1 +1,24 @@
 # Docker config for the UI
+# 1. Base Image: Use a slim Python image.
+FROM python:3.11-slim
+
+# 2. Set the working directory inside the container
+WORKDIR /app
+
+# 3. Install Python Dependencies:
+# Copy the requirements file and install the dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 4. Copy Application Code:
+# Copy your main Streamlit application file
+COPY app.py .
+
+# 5. Define the Port:
+# Streamlit runs on a specific port, but Cloud Run requires us to listen on $PORT (default 8080).
+ENV PORT 8080
+
+# 6. Start the Streamlit Application:
+# Use Streamlit's run command to start the web app on the port specified by the environment.
+# We must use the --server.port flag to ensure Streamlit listens on $PORT.
+CMD ["streamlit", "run", "app.py", "--server.port", "8080", "--server.address", "0.0.0.0"]
