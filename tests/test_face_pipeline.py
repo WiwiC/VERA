@@ -24,10 +24,11 @@ def test_pipeline():
         print(scores)
 
         # Verify outputs
+        # Verify outputs
         out_path = Path(output_dir)
-        assert (out_path / "metrics.csv").exists(), "metrics.csv missing"
-        assert (out_path / "results.json").exists(), "results.json missing"
-        assert (out_path / "debug_video.mp4").exists(), "debug_video.mp4 missing"
+        assert (out_path / "metrics_face.csv").exists(), "metrics_face.csv missing"
+        assert (out_path / "results_face.json").exists(), "results_face.json missing"
+        assert (out_path / "debug_face.mp4").exists(), "debug_face.mp4 missing"
 
         print("\n✅ Verification SUCCESS: All output files created.")
 

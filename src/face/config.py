@@ -3,9 +3,9 @@ Configuration constants for the VERA Face Module.
 Contains landmark indices, visualization colors, scoring baselines, and interpretation ranges.
 """
 
-# =========================================================
+
 # LANDMARK INDICES (MediaPipe FaceMesh)
-# =========================================================
+
 HEAD_POINTS = [234, 454, 1]    # ears + nose
 GAZE_POINTS = [468, 473, 1]    # iris + nose
 EXPRESS_POINTS = [
@@ -15,18 +15,18 @@ EXPRESS_POINTS = [
 ]
 SMILE_POINTS = [61, 291]       # lip corners
 
-# =========================================================
+
 # VISUALIZATION COLORS (BGR)
-# =========================================================
+
 COLOR_HEAD   = (255, 0,   0)   # Blue
 COLOR_GAZE   = (0,   255, 255) # Yellow
 COLOR_EXP    = (0,   255, 0)   # Green
 COLOR_SMILE  = (0,   0,   255) # Red
 
-# =========================================================
+
 # SCORING BASELINES
-# =========================================================
-# Head Stability
+
+
 # Head Stability
 # Normalized by IOD (Inter-Ocular Distance)
 # Optimal: 0.2 - 0.5 IOD/sec (Natural nodding)
@@ -41,9 +41,9 @@ BASELINE_GAZE_VAR     = 0.00002  # tolerance
 BASELINE_SMILE_OPTIMAL = 0.02
 BASELINE_SMILE_RANGE = 0.01
 
-# =========================================================
+
 # INTERPRETATION RANGES
-# =========================================================
+
 INTERPRETATION_RANGES = {
     "head_stability": [
         {"max": 0.1, "label": "rigid", "text": "Stiff neck. Frozen.", "coaching": "Nod slightly to show agreement or emphasis. You look stiff."},

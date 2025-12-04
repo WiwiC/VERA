@@ -25,15 +25,9 @@ def sliding_windows(series, window=5):
 
     for start in seconds:
         end = start + window
-        # We need to ensure we have data for the full window
-        # But for simplicity, we'll take whatever falls in [start, end]
-        # The notebook logic was: if len(win) == window + 1: rows.append(...)
-        # Let's stick to the notebook logic for fidelity
+
         win = series.loc[start:end]
 
-        # Assuming 1 data point per second, window+1 means we cover start to end inclusive?
-        # Actually, if window=5, we want [t, t+5]. That's 6 points if inclusive.
-        # Let's check notebook logic: "if len(win) == window + 1"
         if len(win) == window + 1:
             rows.append({
                 "start_sec": start,
@@ -80,12 +74,13 @@ def compute_scores(raw_df):
                window_df contains the 5-second window metrics.
     """
     # 1. Aggregate per second
-    jitter_head_1s = raw_df.groupby("second")["head_speed"].var().fillna(0)
+    # Head Stability: Use MEAN speed (IOD/sec) to match baseline (0.35 IOD/sec)
+    head_speed_1s  = raw_df.groupby("second")["head_speed"].mean().fillna(0)
     jitter_gaze_1s = raw_df.groupby("second")["gaze_dg"].var().fillna(0)
     smile_1s       = raw_df.groupby("second")["smile"].mean().fillna(0)
 
     # 2. Sliding Windows (5s)
-    df_head_5s  = sliding_windows(jitter_head_1s)
+    df_head_5s  = sliding_windows(head_speed_1s)
     df_gaze_5s  = sliding_windows(jitter_gaze_1s)
     df_smile_5s = sliding_windows(smile_1s)
 
@@ -100,7 +95,7 @@ def compute_scores(raw_df):
     # --- HEAD STABILITY ---
     # Relative
     z_head = (df_head_5s["value"] - df_head_5s["value"].mean()) / (df_head_5s["value"].std() + 1e-9)
-    df_head_5s["rel_score"] = 1 / (1 + np.exp(z_head)) # Inverted: lower jitter is better (consistency)
+    df_head_5s["rel_score"] = 1 / (1 + np.exp(-z_head)) # Normal: Higher speed (up to a point) is better for "nodding"
 
     # Absolute (Gaussian: Optimal range)
     head_abs = df_head_5s["value"].mean()
@@ -140,56 +135,16 @@ def compute_scores(raw_df):
 
     # Merge window dataframes for export
     # Rename columns to be clear
-    df_head_5s = df_head_5s.rename(columns={"value": "head_jitter_val", "rel_score": "head_score"})
+    df_head_5s = df_head_5s.rename(columns={"value": "head_speed_val", "rel_score": "head_score"})
     df_gaze_5s = df_gaze_5s.rename(columns={"value": "gaze_jitter_val", "rel_score": "gaze_score"})
     df_smile_5s = df_smile_5s.rename(columns={"value": "smile_val", "rel_score": "smile_score"})
 
     # Merge on start_sec/end_sec
     window_df = df_head_5s.merge(df_gaze_5s, on=["start_sec", "end_sec"]).merge(df_smile_5s, on=["start_sec", "end_sec"])
 
-    # 5. Get Interpretations & Coaching
-    # Note: Head Stability bucket is based on IOD/sec (speed), but head_abs is variance of speed?
-    # Let's check compute_scores aggregation:
-    # jitter_head_1s = raw_df.groupby("second")["head_speed"].var()
-    # So head_abs is mean variance of speed.
-    # But my config buckets are for "head_stability" in IOD/sec (speed).
-    # Wait, the config says: "Optimal: 0.2 - 0.5 IOD/sec (Natural nodding)".
-    # If I am measuring variance, the units are (IOD/sec)^2.
-    # This is a mismatch.
-    # If the config buckets are for SPEED, I should use mean speed, not variance.
-    # But "Stability" implies low variance.
-    # Let's look at the config again.
-    # "Unstable head movement (Poor). Bobblehead effect." -> High speed or high variance?
-    # Usually high speed means moving a lot. High variance means changing speed a lot.
-    # Given the buckets (0.2, 0.5...), these look like Speed values.
-    # Variance would be much smaller (e.g. 0.01).
-    # I should probably use MEAN SPEED for the interpretation bucket check, even if I score on variance?
-    # Or change aggregation to mean?
-    # In body/scoring, I used mean for magnitude/activity, but variance for jitter/sway.
-    # Here, head_stability seems to be treated like jitter (variance).
-    # But the config values (0.35) are definitely speed-scale (0.35 * 6cm = 2cm/sec).
-    # Variance of 0.35 would be huge.
-    # So I suspect I should be aggregating MEAN speed for the interpretation check.
-
-    # Let's calculate mean speed for interpretation purposes
-    # I don't have it in the window df (which has variance).
-    # I can't easily get it without re-aggregating.
-    # However, for now, I will use head_abs (variance) and assume the user meant variance in config?
-    # No, 0.35 variance is impossible for head stability.
-    # The config comment says "Optimal: 0.2 - 0.5 IOD/sec". That is SPEED.
-    # So I should change the aggregation to use MEAN for interpretation?
-    # Or just accept that my scoring uses variance but my interpretation uses speed?
-    # I will calculate mean speed from raw_df just for interpretation if possible.
-    # But compute_scores takes raw_df.
 
     mean_head_speed = raw_df["head_speed"].mean()
-    mean_gaze_dg = raw_df["gaze_dg"].mean() # Gaze consistency is also variance-based in scoring?
-    # jitter_gaze_1s = var().
-    # Config: "Optimal > 0.8 (Score)". Wait, Gaze interpretation is based on SCORE in the assessment.
-    # But in the config file I wrote: "max: 0.4, 0.7...". These look like scores (0-1).
-    # So for Gaze and Smile, I can use the SCORE.
-    # For Head Stability, the buckets are 0.1, 0.2... which are raw values.
-    # So for Head, I need the raw mean speed.
+    mean_gaze_dg = raw_df["gaze_dg"].mean()
 
     interp_head, coach_head = get_interpretation("head_stability", mean_head_speed)
 

@@ -3,27 +3,25 @@ Configuration constants for the VERA Body Module.
 Contains landmark indices, visualization colors, scoring baselines, and interpretation ranges.
 """
 
-# =========================================================
+
 # LANDMARK INDICES (MediaPipe Holistic/Pose)
-# =========================================================
+
 POSE_POINTS = {
     "shoulders": [11, 12],
     "hips":      [23, 24],
     "wrists":    [15, 16],
 }
 
-# =========================================================
+
 # VISUALIZATION COLORS (BGR)
-# =========================================================
+
 COLOR_SHOULDERS = (255, 0,   0)   # Blue
 COLOR_HIPS      = (0,   255, 255) # Yellow
 COLOR_WRISTS    = (0,   0,   255) # Red
 
-# =========================================================
 # SCORING BASELINES
-# =========================================================
 # Gesture Magnitude
-# Gesture Magnitude
+
 # Normalized by Shoulder Width (SW)
 # Optimal: 1.0 - 2.5 SW (Hands moving freely)
 BASELINE_GESTURE_MAG_OPTIMAL = 1.5
@@ -50,9 +48,9 @@ BASELINE_BODY_SWAY_SCALE = 5.0
 BASELINE_POSTURE_OPTIMAL = 150
 BASELINE_POSTURE_RANGE = 15
 
-# =========================================================
+
 # INTERPRETATION RANGES
-# =========================================================
+
 INTERPRETATION_RANGES = {
     "gesture_magnitude": [
         {"max": 0.5, "label": "very_low", "text": "Gestures too small (Weak). Hands glued to sides/lap.", "coaching": "Unlock your hands. Try to make at least one large gesture per sentence."},

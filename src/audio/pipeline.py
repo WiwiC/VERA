@@ -25,11 +25,21 @@ def run_audio_pipeline(video_path, output_dir):
 
     # 1. Extraction
     print("--- Step 1: Extraction ---")
+
     raw_metrics = process_audio(video_path, output_dir)
 
     if not raw_metrics:
         print("❌ Audio extraction failed.")
         return {}
+
+    # Rename generated audio file to debug_audio.mp3 for consistency
+    generated_audio = Path(output_dir) / f"{Path(video_path).stem}.mp3"
+    debug_audio_path = Path(output_dir) / "debug_audio.mp3"
+    if generated_audio.exists():
+        if debug_audio_path.exists():
+            debug_audio_path.unlink()
+        generated_audio.rename(debug_audio_path)
+        print(f"✅ Saved debug audio to: {debug_audio_path}")
 
     # 2. Scoring
     print("--- Step 2: Scoring ---")

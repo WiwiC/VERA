@@ -54,19 +54,20 @@ def run_face_pipeline(video_path, output_dir=None):
     print("--- Step 3: Saving Results ---")
 
     # Save metrics CSV
-    metrics_path = output_dir / "metrics.csv"
+    # Save metrics CSV
+    metrics_path = output_dir / "metrics_face.csv"
     window_df.to_csv(metrics_path, index=False)
     print(f"✅ Saved metrics to: {metrics_path}")
 
     # Save results JSON
-    results_path = output_dir / "results.json"
+    results_path = output_dir / "results_face.json"
     with open(results_path, "w") as f:
         json.dump(scores, f, indent=4)
     print(f"✅ Saved scores to: {results_path}")
 
     # 4. Visualization
     print("--- Step 4: Visualization ---")
-    debug_video_path = output_dir / "debug_video.mp4"
+    debug_video_path = output_dir / "debug_face.mp4"
     create_debug_video(str(video_path), str(debug_video_path))
     print(f"✅ Saved debug video to: {debug_video_path}")
 
