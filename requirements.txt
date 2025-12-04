@@ -1,8 +1,27 @@
-mediapipe==0.10.9
-opencv-python==4.10.0.84
 numpy==1.26.4
 pandas==2.1.4
 tqdm==4.66.1
 matplotlib==3.8.2
 ipykernel
 notebook
+
+# Body/Face language dependencies
+mediapipe==0.10.9
+opencv-python==4.10.0.84
+
+# Audio Module Dependencies
+librosa
+webrtcvad
+faster-whisper
+pyloudnorm
+moviepy
+soundfile
+
+# Frontend dependencies
+streamlit
+
+# Google cloud dependencies
+google-cloud-storage
+flask
+gunicorn
+google-cloud-pubsub
