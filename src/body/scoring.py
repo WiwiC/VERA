@@ -12,7 +12,10 @@ from src.body.config import (
     BASELINE_GESTURE_ACTIVITY_VAR,
     BASELINE_GESTURE_JITTER_OPTIMAL,
     BASELINE_GESTURE_JITTER_RANGE,
-    BASELINE_BODY_SWAY_SCALE,
+    BASELINE_GESTURE_JITTER_OPTIMAL,
+    BASELINE_GESTURE_JITTER_RANGE,
+    BASELINE_BODY_SWAY_OPTIMAL,
+    BASELINE_BODY_SWAY_VAR,
     BASELINE_POSTURE_OPTIMAL,
     BASELINE_POSTURE_RANGE,
     INTERPRETATION_RANGES
@@ -124,7 +127,7 @@ def compute_scores(raw_df):
     df_sway_5s["rel_score"] = 1 / (1 + np.exp(z_sway)) # Inverted
 
     sway_abs = df_sway_5s["value"].mean()
-    abs_sway_score = np.exp(-sway_abs * BASELINE_BODY_SWAY_SCALE)
+    abs_sway_score = np.exp(-((sway_abs - BASELINE_BODY_SWAY_OPTIMAL)**2) / BASELINE_BODY_SWAY_VAR)
 
     score_sway = 0.5 * abs_sway_score + 0.5 * df_sway_5s["rel_score"].mean()
 
