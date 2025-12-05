@@ -1,0 +1,13 @@
+{
+    "face_global_score": 0.49816783550612165,
+    "face_global_interpretation": "Needs improvement. Facial signals may be distracting or weak.",
+    "head_stability_score": 0.45091967783747855,
+    "head_stability_interpretation": "Very controlled. Serious.",
+    "head_stability_coaching": "Good control. A bit more movement could make you look warmer.",
+    "gaze_consistency_score": 0.7636514725698885,
+    "gaze_consistency_interpretation": "Natural gaze behavior (Good). Natural eye contact.",
+    "gaze_consistency_coaching": "Good eye contact. You feel present.",
+    "smile_activation_score": 0.27993235611099776,
+    "smile_activation_interpretation": "Low smile activation (Weak). Professional but reserved.",
+    "smile_activation_coaching": "Try to smile at the start and end of your sentences."
+}

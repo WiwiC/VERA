@@ -1,0 +1,19 @@
+{
+    "audio_global_score": 0.6847005365853871,
+    "audio_global_interpretation": "Good vocal presence. Balanced and effective.",
+    "speech_rate_score": 0.9722008286450586,
+    "speech_rate_interpretation": "Slower than typical; very clear but may lack energy.",
+    "speech_rate_coaching": "Speed up slightly to keep the flow engaging, while keeping clarity.",
+    "pause_ratio_score": 0.9994631590001519,
+    "pause_ratio_interpretation": "Continuous flow; risks sounding run-on.",
+    "pause_ratio_coaching": "Use silence to your advantage. Let your audience digest your ideas.",
+    "pitch_dynamic_score": 2.0137308158389482e-30,
+    "pitch_dynamic_interpretation": "Rollercoaster pitch; can be distracting.",
+    "pitch_dynamic_coaching": "Tone it down slightly. Too much variation can sound insincere.",
+    "volume_dynamic_score": 1.0,
+    "volume_dynamic_interpretation": "Dynamic delivery. Great emotional texture.",
+    "volume_dynamic_coaching": "Great dynamic range. You use volume effectively to convey emotion.",
+    "vocal_punch_score": 0.45183869528172527,
+    "vocal_punch_interpretation": "Aggressive (Distracting). Too punchy or shouting.",
+    "vocal_punch_coaching": "Soften your attack slightly. You don't need to shout to be heard."
+}

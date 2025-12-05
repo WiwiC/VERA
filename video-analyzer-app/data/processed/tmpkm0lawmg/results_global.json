@@ -1,0 +1,57 @@
+{
+    "meta": {
+        "video_path": "/var/folders/vb/b78r2dwn303dp0f1vhfzzr440000gn/T/tmpkm0lawmg.mp4",
+        "duration_sec": 111.85836100578308
+    },
+    "audio": {
+        "audio_global_score": 0.6847005365853871,
+        "audio_global_interpretation": "Good vocal presence. Balanced and effective.",
+        "speech_rate_score": 0.9722008286450586,
+        "speech_rate_interpretation": "Slower than typical; very clear but may lack energy.",
+        "speech_rate_coaching": "Speed up slightly to keep the flow engaging, while keeping clarity.",
+        "pause_ratio_score": 0.9994631590001519,
+        "pause_ratio_interpretation": "Continuous flow; risks sounding run-on.",
+        "pause_ratio_coaching": "Use silence to your advantage. Let your audience digest your ideas.",
+        "pitch_dynamic_score": 2.0137308158389482e-30,
+        "pitch_dynamic_interpretation": "Rollercoaster pitch; can be distracting.",
+        "pitch_dynamic_coaching": "Tone it down slightly. Too much variation can sound insincere.",
+        "volume_dynamic_score": 1.0,
+        "volume_dynamic_interpretation": "Dynamic delivery. Great emotional texture.",
+        "volume_dynamic_coaching": "Great dynamic range. You use volume effectively to convey emotion.",
+        "vocal_punch_score": 0.45183869528172527,
+        "vocal_punch_interpretation": "Aggressive (Distracting). Too punchy or shouting.",
+        "vocal_punch_coaching": "Soften your attack slightly. You don't need to shout to be heard."
+    },
+    "body": {
+        "body_global_score": 0.5367748589390597,
+        "body_global_interpretation": "Good body language. Balanced and effective.",
+        "gesture_magnitude_score": 0.40844045788026084,
+        "gesture_magnitude_interpretation": "High gesture dynamics (Excellent). Confident, expansive gestures.",
+        "gesture_magnitude_coaching": "Excellent use of space. Your gestures command attention.",
+        "gesture_activity_score": 0.4609088877215485,
+        "gesture_activity_interpretation": "Statue-like. No movement.",
+        "gesture_activity_coaching": "Move your hands to emphasize key verbs. You look frozen.",
+        "gesture_jitter_score": 0.5657043933921325,
+        "gesture_jitter_interpretation": "Natural stability (Good). Healthy fluidity \u2014 no distracting instability.",
+        "gesture_jitter_coaching": "Good control. Your hands look steady.",
+        "body_sway_score": 0.49602143129998133,
+        "body_sway_interpretation": "Grounded, controlled posture (Excellent). Very grounded.",
+        "body_sway_coaching": "Great stability. You look very grounded.",
+        "posture_openness_score": 0.7527991244013754,
+        "posture_openness_interpretation": "Open, expansive posture (Excellent). Strong, confident posture.",
+        "posture_openness_coaching": "Excellent command of space. You look authoritative."
+    },
+    "face": {
+        "face_global_score": 0.49816783550612165,
+        "face_global_interpretation": "Needs improvement. Facial signals may be distracting or weak.",
+        "head_stability_score": 0.45091967783747855,
+        "head_stability_interpretation": "Very controlled. Serious.",
+        "head_stability_coaching": "Good control. A bit more movement could make you look warmer.",
+        "gaze_consistency_score": 0.7636514725698885,
+        "gaze_consistency_interpretation": "Natural gaze behavior (Good). Natural eye contact.",
+        "gaze_consistency_coaching": "Good eye contact. You feel present.",
+        "smile_activation_score": 0.27993235611099776,
+        "smile_activation_interpretation": "Low smile activation (Weak). Professional but reserved.",
+        "smile_activation_coaching": "Try to smile at the start and end of your sentences."
+    }
+}
