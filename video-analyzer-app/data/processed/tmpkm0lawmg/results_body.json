@@ -1,0 +1,19 @@
+{
+    "body_global_score": 0.5367748589390597,
+    "body_global_interpretation": "Good body language. Balanced and effective.",
+    "gesture_magnitude_score": 0.40844045788026084,
+    "gesture_magnitude_interpretation": "High gesture dynamics (Excellent). Confident, expansive gestures.",
+    "gesture_magnitude_coaching": "Excellent use of space. Your gestures command attention.",
+    "gesture_activity_score": 0.4609088877215485,
+    "gesture_activity_interpretation": "Statue-like. No movement.",
+    "gesture_activity_coaching": "Move your hands to emphasize key verbs. You look frozen.",
+    "gesture_jitter_score": 0.5657043933921325,
+    "gesture_jitter_interpretation": "Natural stability (Good). Healthy fluidity \u2014 no distracting instability.",
+    "gesture_jitter_coaching": "Good control. Your hands look steady.",
+    "body_sway_score": 0.49602143129998133,
+    "body_sway_interpretation": "Grounded, controlled posture (Excellent). Very grounded.",
+    "body_sway_coaching": "Great stability. You look very grounded.",
+    "posture_openness_score": 0.7527991244013754,
+    "posture_openness_interpretation": "Open, expansive posture (Excellent). Strong, confident posture.",
+    "posture_openness_coaching": "Excellent command of space. You look authoritative."
+}
