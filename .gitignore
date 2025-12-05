@@ -19,6 +19,8 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+video-analyzer-app/data/processed/*
+!video-analyzer-app/data/processed/.gitkeep
 
 # Models
 models/*
