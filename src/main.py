@@ -17,6 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from src.audio.pipeline import run_audio_pipeline
 from src.body.pipeline import run_body_pipeline
 from src.face.pipeline import run_face_pipeline
+from src.analysis.data_processing import update_master_dataset
 
 
 def run_wrapper(pipeline_func, video_path, output_dir):
@@ -79,14 +80,19 @@ def run_pipelines(video_path):
         "body": results.get("body", {}),
         "face": results.get("face", {}),
     }
-
-    global_json = output_dir / "results_global.json"
-    with open(global_json, "w") as f:
+    # Save Global Results
+    global_results_path = output_dir / "results_global.json"
+    with open(global_results_path, "w") as f:
         json.dump(global_results, f, indent=4)
+
+    # Update Clustering Dataset
+    print("\n--- Clustering Data Update ---")
+    video_name = video_path.stem
+    update_master_dataset(video_name, output_dir)
 
     print("\n" + "=" * 50)
     print(f"🎉 Analysis Completed in {global_results['meta']['duration_sec']:.2f}s")
-    print(f"📄 Global Results saved at: {global_json}")
+    print(f"📄 Global Results saved at: {global_results_path}")
     print("=" * 50)
 
     return output_dir, results
