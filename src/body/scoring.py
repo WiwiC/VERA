@@ -164,7 +164,7 @@ def compute_scores(raw_df):
     # jit_abs is mean variance.
     interp_jit, coach_jit = get_interpretation("gesture_jitter", jit_abs)
 
-    # Sway is variance of position. Buckets 0.05, 0.1...
+    # Sway compare to the mean of displacement.
     interp_sway, coach_sway = get_interpretation("body_sway", sway_abs)
 
     interp_open, coach_open = get_interpretation("posture_openness", open_abs)

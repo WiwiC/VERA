@@ -41,14 +41,18 @@ def run_audio_pipeline(video_path, output_dir):
         generated_audio.rename(debug_audio_path)
         print(f"✅ Saved debug audio to: {debug_audio_path}")
 
-    # 2. Scoring
-    print("--- Step 2: Scoring ---")
+    # 2. Save Metrics (Raw Data)
+    print("--- Step 2: Saving Raw Metrics ---")
+    # Convert dictionary to single-row DataFrame
+    df_audio = pd.DataFrame([raw_metrics])
+    metrics_path = Path(output_dir) / "df_Audio_raw_data.csv"
+    df_audio.to_csv(metrics_path, index=False)
+    print(f"✅ Saved raw metrics to: {metrics_path}")
+
+    # 3. Scoring
+    print("--- Step 3: Scoring ---")
     scores = compute_scores(raw_metrics)
 
-    # 3. Saving Results
-    print("--- Step 3: Saving Results ---")
-
-    # Save Raw Metrics (CSV)
     # Convert scalar dict to 1-row DataFrame
     df_metrics = pd.DataFrame([raw_metrics])
     metrics_path = Path(output_dir) / "metrics_audio.csv"

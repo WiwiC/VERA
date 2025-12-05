@@ -49,10 +49,18 @@ def run_body_pipeline(video_path, output_dir=None):
     # 3. Save Results
     print("--- Step 3: Saving Results ---")
 
-    # Save metrics CSV (metrics_body.csv)
+    # 3. Save Metrics
+    print("--- Step 3: Saving Results ---")
+
+    # Save Raw Data (Frame-by-Frame)
+    raw_data_path = output_dir / "df_Body_raw_data.csv"
+    raw_df.to_csv(raw_data_path)
+    print(f"✅ Saved raw data to: {raw_data_path}")
+
+    # Save Processed Metrics (Windowed/Smoothed)
     metrics_path = output_dir / "metrics_body.csv"
     window_df.to_csv(metrics_path, index=False)
-    print(f"✅ Saved metrics to: {metrics_path}")
+    print(f"✅ Saved processed metrics to: {metrics_path}")
 
     # Save results JSON (results_body.json)
     results_path = output_dir / "results_body.json"
