@@ -25,3 +25,6 @@ google-cloud-storage
 flask
 gunicorn
 google-cloud-pubsub
+
+# Model for Clustering
+sklearn
