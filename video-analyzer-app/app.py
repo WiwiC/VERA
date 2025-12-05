@@ -14,7 +14,7 @@ project_root = current_dir.parent.resolve()
 if str(project_root) not in sys.path:
     sys.path.append(str(project_root))
 
-from tests.orchestrator import run_pipelines  # ⬅️ Parallel orchestrator
+from src.main import run_pipelines  # ⬅️ Parallel main
 
 
 # ============================================================
