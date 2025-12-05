@@ -1,6 +1,6 @@
 """
 VERA Main Orchestrator
-Runs Audio, Body, and Face pipelines in parallel for a given video.
+Runs Audio, Body, and Face pipelines in parallel for a given video
 """
 
 import sys
