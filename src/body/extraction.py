@@ -44,6 +44,8 @@ def process_video(video_path):
         raise ValueError(f"❌ Error loading video: {video_path}")
 
     fps = cap.get(cv2.CAP_PROP_FPS)
+    if fps <= 0:
+        fps = 30.0  # Fallback to 30fps if detection fails
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     features = []
@@ -87,9 +89,9 @@ def process_video(video_path):
                 speed_R = np.linalg.norm(R_wr - prev_R_wr)
                 raw_activity = np.nanmean([speed_L, speed_R])
 
-                # Normalize by shoulder width if valid
+                # Normalize by shoulder width and convert to per-second units (fps-agnostic)
                 if shoulder_width > 0:
-                    gesture_activity = raw_activity / shoulder_width
+                    gesture_activity = (raw_activity / shoulder_width) * fps  # SW/sec
                 else:
                     gesture_activity = 0.0
 
@@ -101,9 +103,9 @@ def process_video(video_path):
             if prev_torso is not None:
                 raw_sway = np.linalg.norm(torso - prev_torso)
 
-                # Normalize by shoulder width if valid
+                # Normalize by shoulder width and convert to per-second units (fps-agnostic)
                 if shoulder_width > 0:
-                    body_sway = raw_sway / shoulder_width
+                    body_sway = (raw_sway / shoulder_width) * fps  # SW/sec
                 else:
                     body_sway = 0.0
             prev_torso = torso
