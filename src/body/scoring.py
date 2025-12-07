@@ -20,6 +20,7 @@ from src.body.config import (
     BASELINE_POSTURE_RANGE,
     INTERPRETATION_RANGES
 )
+from src.utils.temporal import project_windows_to_seconds
 
 def sliding_windows(series, window=5):
     """
@@ -194,4 +195,17 @@ def compute_scores(raw_df):
         "posture_openness_coaching": coach_open
     }
 
-    return scores, window_df
+    # 6. Generate Timeline (1Hz -> 5s)
+    # We use the window_df which has start/end/scores
+    # First, ensure window_df has the score columns we want to project.
+    # The current window_df has columns like 'gesture_magnitude_score', 'gesture_magnitude_val', etc.
+    # We want to project the SCORES (normalized 0-1 or similar) typically, or values?
+    # Usually for a timeline we want the interpretable scores.
+
+    # Let's project the SCORES.
+    cols_to_project = [c for c in window_df.columns if "_score" in c]
+    projection_input = window_df[["start_sec", "end_sec"] + cols_to_project]
+
+    timeline_1s = project_windows_to_seconds(projection_input)
+
+    return scores, window_df, timeline_1s

@@ -14,6 +14,7 @@ from src.face.config import (
     BASELINE_SMILE_RANGE,
     INTERPRETATION_RANGES
 )
+from src.utils.temporal import project_windows_to_seconds
 
 def sliding_windows(series, window=5):
     """
@@ -170,4 +171,10 @@ def compute_scores(raw_df):
         "smile_activation_coaching": coach_smile
     }
 
-    return scores, window_df
+    # 5. Generate Timeline (1Hz -> 5s)
+    cols_to_project = [c for c in window_df.columns if "_score" in c]
+    projection_input = window_df[["start_sec", "end_sec"] + cols_to_project]
+
+    timeline_1s = project_windows_to_seconds(projection_input)
+
+    return scores, window_df, timeline_1s
