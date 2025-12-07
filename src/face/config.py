@@ -1,6 +1,11 @@
 """
 Configuration constants for the VERA Face Module.
 Contains landmark indices, visualization colors, scoring baselines, and interpretation ranges.
+
+FPS-NORMALIZED: All velocity metrics are now in per-second units.
+Baselines are fps-agnostic and work with any video frame rate.
+
+RECALIBRATED: Based on empirical data analysis (2024-12).
 """
 
 
@@ -24,47 +29,62 @@ COLOR_EXP    = (0,   255, 0)   # Green
 COLOR_SMILE  = (0,   0,   255) # Red
 
 
-# SCORING BASELINES
+# =========================================================
+# SCORING BASELINES (FPS-NORMALIZED & RECALIBRATED)
+# All velocity metrics are in per-second units
+# =========================================================
+
+# Head Stability (IOD/sec)
+# Observed data: mean 0.89, median 0.74, IQR 0.50
+# Optimal band: 0.75 - 1.35 IOD/sec (matches interpretation buckets)
+BASELINE_HEAD_STABILITY_OPTIMAL = 0.90   # IOD/sec
+BASELINE_HEAD_STABILITY_VAR     = 0.27   # (0.52)² for Gaussian scoring
+
+# Gaze Consistency (variance of per-second gaze changes)
+# Observed data: mean 0.108, Q25 0.09, Q75 0.12
+# Lower jitter = better (inverted logistic)
+# Note: MIDPOINT is the logistic center, NOT the optimal value (optimal is ≤0.08)
+BASELINE_GAZE_MIDPOINT = 0.10   # Logistic inflection point (lower values score higher)
+BASELINE_GAZE_SCALE    = 0.03   # Logistic scale parameter
+
+# Smile Activation (normalized by IOD - NOT fps-dependent)
+# Observed data: mean 0.82, std 0.05, range 0.62-1.01
+# Uses GAUSSIAN scoring (optimal band, not "more is better")
+BASELINE_SMILE_OPTIMAL = 0.82
+BASELINE_SMILE_VAR     = 0.0064  # (0.08)² for Gaussian scoring
 
 
-# Head Stability
-# Normalized by IOD (Inter-Ocular Distance)
-# Optimal: 0.2 - 0.5 IOD/sec (Natural nodding)
-BASELINE_HEAD_STABILITY_OPTIMAL = 0.35
-BASELINE_HEAD_STABILITY_VAR     = 0.1
-
-#Gaze Consistency
-BASELINE_GAZE_OPTIMAL = 0.00075   # "natural" gaze micro-movement
-BASELINE_GAZE_VAR     = 0.00002  # tolerance
-
-# Smile Activation
-# Normalized by IOD (Smile Width / IOD)
-# Optimal: ~0.90 (Smile Width approx equal to IOD)
-BASELINE_SMILE_OPTIMAL = 0.90
-BASELINE_SMILE_RANGE = 0.15
-
-
-# INTERPRETATION RANGES
+# =========================================================
+# INTERPRETATION RANGES (FPS-NORMALIZED & RECALIBRATED)
+# Thresholds aligned with observed data distributions
+# =========================================================
 
 INTERPRETATION_RANGES = {
     "head_stability": [
-        {"max": 0.4, "label": "rigid", "text": "Stiff neck. Frozen.", "coaching": "Nod slightly to show agreement or emphasis. You look stiff."},
-        {"max": 0.6, "label": "stable", "text": "Very controlled. Serious.", "coaching": "Good control. A bit more movement could make you look warmer."},
-        {"max": 0.8, "label": "optimal", "text": "Highly stable head posture (Excellent). Natural nodding and tilting.", "coaching": "Perfect head engagement. Your nods make you look like an active listener."},
-        {"max": 0.9, "label": "high", "text": "Very active head movement.", "coaching": "High energy. Ensure your head movements are intentional, not random."},
-        {"max": 999, "label": "distracting", "text": "Unstable head movement (Poor). Bobblehead effect.", "coaching": "Keep your head steady. Excessive nodding undermines your authority."}
+        # Buckets on head_speed (IOD/sec)
+        # Data: Q25=0.46, median=0.74, Q75=1.02
+        {"max": 0.45, "label": "rigid", "text": "Stiff neck. Frozen.", "coaching": "Nod slightly to show agreement or emphasis. You look stiff."},
+        {"max": 0.75, "label": "stable", "text": "Very controlled. Serious.", "coaching": "Good control. A bit more movement could make you look warmer."},
+        {"max": 1.35, "label": "optimal", "text": "Natural head engagement (Excellent). Good nodding and tilting.", "coaching": "Perfect head engagement. Your nods make you look like an active listener."},
+        {"max": 1.80, "label": "high", "text": "Active head movement.", "coaching": "High energy. Ensure your head movements are intentional, not random."},
+        {"max": 999, "label": "distracting", "text": "Excessive head movement (Poor). Bobblehead effect.", "coaching": "Keep your head steady. Excessive nodding undermines your authority."}
     ],
     "gaze_consistency": [
-        {"max": 0.4, "label": "poor", "text": "Unsteady or nervous gaze (Poor). Avoidant or distracted.", "coaching": "Look at the camera lens, not your screen. You seem disengaged."},
-        {"max": 0.7, "label": "weak", "text": "Slightly unstable gaze (Weak). Frequent scanning/darting.", "coaching": "Hold your gaze for longer. Stop scanning the room."},
-        {"max": 0.9, "label": "good", "text": "Natural gaze behavior (Good). Natural eye contact.", "coaching": "Good eye contact. You feel present."},
-        {"max": 999, "label": "optimal", "text": "Highly controlled gaze (Excellent). Locked-in, confident gaze.", "coaching": "Excellent focus. You connect strongly with the viewer."}
+        # Buckets on gaze_jitter (variance of gaze_dg/sec)
+        # RECALIBRATED: Data mean 0.108, Q25 0.09, Q75 0.12
+        # INVERTED: Lower values = better (more stable gaze)
+        {"max": 0.08, "label": "optimal", "text": "Highly controlled gaze (Excellent). Locked-in, confident gaze.", "coaching": "Excellent focus. You connect strongly with the viewer."},
+        {"max": 0.11, "label": "good", "text": "Natural gaze behavior (Good). Natural eye contact.", "coaching": "Good eye contact. You feel present."},
+        {"max": 0.14, "label": "weak", "text": "Slightly unstable gaze (Weak). Occasional scanning.", "coaching": "Hold your gaze for longer. Stop scanning the room."},
+        {"max": 999, "label": "poor", "text": "Unsteady or nervous gaze (Poor). Frequent darting.", "coaching": "Look at the camera lens, not your screen. You seem disengaged."}
     ],
     "smile_activation": [
-        {"max": 0.2, "label": "flat", "text": "Flat or absent smile (Poor). Serious, poker face.", "coaching": "Smile with your eyes. You look a bit severe."},
-        {"max": 0.5, "label": "neutral", "text": "Low smile activation (Weak). Professional but reserved.", "coaching": "Try to smile at the start and end of your sentences."},
-        {"max": 0.8, "label": "good", "text": "Balanced, natural smile (Good). Warm and approachable.", "coaching": "Nice warmth. Your expression is welcoming."},
-        {"max": 999, "label": "optimal", "text": "Expressive, warm, approachable (Excellent). Highly radiant and positive.", "coaching": "Fantastic energy! Your smile is contagious."}
+        # Buckets on smile_val (lip distance / IOD)
+        # Data: mean 0.82, Q25 0.79, Q75 0.85
+        {"max": 0.75, "label": "flat", "text": "Flat or absent smile (Poor). Serious, poker face.", "coaching": "Smile with your eyes. You look a bit severe."},
+        {"max": 0.80, "label": "neutral", "text": "Low smile activation (Weak). Professional but reserved.", "coaching": "Try to smile at the start and end of your sentences."},
+        {"max": 0.88, "label": "optimal", "text": "Balanced, natural smile (Excellent). Warm and approachable.", "coaching": "Nice warmth. Your expression is welcoming."},
+        {"max": 999, "label": "excessive", "text": "Very high smile (Good). Highly radiant, possibly over-expressive.", "coaching": "Great energy! Just ensure your smile matches the content."}
     ],
     "face_global_score": [
         (0.70, 1.00, "Excellent facial communication. High presence, warmth, and control."),

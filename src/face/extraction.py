@@ -26,9 +26,9 @@ def process_video(video_path):
 
     Returns:
         pd.DataFrame: DataFrame containing timestamped metrics:
-                      - head_speed
-                      - gaze_dg (gaze direction change)
-                      - smile (activation intensity)
+                      - head_speed (IOD/sec, fps-normalized)
+                      - gaze_dg (gaze direction change per sec, fps-normalized)
+                      - smile (activation intensity, normalized by IOD)
     """
     # Initialize MediaPipe FaceMesh
     mp_face_mesh = mp.solutions.face_mesh
@@ -44,6 +44,8 @@ def process_video(video_path):
         raise ValueError(f"❌ Error loading video: {video_path}")
 
     fps = cap.get(cv2.CAP_PROP_FPS)
+    if fps <= 0:
+        fps = 30.0  # Fallback to 30fps if detection fails
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     features = []
@@ -76,9 +78,9 @@ def process_video(video_path):
             if prev_head_center is not None:
                 raw_speed = np.linalg.norm(head_center - prev_head_center)
 
-                # Normalize by IOD if valid
+                # Normalize by IOD and convert to per-second units (fps-agnostic)
                 if iod > 0:
-                    head_speed = raw_speed / iod
+                    head_speed = (raw_speed / iod) * fps  # IOD/sec
                 else:
                     head_speed = 0.0
             prev_head_center = head_center
@@ -91,7 +93,8 @@ def process_video(video_path):
             gaze_vec = gaze_vec / (np.linalg.norm(gaze_vec) + 1e-6)
 
             if prev_gaze is not None:
-                dg = np.linalg.norm(gaze_vec - prev_gaze)
+                # Convert to per-second units (fps-agnostic)
+                dg = np.linalg.norm(gaze_vec - prev_gaze) * fps  # per sec
             prev_gaze = gaze_vec
 
             # ----- SMILE ACTIVATION -----
