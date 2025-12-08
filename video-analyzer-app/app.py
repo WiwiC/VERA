@@ -132,6 +132,9 @@ def landing_page():
 
     st.markdown("""
         <style>
+            .block-container {
+                padding-top: 0 !important;
+            }
             .stApp {
                 background-color: #E7E7FF !important;
             }
@@ -220,15 +223,98 @@ def landing_page():
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+
 # ============================================================
 # ANALYZER PAGE
+# ============================================================
+# ============================================================
+# ANALYZER PAGE (FULL REDESIGN)
 # ============================================================
 def analysis_page():
 
     uploaded_video = st.session_state.uploaded_video
 
-    st.write("## 📺 Video Preview")
-    st.video(uploaded_video)
+    # -------------------------
+    # PAGE-WIDE CSS
+    # -------------------------
+    st.markdown("""
+        <style>
+            .dashboard-card {
+                background: white;
+                border-radius: 18px;
+                padding: 25px;
+                box-shadow: 0px 4px 18px rgba(0,0,0,0.12);
+                margin-bottom: 25px;
+            }
+
+            .score-card {
+                background: #F4F4FF;
+                border-radius: 16px;
+                padding: 18px;
+                text-align: center;
+                box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
+            }
+
+            .score-title {
+                font-size: 18px;
+                font-weight: 600;
+                color: #2B3A8B;
+            }
+
+            .score-value {
+                font-size: 32px;
+                font-weight: 700;
+                color: #1A237E;
+                margin-top: -5px;
+            }
+
+            .section-title {
+                font-size: 22px;
+                font-weight: 700;
+                color: #2B3A8B;
+                margin-bottom: 10px;
+            }
+
+            .metric-card {
+                background: #FFFFFF;
+                padding: 18px;
+                border-radius: 14px;
+                box-shadow: 0px 2px 10px rgba(0,0,0,0.06);
+                margin-bottom: 15px;
+            }
+
+            .metric-name {
+                font-size: 18px;
+                font-weight: 600;
+                margin-bottom: 6px;
+            }
+
+            .metric-score {
+                font-size: 16px;
+                font-weight: 500;
+                color: #303F9F;
+                margin-bottom: 5px;
+            }
+
+            .metric-coaching {
+                font-size: 14px;
+                color: #555;
+                margin-bottom: 10px;
+            }
+
+        </style>
+    """, unsafe_allow_html=True)
+
+    # -------------------------
+    # PROCESSING VIDEO
+    # -------------------------
+    left, right = st.columns([1, 1])
+
+    with left:
+        st.markdown("<div class='dashboard-card'>", unsafe_allow_html=True)
+        st.markdown("## 🎥 Video Preview")
+        st.video(uploaded_video)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # Save temp file
     suffix = Path(uploaded_video.name).suffix or ".mp4"
@@ -236,108 +322,123 @@ def analysis_page():
         tmp.write(uploaded_video.read())
         temp_path = tmp.name
 
-    st.write("### 🔄 Processing video…")
-
     results_files = process_video(temp_path)
-    st.success("🎉 Analysis ready!")
-
-    # Load enriched JSON
     enriched_data = json.loads(results_files["results_global_enriched.json"])
 
-    # ============================================================
-    # GLOBAL SCORE CARDS
-    # ============================================================
-    st.write("### ⭐ Global Scores Overview")
+    # -------------------------
+    # GLOBAL SCORE PANEL
+    # -------------------------
+    with right:
+        st.markdown("<div class='dashboard-card'>", unsafe_allow_html=True)
 
-    def get_global(module):
-        block = enriched_data.get(module, {}).get("global", {})
-        if module == "audio":
-            return float(block.get("score", 0))
-        return float(block.get("communication_score", 0))
+        st.markdown("<div class='section-title'>⭐ Global Scores</div>", unsafe_allow_html=True)
 
-    cols = st.columns(3)
-    cols[0].metric("🎤 Audio", f"{get_global('audio'):.2f}")
-    cols[1].metric("🕺 Body", f"{get_global('body'):.2f}")
-    cols[2].metric("🙂 Face", f"{get_global('face'):.2f}")
+        def get_global(module):
+            block = enriched_data.get(module, {}).get("global", {})
+            if module == "audio":
+                return float(block.get("score", 0))
+            return float(block.get("communication_score", 0))
 
-    # ============================================================
-    # TABS FOR DETAILED ANALYSIS
-    # ============================================================
-    tab_audio, tab_body, tab_face = st.tabs(["🎧 Audio", "🕺 Body", "🙂 Face"])
+        sc1, sc2, sc3 = st.columns(3)
 
-    # ---------------- AUDIO ----------------
-    with tab_audio:
-        audio_block = enriched_data["audio"]
-        st.subheader("🌐 Global Audio Summary")
-        st.info(f"**Interpretation:** {audio_block['global']['interpretation']}")
-        with st.expander("ℹ️ What / Why"):
-            st.write(f"**What:** {audio_block['global']['what']}")
-            st.write(f"**Why:** {audio_block['global']['why']}")
+        with sc1:
+            st.markdown("""
+                <div class="score-card">
+                    <div class="score-title">🎤 Audio</div>
+                    <div class="score-value">""" + f"{get_global('audio'):.2f}" + """</div>
+                </div>
+            """, unsafe_allow_html=True)
 
-        st.subheader("🧠 Audio Metrics & Coaching")
-        for name, metric in audio_block["metrics"].items():
-            render_metric_panel(name, metric)
+        with sc2:
+            st.markdown("""
+                <div class="score-card">
+                    <div class="score-title">🕺 Body</div>
+                    <div class="score-value">""" + f"{get_global('body'):.2f}" + """</div>
+                </div>
+            """, unsafe_allow_html=True)
 
-        if "metrics_audio.csv" in results_files:
-            st.download_button("Download metrics_audio.csv",
-                results_files["metrics_audio.csv"],
-                "metrics_audio.csv", "text/csv")
+        with sc3:
+            st.markdown("""
+                <div class="score-card">
+                    <div class="score-title">🙂 Face</div>
+                    <div class="score-value">""" + f"{get_global('face'):.2f}" + """</div>
+                </div>
+            """, unsafe_allow_html=True)
 
-    # ---------------- BODY ----------------
-    with tab_body:
-        body_block = enriched_data["body"]
-        st.subheader("🌐 Global Body Summary")
-        st.info(f"**Interpretation:** {body_block['global']['interpretation']}")
-        with st.expander("ℹ️ What / Why"):
-            st.write(f"**What:** {body_block['global']['what']}")
-            st.write(f"**Why:** {body_block['global']['why']}")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        st.subheader("🧠 Body Metrics & Coaching")
-        for name, metric in body_block["metrics"].items():
-            render_metric_panel(name, metric)
+    # -------------------------
+    # METRIC EXPLORER PANEL
+    # -------------------------
+    st.markdown("<div class='dashboard-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='section-title'>🧭 Explore Your Communication</div>", unsafe_allow_html=True)
 
-        if "metrics_body.csv" in results_files:
-            st.download_button("Download metrics_body.csv",
-                results_files["metrics_body.csv"],
-                "metrics_body.csv", "text/csv")
+    # Segmented control
+    selected = st.segmented_control(
+        "Select Module",
+        options=["Audio", "Body", "Face"],
+        default="Audio"
+    )
 
-        if "debug_body.mp4" in results_files:
-            st.video(results_files["debug_body.mp4"])
-            st.download_button("Download debug_body.mp4",
-                results_files["debug_body.mp4"],
-                "debug_body.mp4", "video/mp4")
+    # Helper function to render a metric card
+    def show_metric(name, metric):
+        st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
 
-    # ---------------- FACE ----------------
-    with tab_face:
-        face_block = enriched_data["face"]
-        st.subheader("🌐 Global Face Summary")
-        st.info(f"**Interpretation:** {face_block['global']['interpretation']}")
-        with st.expander("ℹ️ What / Why"):
-            st.write(f"**What:** {face_block['global']['what']}")
-            st.write(f"**Why:** {face_block['global']['why']}")
+        st.markdown(f"<div class='metric-name'>{name.replace('_', ' ').title()}</div>", unsafe_allow_html=True)
 
-        st.subheader("🧠 Face Metrics & Coaching")
-        for name, metric in face_block["metrics"].items():
-            render_metric_panel(name, metric)
+        score = metric.get("score") or metric.get("communication_score")
+        if score is not None:
+            st.markdown(f"<div class='metric-score'>Score: {score:.2f}</div>", unsafe_allow_html=True)
 
-        if "metrics_face.csv" in results_files:
-            st.download_button("Download metrics_face.csv",
-                results_files["metrics_face.csv"],
-                "metrics_face.csv", "text/csv")
+        coaching = metric.get("coaching") or metric.get("communication_coaching")
+        if coaching:
+            st.markdown(f"<div class='metric-coaching'><b>Coaching:</b> {coaching}</div>", unsafe_allow_html=True)
 
-        if "debug_face.mp4" in results_files:
-            st.video(results_files["debug_face.mp4"])
-            st.download_button("Download debug_face.mp4",
-                results_files["debug_face.mp4"],
-                "debug_face.mp4", "video/mp4")
+        # Expanders for details
+        with st.expander("More Details"):
+            interp = metric.get("interpretation") or metric.get("communication_interpretation")
+            if interp:
+                st.write(f"**Interpretation:** {interp}")
 
-    # Final download
+            st.write(f"**What:** {metric.get('what', 'N/A')}")
+            st.write(f"**How:** {metric.get('how', 'N/A')}")
+            st.write(f"**Why:** {metric.get('why', 'N/A')}")
+
+            if "score_semantics" in metric:
+                st.json(metric["score_semantics"])
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # -------------------------
+    # RENDER METRICS (BOTTOM)
+    # -------------------------
+    module_key = selected.lower()
+    module_metrics = enriched_data[module_key]["metrics"]
+
+    colA, colB = st.columns(2)
+
+    metric_names = list(module_metrics.keys())
+
+    for i, m in enumerate(metric_names):
+        if i % 2 == 0:
+            with colA:
+                show_metric(m, module_metrics[m])
+        else:
+            with colB:
+                show_metric(m, module_metrics[m])
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # -------------------------
+    # FINAL DOWNLOAD BUTTON
+    # -------------------------
     st.download_button(
         "📥 Download Full JSON",
         results_files["results_global_enriched.json"],
         "results_global_enriched.json",
         "application/json"
     )
+
 
 
 # ============================================================
