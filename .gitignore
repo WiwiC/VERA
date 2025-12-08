@@ -16,6 +16,8 @@ VERA-PoseBody/
 .ipynb_checkpoints/
 
 # Data
+data/clustering_dataset/*
+!data/clustering_dataset/.gitkeep
 data/raw/*
 !data/raw/.gitkeep
 data/processed/*
