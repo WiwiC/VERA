@@ -36,18 +36,16 @@ if "uploaded_video" not in st.session_state:
 # ============================================================
 def render_metric_panel(metric_name: str, metric_data: dict):
     """Renders a metric with score, interpretation, coaching, what/how/why, semantics."""
-
     nice_name = metric_name.replace("_", " ").title()
 
     st.markdown("---")
     st.markdown(f"### 🧩 **{nice_name}**")
 
     # Extract scores
-    main_score = metric_data.get("score")                     # AUDIO
-    comm_score = metric_data.get("communication_score")       # BODY/FACE
-    cons_score = metric_data.get("consistency_score")         # BODY/FACE
+    main_score = metric_data.get("score")
+    comm_score = metric_data.get("communication_score")
+    cons_score = metric_data.get("consistency_score")
 
-    # Score display – only show consistency once (here, NOT inside expander)
     cols = st.columns(2)
 
     with cols[0]:
@@ -62,7 +60,6 @@ def render_metric_panel(metric_name: str, metric_data: dict):
         elif cons_score is not None:
             st.metric("Consistency Score", f"{float(cons_score):.2f}")
 
-    # Interpretation
     interpretation = (
         metric_data.get("interpretation")
         or metric_data.get("communication_interpretation")
@@ -70,7 +67,6 @@ def render_metric_panel(metric_name: str, metric_data: dict):
     if interpretation:
         st.info(f"**Interpretation:** {interpretation}")
 
-    # Coaching
     coaching = (
         metric_data.get("coaching")
         or metric_data.get("communication_coaching")
@@ -78,7 +74,6 @@ def render_metric_panel(metric_name: str, metric_data: dict):
     if coaching:
         st.warning(f"**Coaching:** {coaching}")
 
-    # Consistency (ONLY textual, not numeric — avoids duplication)
     has_consistency_text = (
         metric_data.get("consistency_interpretation")
         or metric_data.get("consistency_coaching")
@@ -91,13 +86,11 @@ def render_metric_panel(metric_name: str, metric_data: dict):
             if metric_data.get("consistency_coaching"):
                 st.write(f"**Coaching:** {metric_data['consistency_coaching']}")
 
-    # What / How / Why
     with st.expander("ℹ️ What / How / Why"):
         st.write(f"**What:** {metric_data.get('what', 'N/A')}")
         st.write(f"**How:** {metric_data.get('how', 'N/A')}")
         st.write(f"**Why:** {metric_data.get('why', 'N/A')}")
 
-    # Score semantics
     if "score_semantics" in metric_data:
         with st.expander("📘 Score Meaning"):
             st.json(metric_data["score_semantics"])
@@ -156,25 +149,30 @@ def landing_page():
                 background: white;
                 padding: 30px;
                 border-radius: 18px;
-                width: 420px;
+                width: 480px;
                 margin-left: auto;
                 margin-right: auto;
                 box-shadow: 0px 4px 18px rgba(0,0,0,0.12);
             }
 
             .start-button-container {
-                max-width: 420px;
-                margin: 20px auto 0 auto;
+                margin-top: 25px;
+                width: 480px;
+                margin-left: auto;
+                margin-right: auto;
             }
         </style>
     """, unsafe_allow_html=True)
 
+    # --------------------------
+    # HERO SECTION
+    # --------------------------
     st.markdown("<div class='landing-container'>", unsafe_allow_html=True)
 
     # Logo
     logo_path = Path(__file__).parent / "logoVERA.png"
     if logo_path.exists():
-        st.image(str(logo_path), width=180)
+        st.image(str(logo_path), width=200)
 
     # Tagline
     st.markdown("""
@@ -186,43 +184,53 @@ def landing_page():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Upload card
+    # --------------------------
+    # UPLOAD CARD
+    # --------------------------
     st.markdown("<div class='upload-card'>", unsafe_allow_html=True)
-    uploaded = st.file_uploader("Upload your video:", type=["mp4", "mov", "avi", "mkv"])
+
+    uploaded = st.file_uploader(
+        "Upload your video:",
+        type=["mp4", "mov", "avi", "mkv"]
+    )
+
     st.markdown("</div>", unsafe_allow_html=True)
 
     if uploaded:
         st.session_state.uploaded_video = uploaded
         st.success("Video uploaded successfully!")
 
-    # Start Analyzer button
+    # --------------------------
+    # START BUTTON (NO EMPTY WHITE BAR)
+    # --------------------------
     st.markdown("<div class='start-button-container'>", unsafe_allow_html=True)
 
-    if st.button("🚀 Start Analyzer", use_container_width=True):
+    # center the button nicely
+    col_left, col_center, col_right = st.columns([1, 2, 1])
 
-        if "uploaded_video" not in st.session_state or st.session_state.uploaded_video is None:
-            st.error("Please upload a video first.")
-        else:
-            uploaded_video = st.session_state.uploaded_video
+    with col_center:
+        if st.button("🚀 Start Analyzer", use_container_width=True):
 
-            # PROCESSING HAPPENS HERE
-            with st.spinner("🔄 Processing your video… This may take a moment ⏳"):
-
-                # Save temp file
+            if st.session_state.uploaded_video is None:
+                st.error("Please upload a video first.")
+            else:
+                # Save uploaded file temporarily
+                uploaded_video = st.session_state.uploaded_video
                 suffix = Path(uploaded_video.name).suffix or ".mp4"
+
                 with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
                     tmp.write(uploaded_video.read())
                     temp_path = tmp.name
 
-                # Run pipeline ONCE
-                st.session_state.results_files = process_video(temp_path)
+                # Run pipeline once
+                with st.spinner("🔄 Processing your video… This may take a moment ⏳"):
+                    st.session_state.results_files = process_video(temp_path)
 
-            # When finished → go to analyzer page
-            st.session_state.page = "analyze"
-            st.rerun()
+                # Navigate to analysis page
+                st.session_state.page = "analyze"
+                st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
-
 
 
 # ============================================================
@@ -233,16 +241,14 @@ def analysis_page():
     # 💜 Full purple background
     st.markdown("""
         <style>
-            .stApp {
-                background-color: #E7E7FF !important;
-            }
+            .stApp { background-color: #E7E7FF !important; }
             .block-container {
                 background-color: transparent !important;
                 padding-top: 20px;
             }
 
             .dashboard-card {
-                background: white;
+                background: purple;
                 border-radius: 18px;
                 padding: 25px;
                 box-shadow: 0px 4px 18px rgba(0,0,0,0.12);
@@ -306,12 +312,9 @@ def analysis_page():
         </style>
     """, unsafe_allow_html=True)
 
-    # ============================================================
-    # GET UPLOADED VIDEO + RESULTS
-    # ============================================================
     uploaded_video = st.session_state.uploaded_video
-
     results_files = st.session_state.get("results_files", None)
+
     if results_files is None:
         st.error("No analysis results found. Please upload and analyze a video first.")
         return
@@ -319,7 +322,7 @@ def analysis_page():
     enriched_data = json.loads(results_files["results_global_enriched.json"])
 
     # ============================================================
-    # TOP: VIDEO LEFT + SCORES RIGHT
+    # TOP: VIDEO + GLOBAL SCORES
     # ============================================================
     col_left, col_right = st.columns([1.2, 1])
 
@@ -383,9 +386,10 @@ def analysis_page():
         st.markdown("</div>", unsafe_allow_html=True)
 
     # ============================================================
-    # METRIC EXPLORATION SECTION
+    # DETAILED ANALYSIS SECTION (FIXED)
     # ============================================================
     st.markdown("<div class='dashboard-card'>", unsafe_allow_html=True)
+
     st.markdown("<div class='section-title'>Detailed Analysis</div>", unsafe_allow_html=True)
 
     selected = st.segmented_control(
@@ -394,13 +398,10 @@ def analysis_page():
         default="Audio"
     )
 
-    # Pick which module's metrics to show
     module_key = selected.lower()
     module_metrics = enriched_data[module_key]["metrics"]
 
-    # ------------------------------------------------------------
-    # METRIC CARD COMPONENT
-    # ------------------------------------------------------------
+    # Metric rendering component
     def show_metric(name, metric):
 
         st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
@@ -410,7 +411,6 @@ def analysis_page():
             unsafe_allow_html=True,
         )
 
-        # Score
         score = metric.get("score") or metric.get("communication_score")
         if score is not None:
             st.markdown(
@@ -418,7 +418,6 @@ def analysis_page():
                 unsafe_allow_html=True
             )
 
-        # Coaching
         coaching = metric.get("coaching") or metric.get("communication_coaching")
         if coaching:
             st.markdown(
@@ -426,7 +425,6 @@ def analysis_page():
                 unsafe_allow_html=True
             )
 
-        # Details expander
         with st.expander("More Details"):
             interp = metric.get("interpretation") or metric.get("communication_interpretation")
             if interp:
@@ -441,9 +439,7 @@ def analysis_page():
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # ------------------------------------------------------------
-    # TWO-COLUMN METRIC GRID
-    # ------------------------------------------------------------
+    # Two column layout
     colA, colB = st.columns(2)
 
     for i, (name, metric) in enumerate(module_metrics.items()):
