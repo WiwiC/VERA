@@ -10,6 +10,7 @@ VERA-PoseBody/
 
 # OS
 .DS_Store
+.env
 
 # Jupyter
 .ipynb_checkpoints/
