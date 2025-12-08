@@ -1,0 +1,898 @@
+{
+  "metrics": [
+    {
+      "module_id": "face",
+      "metric_id": "head_stability",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Head Stability",
+      "what_is_measured": "How steady your head is while you speak. This captures natural nodding and tilting that signal engagement, versus being frozen or excessively bobbing.",
+      "how_it_is_measured": "We track how much your head position changes between video frames, normalized to your face size and converted to movement per second.",
+      "why_it_matters": "Natural head movement shows you're an active listener and engaged speaker. Too little looks stiff and unapproachable; too much looks distracting and undermines authority.",
+      "raw_value_unit": "IOD/sec",
+      "raw_value_directionality": "sweet_spot",
+      "raw_value_ideal_range": [0.75, 1.35],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Head movement is far from the ideal range (either frozen stiff or excessively bobbing).",
+        "1": "Natural, engaged head movement within the optimal range."
+      },
+      "scoring_function_type": "gaussian",
+      "uses_consistency_score": true,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 0.45,
+          "label": "rigid",
+          "user_text": "Stiff neck. Frozen.",
+          "coaching": "Nod slightly to show agreement or emphasis. You look stiff."
+        },
+        {
+          "min_raw": 0.45,
+          "max_raw": 0.75,
+          "label": "stable",
+          "user_text": "Very controlled. Serious.",
+          "coaching": "Good control. A bit more movement could make you look warmer."
+        },
+        {
+          "min_raw": 0.75,
+          "max_raw": 1.35,
+          "label": "optimal",
+          "user_text": "Natural head engagement (Excellent). Good nodding and tilting.",
+          "coaching": "Perfect head engagement. Your nods make you look like an active listener."
+        },
+        {
+          "min_raw": 1.35,
+          "max_raw": 1.80,
+          "label": "high",
+          "user_text": "Active head movement.",
+          "coaching": "High energy. Ensure your head movements are intentional, not random."
+        },
+        {
+          "min_raw": 1.80,
+          "max_raw": 999,
+          "label": "distracting",
+          "user_text": "Excessive head movement (Poor). Bobblehead effect.",
+          "coaching": "Keep your head steady. Excessive nodding undermines your authority."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Head Stability",
+      "notes": null
+    },
+    {
+      "module_id": "face",
+      "metric_id": "gaze_consistency",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Gaze Consistency",
+      "what_is_measured": "How stable and focused your eye contact is. This captures whether you maintain a confident, locked-in gaze versus darting or scanning nervously.",
+      "how_it_is_measured": "We measure how much your gaze direction changes each second by tracking your iris positions relative to your face.",
+      "why_it_matters": "Steady eye contact makes you appear confident and connected. Frequent gaze shifts can make you seem nervous, disengaged, or untrustworthy.",
+      "raw_value_unit": "variance of gaze change per second",
+      "raw_value_directionality": "lower_is_better",
+      "raw_value_ideal_range": [0, 0.08],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Highly unstable gaze with frequent darting or scanning.",
+        "1": "Steady, confident gaze with minimal jitter."
+      },
+      "scoring_function_type": "logistic",
+      "uses_consistency_score": true,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 0.08,
+          "label": "optimal",
+          "user_text": "Highly controlled gaze (Excellent). Locked-in, confident gaze.",
+          "coaching": "Excellent focus. You connect strongly with the viewer."
+        },
+        {
+          "min_raw": 0.08,
+          "max_raw": 0.11,
+          "label": "good",
+          "user_text": "Natural gaze behavior (Good). Natural eye contact.",
+          "coaching": "Good eye contact. You feel present."
+        },
+        {
+          "min_raw": 0.11,
+          "max_raw": 0.14,
+          "label": "weak",
+          "user_text": "Slightly unstable gaze (Weak). Occasional scanning.",
+          "coaching": "Hold your gaze for longer. Stop scanning the room."
+        },
+        {
+          "min_raw": 0.14,
+          "max_raw": 999,
+          "label": "poor",
+          "user_text": "Unsteady or nervous gaze (Poor). Frequent darting.",
+          "coaching": "Look at the camera lens, not your screen. You seem disengaged."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Gaze Consistency",
+      "notes": "The baseline 'MIDPOINT' (0.10) is the logistic inflection point, not the optimal value. Optimal gaze jitter is ≤0.08."
+    },
+    {
+      "module_id": "face",
+      "metric_id": "smile_activation",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Smile Activation",
+      "what_is_measured": "How much you smile during your presentation. This captures warmth and approachability through facial expression.",
+      "how_it_is_measured": "We measure the width of your mouth (distance between lip corners) relative to the distance between your eyes.",
+      "why_it_matters": "A natural smile makes you appear warm, approachable, and confident. Too little can seem cold or severe; too much may appear forced or insincere.",
+      "raw_value_unit": "ratio (lip width / inter-ocular distance)",
+      "raw_value_directionality": "sweet_spot",
+      "raw_value_ideal_range": [0.80, 0.88],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Smile is far from the natural optimal range (either absent or excessive).",
+        "1": "Natural, balanced smile within the optimal range."
+      },
+      "scoring_function_type": "gaussian",
+      "uses_consistency_score": true,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 0.75,
+          "label": "flat",
+          "user_text": "Flat or absent smile (Poor). Serious, poker face.",
+          "coaching": "Smile with your eyes. You look a bit severe."
+        },
+        {
+          "min_raw": 0.75,
+          "max_raw": 0.80,
+          "label": "neutral",
+          "user_text": "Low smile activation (Weak). Professional but reserved.",
+          "coaching": "Try to smile at the start and end of your sentences."
+        },
+        {
+          "min_raw": 0.80,
+          "max_raw": 0.88,
+          "label": "optimal",
+          "user_text": "Balanced, natural smile (Excellent). Warm and approachable.",
+          "coaching": "Nice warmth. Your expression is welcoming."
+        },
+        {
+          "min_raw": 0.88,
+          "max_raw": 999,
+          "label": "excessive",
+          "user_text": "Very high smile (Good). Highly radiant, possibly over-expressive.",
+          "coaching": "Great energy! Just ensure your smile matches the content."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Smile Activation",
+      "notes": null
+    },
+    {
+      "module_id": "face",
+      "metric_id": "face_global_score",
+      "metric_type": "global_score",
+      "display_name": "Facial Communication",
+      "what_is_measured": "Your overall facial expressiveness and presence during the presentation, combining head movement, eye contact, and smile.",
+      "how_it_is_measured": "We average the scores from head stability, gaze consistency, and smile activation.",
+      "why_it_matters": "Your face is the primary channel for conveying warmth, confidence, and engagement. A strong facial communication score means you connect well visually.",
+      "raw_value_unit": null,
+      "raw_value_directionality": null,
+      "raw_value_ideal_range": null,
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Facial signals may be distracting or weak.",
+        "1": "Excellent facial communication with high presence, warmth, and control."
+      },
+      "scoring_function_type": null,
+      "uses_consistency_score": false,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 0.50,
+          "label": "needs_improvement",
+          "user_text": "Needs improvement. Facial signals may be distracting or weak.",
+          "coaching": null
+        },
+        {
+          "min_raw": 0.50,
+          "max_raw": 0.70,
+          "label": "good",
+          "user_text": "Good facial communication. Balanced and effective.",
+          "coaching": null
+        },
+        {
+          "min_raw": 0.70,
+          "max_raw": 1.00,
+          "label": "excellent",
+          "user_text": "Excellent facial communication. High presence, warmth, and control.",
+          "coaching": null
+        }
+      ],
+      "global_aggregation": {
+        "sub_metrics": ["head_stability", "gaze_consistency", "smile_activation"],
+        "weights": "equal (1/3 each)",
+        "formula": "Average of head stability, gaze consistency, and smile activation communication scores."
+      },
+      "frontend_short_label": "Facial Communication",
+      "notes": "Global interpretation uses the score (0-1), not raw values. Buckets are score-based."
+    },
+    {
+      "module_id": "body",
+      "metric_id": "gesture_magnitude",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Gesture Magnitude",
+      "what_is_measured": "How large and expansive your hand gestures are. This captures whether you use confident, space-claiming gestures or keep your hands close to your body.",
+      "how_it_is_measured": "We measure how far your wrists are from your torso center, normalized to your shoulder width.",
+      "why_it_matters": "Larger gestures project confidence and help emphasize key points. Gestures that are too small look timid; gestures that are too large can be distracting.",
+      "raw_value_unit": "SW (shoulder widths)",
+      "raw_value_directionality": "sweet_spot",
+      "raw_value_ideal_range": [1.5, 2.5],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Gestures are far from the ideal size (either too small or excessively large).",
+        "1": "Gestures are confident and well-sized within the optimal range."
+      },
+      "scoring_function_type": "gaussian",
+      "uses_consistency_score": true,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 1.0,
+          "label": "very_low",
+          "user_text": "Gestures too small (Weak). Hands glued to sides/lap.",
+          "coaching": "Unlock your hands. Try to make at least one large gesture per sentence."
+        },
+        {
+          "min_raw": 1.0,
+          "max_raw": 1.5,
+          "label": "low",
+          "user_text": "Small, timid gestures.",
+          "coaching": "Open up your posture. Imagine holding a beach ball, not a tennis ball."
+        },
+        {
+          "min_raw": 1.5,
+          "max_raw": 2.5,
+          "label": "optimal",
+          "user_text": "High gesture dynamics (Excellent). Confident, expansive gestures.",
+          "coaching": "Excellent use of space. Your gestures command attention."
+        },
+        {
+          "min_raw": 2.5,
+          "max_raw": 3.0,
+          "label": "high",
+          "user_text": "Very large, theatrical gestures.",
+          "coaching": "Great energy, but ensure your gestures don't block your face."
+        },
+        {
+          "min_raw": 3.0,
+          "max_raw": 999,
+          "label": "very_high",
+          "user_text": "Wild, flailing movements. Distracting.",
+          "coaching": "Keep your gestures within the 'box' (shoulders to hips). You are flailing."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Gesture Size",
+      "notes": null
+    },
+    {
+      "module_id": "body",
+      "metric_id": "gesture_activity",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Gesture Activity",
+      "what_is_measured": "How dynamic and fluid your hand movements are. This captures the speed and energy of your gestures throughout the presentation.",
+      "how_it_is_measured": "We track how fast your wrists move over time, normalized to your shoulder width and converted to movement per second.",
+      "why_it_matters": "Dynamic gestures keep the audience engaged and help emphasize your words. Too little movement looks static and boring; too much looks frantic.",
+      "raw_value_unit": "SW/sec (shoulder widths per second)",
+      "raw_value_directionality": "sweet_spot",
+      "raw_value_ideal_range": [1.5, 4.5],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Gesture pace is far from ideal (either statue-like or frantic).",
+        "1": "Dynamic, fluid gesture pace within the optimal range."
+      },
+      "scoring_function_type": "gaussian",
+      "uses_consistency_score": true,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 0.6,
+          "label": "very_low",
+          "user_text": "Statue-like. No movement.",
+          "coaching": "Move your hands to emphasize key verbs. You look frozen."
+        },
+        {
+          "min_raw": 0.6,
+          "max_raw": 1.5,
+          "label": "low",
+          "user_text": "Too static (Weak). Slow, lethargic movement.",
+          "coaching": "Add some snap to your gestures. Match the rhythm of your speech."
+        },
+        {
+          "min_raw": 1.5,
+          "max_raw": 4.5,
+          "label": "optimal",
+          "user_text": "Optimal gesture pace (Excellent). Dynamic, fluid movement.",
+          "coaching": "Perfect gesture pacing. Your hands move naturally with your words."
+        },
+        {
+          "min_raw": 4.5,
+          "max_raw": 9.0,
+          "label": "high",
+          "user_text": "Fast, energetic movement.",
+          "coaching": "High energy! Just be careful not to look frantic."
+        },
+        {
+          "min_raw": 9.0,
+          "max_raw": 999,
+          "label": "very_high",
+          "user_text": "Chaotic, frantic waving.",
+          "coaching": "Slow down. Your hands are moving faster than your audience can follow."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Gesture Activity",
+      "notes": null
+    },
+    {
+      "module_id": "body",
+      "metric_id": "gesture_jitter",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Gesture Stability",
+      "what_is_measured": "How smooth and intentional your gestures are. This captures whether your hand movements are controlled and deliberate versus shaky or fidgety.",
+      "how_it_is_measured": "We measure the variance in your gesture speed each second — lower variance means smoother, more intentional movements.",
+      "why_it_matters": "Smooth gestures project composure and confidence. Shaky or fidgety hands can signal nervousness and distract your audience.",
+      "raw_value_unit": "variance of gesture activity per second",
+      "raw_value_directionality": "lower_is_better",
+      "raw_value_ideal_range": [0, 2.7],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Gestures are shaky, fidgety, and unstable.",
+        "1": "Gestures are smooth, intentional, and composed."
+      },
+      "scoring_function_type": "logistic",
+      "uses_consistency_score": true,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 2.7,
+          "label": "optimal",
+          "user_text": "Extremely stable gestures (Excellent). Smooth, intentional movement.",
+          "coaching": "Excellent stability. You look very composed."
+        },
+        {
+          "min_raw": 2.7,
+          "max_raw": 7.2,
+          "label": "good",
+          "user_text": "Natural stability (Good). Healthy fluidity.",
+          "coaching": "Good control. Your hands look steady."
+        },
+        {
+          "min_raw": 7.2,
+          "max_raw": 13.5,
+          "label": "high",
+          "user_text": "Mild instability (Weak). Occasional shaking.",
+          "coaching": "Smooth out your movements. Try to be more deliberate."
+        },
+        {
+          "min_raw": 13.5,
+          "max_raw": 999,
+          "label": "very_high",
+          "user_text": "Strong jitter / instability (Poor). Fidgety hands.",
+          "coaching": "Plant your hands when not gesturing. Avoid nervous ticks."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Gesture Stability",
+      "notes": "Display name uses 'Stability' for positive framing, though the underlying metric is 'jitter' (instability)."
+    },
+    {
+      "module_id": "body",
+      "metric_id": "body_sway",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Body Sway",
+      "what_is_measured": "How much your torso moves side-to-side or back-and-forth. This captures whether you have a grounded, stable presence versus restless rocking.",
+      "how_it_is_measured": "We track how much your torso center moves over time, normalized to your shoulder width and converted to movement per second.",
+      "why_it_matters": "A grounded stance projects confidence and authority. Too much sway can be distracting and make you appear nervous or unsteady.",
+      "raw_value_unit": "SW/sec (shoulder widths per second)",
+      "raw_value_directionality": "sweet_spot",
+      "raw_value_ideal_range": [0.30, 0.90],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Body movement is far from ideal (either robotically still or excessively swaying).",
+        "1": "Natural, grounded posture with controlled movement."
+      },
+      "scoring_function_type": "gaussian",
+      "uses_consistency_score": true,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 0.15,
+          "label": "rigid",
+          "user_text": "Robotically still. Unnatural.",
+          "coaching": "Relax your shoulders. It's okay to shift your weight slightly."
+        },
+        {
+          "min_raw": 0.15,
+          "max_raw": 0.30,
+          "label": "stable",
+          "user_text": "Grounded, controlled posture (Excellent). Very grounded.",
+          "coaching": "Great stability. You look very grounded."
+        },
+        {
+          "min_raw": 0.30,
+          "max_raw": 0.90,
+          "label": "optimal",
+          "user_text": "Natural controlled movement (Good). Natural, relaxed posture.",
+          "coaching": "Natural posture. You look comfortable and engaged."
+        },
+        {
+          "min_raw": 0.90,
+          "max_raw": 1.50,
+          "label": "unstable",
+          "user_text": "Restless torso movement (Weak). Noticeable swaying.",
+          "coaching": "Plant your feet. You are starting to rock back and forth."
+        },
+        {
+          "min_raw": 1.50,
+          "max_raw": 999,
+          "label": "distracting",
+          "user_text": "Strong body sway (Poor). Sea-sickness inducing sway.",
+          "coaching": "Stop moving your torso. Imagine a string pulling you up from the crown of your head."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Body Sway",
+      "notes": null
+    },
+    {
+      "module_id": "body",
+      "metric_id": "posture_openness",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Posture Openness",
+      "what_is_measured": "How open and confident your posture is. This captures whether your shoulders are rolled back and open versus hunched forward and closed.",
+      "how_it_is_measured": "We measure the angle formed by your shoulders relative to your chest — a wider angle means a more open posture.",
+      "why_it_matters": "Open posture signals confidence and approachability. Closed, hunched posture can make you appear defensive or insecure.",
+      "raw_value_unit": "degrees",
+      "raw_value_directionality": "sweet_spot",
+      "raw_value_ideal_range": [42, 54],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Posture is far from ideal (either hunched closed or unnaturally forced open).",
+        "1": "Confident, approachable posture within the optimal range."
+      },
+      "scoring_function_type": "gaussian",
+      "uses_consistency_score": true,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 40,
+          "label": "closed",
+          "user_text": "Closed, collapsed posture (Poor). Strong inward rotation.",
+          "coaching": "Roll your shoulders back. You look defensive."
+        },
+        {
+          "min_raw": 40,
+          "max_raw": 42,
+          "label": "constricted",
+          "user_text": "Slightly constricted posture (Weak). Shoulders rolled forward.",
+          "coaching": "Open your chest. Let your arms hang naturally."
+        },
+        {
+          "min_raw": 42,
+          "max_raw": 54,
+          "label": "optimal",
+          "user_text": "Optimal posture (Excellent). Confident and approachable.",
+          "coaching": "Perfect posture. You look confident and open."
+        },
+        {
+          "min_raw": 54,
+          "max_raw": 56,
+          "label": "good",
+          "user_text": "Open posture (Good). Slightly expansive.",
+          "coaching": "Good openness. You look approachable."
+        },
+        {
+          "min_raw": 56,
+          "max_raw": 999,
+          "label": "exaggerated",
+          "user_text": "Exaggerated openness (Weak). May look unnatural or stiff.",
+          "coaching": "Relax your shoulders slightly. You look overly rigid."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Posture Openness",
+      "notes": null
+    },
+    {
+      "module_id": "body",
+      "metric_id": "body_global_score",
+      "metric_type": "global_score",
+      "display_name": "Body Language",
+      "what_is_measured": "Your overall physical presence and expressiveness, combining gesture size, gesture activity, gesture stability, body sway, and posture.",
+      "how_it_is_measured": "We average the scores from all five body metrics.",
+      "why_it_matters": "Your body language reinforces your message and projects confidence. A strong body language score means you use physical presence effectively.",
+      "raw_value_unit": null,
+      "raw_value_directionality": null,
+      "raw_value_ideal_range": null,
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Body signals may be distracting, weak, or closed-off.",
+        "1": "Excellent body language with high presence, energy, and control."
+      },
+      "scoring_function_type": null,
+      "uses_consistency_score": false,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 0.50,
+          "label": "needs_improvement",
+          "user_text": "Needs improvement. Body signals may be distracting, weak, or closed-off.",
+          "coaching": null
+        },
+        {
+          "min_raw": 0.50,
+          "max_raw": 0.70,
+          "label": "good",
+          "user_text": "Good body language. Balanced and effective.",
+          "coaching": null
+        },
+        {
+          "min_raw": 0.70,
+          "max_raw": 1.00,
+          "label": "excellent",
+          "user_text": "Excellent body language. High presence, energy, and control.",
+          "coaching": null
+        }
+      ],
+      "global_aggregation": {
+        "sub_metrics": ["gesture_magnitude", "gesture_activity", "gesture_jitter", "body_sway", "posture_openness"],
+        "weights": "equal (1/5 each)",
+        "formula": "Average of gesture magnitude, gesture activity, gesture jitter, body sway, and posture openness communication scores."
+      },
+      "frontend_short_label": "Body Language",
+      "notes": "Global interpretation uses the score (0-1), not raw values. Buckets are score-based."
+    },
+    {
+      "module_id": "audio",
+      "metric_id": "speech_rate",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Speech Rate",
+      "what_is_measured": "How fast you speak, measured in words per minute. This captures your pacing and whether it's easy for the audience to follow.",
+      "how_it_is_measured": "We transcribe your speech and count the words, then divide by the speaking time.",
+      "why_it_matters": "The right pace keeps your audience engaged and ensures comprehension. Too slow can bore; too fast can overwhelm and cause people to miss key points.",
+      "raw_value_unit": "WPM (words per minute)",
+      "raw_value_directionality": "sweet_spot",
+      "raw_value_ideal_range": [130, 160],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Speaking pace is far from ideal (either very slow or overwhelming).",
+        "1": "Speaking pace is within the optimal range for clarity and engagement."
+      },
+      "scoring_function_type": "plateau",
+      "uses_consistency_score": false,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 100,
+          "label": "very_slow",
+          "user_text": "Very slow pace; can feel heavy or overly deliberate.",
+          "coaching": "Increase your tempo on less critical details to add energy."
+        },
+        {
+          "min_raw": 100,
+          "max_raw": 130,
+          "label": "slow",
+          "user_text": "Slower than typical; very clear but may lack energy.",
+          "coaching": "Speed up slightly to keep the flow engaging, while keeping clarity."
+        },
+        {
+          "min_raw": 130,
+          "max_raw": 160,
+          "label": "optimal",
+          "user_text": "Optimal pace. Easy to follow and engaging.",
+          "coaching": "Excellent pace! You are easy to follow and engaging."
+        },
+        {
+          "min_raw": 160,
+          "max_raw": 180,
+          "label": "fast",
+          "user_text": "Energetic and lively. Good for excitement.",
+          "coaching": "Great energy. Just ensure you pause enough to let points land."
+        },
+        {
+          "min_raw": 180,
+          "max_raw": 200,
+          "label": "rushed",
+          "user_text": "Very fast; listeners might miss details.",
+          "coaching": "Slow down slightly. You risk losing the audience's comprehension."
+        },
+        {
+          "min_raw": 200,
+          "max_raw": 999,
+          "label": "overwhelming",
+          "user_text": "Too rapid; cognitive overload for listeners.",
+          "coaching": "Deliberately slow down. Force yourself to take a breath between sentences."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Speech Rate",
+      "notes": null
+    },
+    {
+      "module_id": "audio",
+      "metric_id": "pause_ratio",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Pause Ratio",
+      "what_is_measured": "How much silence you use relative to speaking time. This captures your rhythm and use of pauses for emphasis.",
+      "how_it_is_measured": "We detect speech versus silence and calculate the percentage of time that is silent.",
+      "why_it_matters": "Strategic pauses add emphasis and give the audience time to absorb your points. Too few pauses sound rushed; too many sound hesitant.",
+      "raw_value_unit": "ratio (0-1)",
+      "raw_value_directionality": "sweet_spot",
+      "raw_value_ideal_range": [0.10, 0.25],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Pause usage is far from ideal (either no pauses or excessive silence).",
+        "1": "Perfect rhythm with strategic use of silence for emphasis."
+      },
+      "scoring_function_type": "plateau",
+      "uses_consistency_score": false,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 0.05,
+          "label": "no_pauses",
+          "user_text": "Rushed, dense, and breathless.",
+          "coaching": "Force yourself to pause for 1 second after every key point."
+        },
+        {
+          "min_raw": 0.05,
+          "max_raw": 0.10,
+          "label": "low_pauses",
+          "user_text": "Continuous flow; risks sounding run-on.",
+          "coaching": "Use silence to your advantage. Let your audience digest your ideas."
+        },
+        {
+          "min_raw": 0.10,
+          "max_raw": 0.25,
+          "label": "optimal",
+          "user_text": "Perfect rhythm. Great use of silence for emphasis.",
+          "coaching": "Perfect use of silence. It makes you sound confident and thoughtful."
+        },
+        {
+          "min_raw": 0.25,
+          "max_raw": 0.40,
+          "label": "frequent_pauses",
+          "user_text": "Very distinct, deliberate speaking style.",
+          "coaching": "Good clarity, but ensure the flow doesn't feel choppy."
+        },
+        {
+          "min_raw": 0.40,
+          "max_raw": 0.50,
+          "label": "disjointed",
+          "user_text": "Too much silence; breaks the momentum.",
+          "coaching": "Connect your ideas more smoothly. Reduce the length of your pauses."
+        },
+        {
+          "min_raw": 0.50,
+          "max_raw": 999,
+          "label": "fragmented",
+          "user_text": "Excessive silence; sounds hesitant or unprepared.",
+          "coaching": "Try to keep your train of thought moving. Avoid long gaps."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Pause Ratio",
+      "notes": null
+    },
+    {
+      "module_id": "audio",
+      "metric_id": "pitch_dynamic",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Pitch Dynamic",
+      "what_is_measured": "How much your voice pitch varies during your presentation. This captures vocal expressiveness and melodic quality.",
+      "how_it_is_measured": "We analyze your voice frequency and measure how much it rises and falls, expressed in semitones (musical half-steps).",
+      "why_it_matters": "Pitch variation makes your voice engaging and helps convey emotion. Too little sounds monotone and boring; too much can sound insincere.",
+      "raw_value_unit": "semitones (ST)",
+      "raw_value_directionality": "sweet_spot",
+      "raw_value_ideal_range": [3.5, 6.0],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Pitch variation is far from ideal (either monotone or rollercoaster).",
+        "1": "Highly expressive pitch with captivating vocal melody."
+      },
+      "scoring_function_type": "plateau",
+      "uses_consistency_score": false,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 1.5,
+          "label": "robotic",
+          "user_text": "Completely monotone. Hard to listen to.",
+          "coaching": "You need to vary your pitch. Try emphasizing one word in every sentence."
+        },
+        {
+          "min_raw": 1.5,
+          "max_raw": 3.5,
+          "label": "flat",
+          "user_text": "Reserved and controlled, but lacks emotion.",
+          "coaching": "Try to 'color' your words more. Don't be afraid to go higher or lower."
+        },
+        {
+          "min_raw": 3.5,
+          "max_raw": 6.0,
+          "label": "optimal",
+          "user_text": "Highly expressive. Captivating vocal melody.",
+          "coaching": "Fantastic intonation! Your voice is melodic and captivating."
+        },
+        {
+          "min_raw": 6.0,
+          "max_raw": 8.0,
+          "label": "theatrical",
+          "user_text": "Very expressive; high emotional engagement.",
+          "coaching": "Very lively! Great for storytelling, but ensure it fits the context."
+        },
+        {
+          "min_raw": 8.0,
+          "max_raw": 999,
+          "label": "exaggerated",
+          "user_text": "Rollercoaster pitch; can be distracting.",
+          "coaching": "Tone it down slightly. Too much variation can sound insincere."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Pitch Dynamic",
+      "notes": null
+    },
+    {
+      "module_id": "audio",
+      "metric_id": "volume_dynamic",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Volume Dynamic",
+      "what_is_measured": "How much your volume varies during your presentation. This captures emotional texture and emphasis in your delivery.",
+      "how_it_is_measured": "We measure the variation in your voice loudness over time, expressed as a coefficient of variation.",
+      "why_it_matters": "Volume variation adds emotional texture and helps emphasize key points. Too little sounds robotic; too much can be jarring.",
+      "raw_value_unit": "CV (coefficient of variation)",
+      "raw_value_directionality": "sweet_spot",
+      "raw_value_ideal_range": [0.40, 0.90],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Volume is far from ideal (either robotic flat or extreme swings).",
+        "1": "Dynamic delivery with great emotional texture."
+      },
+      "scoring_function_type": "plateau",
+      "uses_consistency_score": false,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 0.20,
+          "label": "monotone",
+          "user_text": "Robotic volume. No emotional emphasis.",
+          "coaching": "Punch your key words! Make important ideas louder than the rest."
+        },
+        {
+          "min_raw": 0.20,
+          "max_raw": 0.40,
+          "label": "reserved",
+          "user_text": "Controlled volume. Polite but safe.",
+          "coaching": "Don't be afraid to whisper or project. Use volume to tell the story."
+        },
+        {
+          "min_raw": 0.40,
+          "max_raw": 0.90,
+          "label": "optimal",
+          "user_text": "Dynamic delivery. Great emotional texture.",
+          "coaching": "Great dynamic range. You use volume effectively to convey emotion."
+        },
+        {
+          "min_raw": 0.90,
+          "max_raw": 999,
+          "label": "unstable",
+          "user_text": "Extreme volume swings.",
+          "coaching": "Be careful of sudden shouts or drops. Keep the baseline steady."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Volume Dynamic",
+      "notes": null
+    },
+    {
+      "module_id": "audio",
+      "metric_id": "vocal_punch",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Vocal Punch",
+      "what_is_measured": "How much energy and attack your voice has. This captures the clarity and power of your articulation.",
+      "how_it_is_measured": "We measure the ratio between your voice peaks and overall loudness, expressed in decibels (crest factor).",
+      "why_it_matters": "Vocal punch makes your voice cut through clearly and sound authoritative. Too little sounds muffled; too much sounds aggressive.",
+      "raw_value_unit": "dB (decibels)",
+      "raw_value_directionality": "sweet_spot",
+      "raw_value_ideal_range": [13.0, 20.0],
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Vocal energy is far from ideal (either muffled/flat or aggressive/shouting).",
+        "1": "Strong vocal energy with clear, punchy articulation."
+      },
+      "scoring_function_type": "plateau",
+      "uses_consistency_score": false,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 10.0,
+          "label": "muffled",
+          "user_text": "Muffled/Flat (Weak). Lacks energy and attack.",
+          "coaching": "Articulate more clearly. Hit your consonants harder."
+        },
+        {
+          "min_raw": 10.0,
+          "max_raw": 13.0,
+          "label": "soft",
+          "user_text": "Gentle delivery. Good for intimacy, bad for power.",
+          "coaching": "Project your voice more. Imagine reaching the back of the room."
+        },
+        {
+          "min_raw": 13.0,
+          "max_raw": 20.0,
+          "label": "optimal",
+          "user_text": "Strong vocal energy. Clear, punchy articulation.",
+          "coaching": "Strong vocal presence. Your voice cuts through clearly."
+        },
+        {
+          "min_raw": 20.0,
+          "max_raw": 999,
+          "label": "aggressive",
+          "user_text": "Aggressive (Distracting). Too punchy or shouting.",
+          "coaching": "Soften your attack slightly. You don't need to shout to be heard."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Vocal Punch",
+      "notes": null
+    },
+    {
+      "module_id": "audio",
+      "metric_id": "audio_global_score",
+      "metric_type": "global_score",
+      "display_name": "Vocal Presence",
+      "what_is_measured": "Your overall vocal delivery, combining speech rate, pause usage, pitch variation, volume dynamics, and vocal energy.",
+      "how_it_is_measured": "We average the scores from all five audio metrics.",
+      "why_it_matters": "Your voice is how you convey emotion, emphasis, and authority. A strong vocal presence score means you sound engaging, clear, and dynamic.",
+      "raw_value_unit": null,
+      "raw_value_directionality": null,
+      "raw_value_ideal_range": null,
+      "score_range": [0, 1],
+      "score_semantics": {
+        "0": "Voice may be monotone, rushed, or flat.",
+        "1": "Excellent vocal presence — engaging, clear, and dynamic."
+      },
+      "scoring_function_type": null,
+      "uses_consistency_score": false,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 0.50,
+          "label": "needs_improvement",
+          "user_text": "Needs improvement. Voice may be monotone, rushed, or flat.",
+          "coaching": null
+        },
+        {
+          "min_raw": 0.50,
+          "max_raw": 0.70,
+          "label": "good",
+          "user_text": "Good vocal presence. Balanced and effective.",
+          "coaching": null
+        },
+        {
+          "min_raw": 0.70,
+          "max_raw": 1.00,
+          "label": "excellent",
+          "user_text": "Excellent vocal presence. Engaging, clear, and dynamic.",
+          "coaching": null
+        }
+      ],
+      "global_aggregation": {
+        "sub_metrics": ["speech_rate", "pause_ratio", "pitch_dynamic", "volume_dynamic", "vocal_punch"],
+        "weights": "equal (1/5 each)",
+        "formula": "Average of speech rate, pause ratio, pitch dynamic, volume dynamic, and vocal punch scores."
+      },
+      "frontend_short_label": "Vocal Presence",
+      "notes": "Global interpretation uses the score (0-1), not raw values. Buckets are score-based. Audio module has no consistency scores."
+    }
+  ]
+}
+
