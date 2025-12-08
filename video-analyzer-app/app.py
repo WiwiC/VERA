@@ -18,9 +18,99 @@ from src.main import run_pipelines  # ⬅️ Parallel main
 
 
 # ============================================================
+# HELPER: METRIC RENDERING
+# ============================================================
+def render_metric_panel(metric_name: str, metric_data: dict):
+    """
+    Pretty Streamlit panel for a single metric with:
+    - score(s)
+    - interpretation
+    - coaching
+    - what / how / why
+    - score semantics
+    - consistency details (if present)
+    """
+    nice_name = metric_name.replace("_", " ").title()
+
+    st.markdown(f"---")
+    st.markdown(f"### 🧩 **{nice_name}**")
+
+    # Scores
+    score_cols = st.columns(3)
+
+    # Main / communication score
+    main_score = metric_data.get("score")
+    comm_score = metric_data.get("communication_score")
+    cons_score = metric_data.get("consistency_score")
+
+    with score_cols[0]:
+        if main_score is not None:
+            st.metric("Score", f"{float(main_score):.2f}")
+        elif comm_score is not None:
+            st.metric("Communication Score", f"{float(comm_score):.2f}")
+
+    with score_cols[1]:
+        if comm_score is not None and main_score is not None:
+            st.metric("Communication Score", f"{float(comm_score):.2f}")
+        elif cons_score is not None:
+            st.metric("Consistency Score", f"{float(cons_score):.2f}")
+
+    with score_cols[2]:
+        if cons_score is not None and (main_score is not None or comm_score is not None):
+            st.metric("Consistency Score", f"{float(cons_score):.2f}")
+
+    # Interpretations + Coaching (primary / communication)
+    interpretation = (
+        metric_data.get("interpretation")
+        or metric_data.get("communication_interpretation")
+    )
+    coaching = (
+        metric_data.get("coaching")
+        or metric_data.get("communication_coaching")
+    )
+
+    if interpretation:
+        st.info(f"**Interpretation:** {interpretation}")
+
+    if coaching:
+        st.warning(f"**Coaching:** {coaching}")
+
+    # Consistency details, if present
+    has_consistency = (
+        "consistency_interpretation" in metric_data
+        or "consistency_coaching" in metric_data
+        or cons_score is not None
+    )
+    if has_consistency:
+        with st.expander("📏 Consistency details"):
+            #if cons_score is not None:
+            #    st.write(f"**Consistency score:** {float(cons_score):.2f}")
+            if metric_data.get("consistency_interpretation"):
+                st.write(
+                    f"**Interpretation:** {metric_data['consistency_interpretation']}"
+                )
+            if metric_data.get("consistency_coaching"):
+                st.write(
+                    f"**Coaching:** {metric_data['consistency_coaching']}"
+                )
+
+    # What / How / Why
+    with st.expander("ℹ️ What / How / Why"):
+        st.write(f"**What:** {metric_data.get('what', 'N/A')}")
+        st.write(f"**How:** {metric_data.get('how', 'N/A')}")
+        st.write(f"**Why:** {metric_data.get('why', 'N/A')}")
+
+    # Score semantics
+    if "score_semantics" in metric_data:
+        with st.expander("📘 Score meaning"):
+            st.json(metric_data["score_semantics"])
+
+
+# ============================================================
 # CUSTOM PAGE STYLING
 # ============================================================
-st.markdown("""
+st.markdown(
+    """
 <style>
     .main-title {
         text-align: center;
@@ -42,7 +132,9 @@ st.markdown("""
 
 <h1 class="main-title">🎥 VERA</h1>
 <p class="subtitle">AI analysis across <b>audio</b>, <b>body language</b>, and <b>facial expression</b>.</p>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 
 # ============================================================
@@ -59,18 +151,13 @@ def process_video(video_path):
     # Convert all produced files into a dictionary
     outputs = {}
 
-    # Global file
-    global_json_path = Path(output_dir) / "results_global.json"
-    if global_json_path.exists():
-        outputs["results_global.json"] = global_json_path.read_text()
+    # Enriched Global file
+    enriched_path = Path(output_dir) / "results_global_enriched.json"
+    if enriched_path.exists():
+        outputs["results_global_enriched.json"] = enriched_path.read_text()
 
-    # Load audio / body / face outputs
+    # Load media and CSVs
     for module in ["audio", "body", "face"]:
-        # JSON
-        json_path = Path(output_dir) / f"results_{module}.json"
-        if json_path.exists():
-            outputs[f"results_{module}.json"] = json_path.read_text()
-
         # CSV
         csv_path = Path(output_dir) / f"metrics_{module}.csv"
         if csv_path.exists():
@@ -88,7 +175,9 @@ def process_video(video_path):
 # SIDEBAR UPLOAD
 # ============================================================
 st.sidebar.header("📤 Upload Your Video")
-uploaded_video = st.sidebar.file_uploader("Select a video file:", type=["mp4", "mov", "avi", "mkv"])
+uploaded_video = st.sidebar.file_uploader(
+    "Select a video file:", type=["mp4", "mov", "avi", "mkv"]
+)
 
 
 # ============================================================
@@ -100,7 +189,8 @@ if uploaded_video is not None:
     st.video(uploaded_video)
 
     # Save video temporarily
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
+    suffix = Path(uploaded_video.name).suffix or ".mp4"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         tmp.write(uploaded_video.read())
         temp_video_path = tmp.name
 
@@ -109,34 +199,50 @@ if uploaded_video is not None:
     # Run Pipelines
     if st.button("Start Analysis", type="primary"):
 
-        results = process_video(temp_video_path)
+        results_files = process_video(temp_video_path)
 
         st.write("## 📊 Analysis Results")
 
+        # Load Enriched Data
+        enriched_data = {}
+        if "results_global_enriched.json" in results_files:
+            try:
+                enriched_data = json.loads(
+                    results_files["results_global_enriched.json"]
+                )
+            except Exception as e:
+                st.error(f"Error loading enriched JSON: {e}")
+                enriched_data = {}
+
         # ============================================================
-        # SCORE CARDS
+        # GLOBAL SCORE CARDS (Audio / Body / Face) – FIRST
         # ============================================================
-        st.write("### Global Scores Overview")
+        st.write("### ⭐ Global Scores Overview")
+
         score_cols = st.columns(3)
 
+        def get_global_score(data, module, key="communication_score"):
+            try:
+                module_data = data.get(module, {})
+                global_block = module_data.get("global", {})
+                # Audio uses "score", others use "communication_score"
+                if module == "audio" and key == "communication_score":
+                    key = "score"
+                return float(global_block.get(key, 0.0))
+            except Exception:
+                return 0.0
+
         # AUDIO SCORE
-        if "results_audio.json" in results:
-            audio_data = json.loads(results["results_audio.json"])
-            if "audio_global_score" in audio_data:
-                score_cols[0].metric("🎤 Audio Score", f"{audio_data['audio_global_score']:.2f}")
+        audio_score = get_global_score(enriched_data, "audio")
+        score_cols[0].metric("🎤 Audio Score", f"{audio_score:.2f}")
 
         # BODY SCORE
-        if "results_body.json" in results:
-            body_data = json.loads(results["results_body.json"])
-            if "body_global_score" in body_data:
-                score_cols[1].metric("🕺 Body Score", f"{body_data['body_global_score']:.2f}")
+        body_score = get_global_score(enriched_data, "body")
+        score_cols[1].metric("🕺 Body Score", f"{body_score:.2f}")
 
         # FACE SCORE
-        if "results_face.json" in results:
-            face_data = json.loads(results["results_face.json"])
-            if "face_global_score" in face_data:
-                score_cols[2].metric("🙂 Face Score", f"{face_data['face_global_score']:.2f}")
-
+        face_score = get_global_score(enriched_data, "face")
+        score_cols[2].metric("🙂 Face Score", f"{face_score:.2f}")
 
         # ============================================================
         # TABS (Audio / Body / Face)
@@ -147,84 +253,130 @@ if uploaded_video is not None:
         with tab_audio:
             st.header("🎧 Audio Analysis")
 
-            if "results_audio.json" in results:
-                with st.expander("📄 Audio JSON Output"):
-                    st.json(json.loads(results["results_audio.json"]))
-                st.download_button(
-                    "Download results_audio.json",
-                    data=results["results_audio.json"],
-                    file_name="results_audio.json",
-                    mime="application/json"
-                )
+            audio_block = enriched_data.get("audio", {})
+            audio_global = audio_block.get("global", {})
+            audio_metrics = audio_block.get("metrics", {})
 
-            if "metrics_audio.csv" in results:
+            # Global summary
+            if audio_global:
+                st.subheader("🌐 Global audio summary")
+                if "interpretation" in audio_global:
+                    st.info(f"**Interpretation:** {audio_global['interpretation']}")
+                with st.expander("ℹ️ What / Why (Global)"):
+                    st.write(f"**What:** {audio_global.get('what', 'N/A')}")
+                    st.write(f"**Why:** {audio_global.get('why', 'N/A')}")
+
+            # Metric-level panels (coaching, etc.)
+            if audio_metrics:
+                st.subheader("🧠 Audio metrics & coaching")
+                for metric_name, metric_data in audio_metrics.items():
+                    render_metric_panel(metric_name, metric_data)
+            else:
+                st.write("No audio metric details available.")
+
+            # Metrics CSV download
+            if "metrics_audio.csv" in results_files:
                 st.download_button(
                     "Download metrics_audio.csv",
-                    data=results["metrics_audio.csv"],
+                    data=results_files["metrics_audio.csv"],
                     file_name="metrics_audio.csv",
-                    mime="text/csv"
+                    mime="text/csv",
                 )
-
 
         # ---------------- BODY TAB ----------------
         with tab_body:
             st.header("🕺 Body Analysis")
 
-            if "results_body.json" in results:
-                with st.expander("📄 Body JSON Output"):
-                    st.json(json.loads(results["results_body.json"]))
-                st.download_button(
-                    "Download results_body.json",
-                    data=results["results_body.json"],
-                    file_name="results_body.json",
-                    mime="application/json"
-                )
+            body_block = enriched_data.get("body", {})
+            body_global = body_block.get("global", {})
+            body_metrics = body_block.get("metrics", {})
 
-            if "metrics_body.csv" in results:
+            # Global summary
+            if body_global:
+                st.subheader("🌐 Global body summary")
+                if "interpretation" in body_global:
+                    st.info(f"**Interpretation:** {body_global['interpretation']}")
+                with st.expander("ℹ️ What / Why (Global)"):
+                    st.write(f"**What:** {body_global.get('what', 'N/A')}")
+                    st.write(f"**Why:** {body_global.get('why', 'N/A')}")
+
+            # Metric-level panels
+            if body_metrics:
+                st.subheader("🧠 Body metrics & coaching")
+                for metric_name, metric_data in body_metrics.items():
+                    render_metric_panel(metric_name, metric_data)
+            else:
+                st.write("No body metric details available.")
+
+            # CSV & debug video
+            if "metrics_body.csv" in results_files:
                 st.download_button(
                     "Download metrics_body.csv",
-                    data=results["metrics_body.csv"],
+                    data=results_files["metrics_body.csv"],
                     file_name="metrics_body.csv",
-                    mime="text/csv"
+                    mime="text/csv",
                 )
 
-            if "debug_body.mp4" in results:
-                st.video(results["debug_body.mp4"])
+            if "debug_body.mp4" in results_files:
+                st.write("### 🎬 Debug body video")
+                st.video(results_files["debug_body.mp4"])
                 st.download_button(
-                    "Download debug_pose.mp4",
-                    data=results["debug_body.mp4"],
-                    file_name="debug_pose.mp4",
-                    mime="video/mp4"
+                    "Download debug_body.mp4",
+                    data=results_files["debug_body.mp4"],
+                    file_name="debug_body.mp4",
+                    mime="video/mp4",
                 )
-
 
         # ---------------- FACE TAB ----------------
         with tab_face:
             st.header("🙂 Face Analysis")
 
-            if "results_face.json" in results:
-                with st.expander("📄 Face JSON Output"):
-                    st.json(json.loads(results["results_face.json"]))
-                st.download_button(
-                    "Download results_face.json",
-                    data=results["results_face.json"],
-                    file_name="results_face.json",
-                    mime="application/json"
-                )
+            face_block = enriched_data.get("face", {})
+            face_global = face_block.get("global", {})
+            face_metrics = face_block.get("metrics", {})
 
-            if "metrics_face.csv" in results:
+            # Global summary
+            if face_global:
+                st.subheader("🌐 Global face summary")
+                if "interpretation" in face_global:
+                    st.info(f"**Interpretation:** {face_global['interpretation']}")
+                with st.expander("ℹ️ What / Why (Global)"):
+                    st.write(f"**What:** {face_global.get('what', 'N/A')}")
+                    st.write(f"**Why:** {face_global.get('why', 'N/A')}")
+
+            # Metric-level panels
+            if face_metrics:
+                st.subheader("🧠 Face metrics & coaching")
+                for metric_name, metric_data in face_metrics.items():
+                    render_metric_panel(metric_name, metric_data)
+            else:
+                st.write("No face metric details available.")
+
+            # CSV & debug video
+            if "metrics_face.csv" in results_files:
                 st.download_button(
                     "Download metrics_face.csv",
-                    data=results["metrics_face.csv"],
+                    data=results_files["metrics_face.csv"],
                     file_name="metrics_face.csv",
-                    mime="text/csv"
+                    mime="text/csv",
                 )
 
-            if "debug_face.mp4" in results:
-                st.video(results["debug_face.mp4"])
+            if "debug_face.mp4" in results_files:
+                st.write("### 🎬 Debug face video")
+                st.video(results_files["debug_face.mp4"])
                 st.download_button(
                     "Download debug_face.mp4",
-                    data=results["debug_face.mp4"],
+                    data=results_files["debug_face.mp4"],
                     file_name="debug_face.mp4",
-                    mime="video/mp4"
+                    mime="video/mp4",
                 )
+
+        # Download Enriched JSON
+        if "results_global_enriched.json" in results_files:
+            st.divider()
+            st.download_button(
+                "📥 Download Full Analysis (JSON)",
+                data=results_files["results_global_enriched.json"],
+                file_name="results_global_enriched.json",
+                mime="application/json",
+            )
