@@ -56,7 +56,7 @@ BASELINE_BODY_SWAY_VAR     = 0.09   # (0.3)² for Gaussian scoring
 # Posture Openness (degrees - NOT fps-dependent)
 # Angle at sternum (Left Shoulder - Sternum - Right Shoulder)
 # Observed data: mean 47°, std 6.7°, range 40-75°
-# Uses GAUSSIAN scoring for optimal band (not "more is always better")
+# Optimal band: Gaussian
 BASELINE_POSTURE_OPTIMAL = 48
 BASELINE_POSTURE_VAR     = 100  # (10)² for Gaussian scoring
 

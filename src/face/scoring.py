@@ -133,7 +133,6 @@ def compute_scores(raw_df):
     # --- SMILE ACTIVATION ---
     smile_val = df_smile_5s["value"]
     # Absolute (Communication Score) - GAUSSIAN for optimal band
-    # FIX: Changed from sigmoid to Gaussian to properly reward optimal range
     smile_comm_score = np.exp(-((smile_val - BASELINE_SMILE_OPTIMAL)**2) / BASELINE_SMILE_VAR)
 
     # Relative (Consistency Score)
@@ -186,10 +185,7 @@ def compute_scores(raw_df):
     smile_mean_cons = df_smile_5s["smile_activation_cons_score"].mean()
 
     # Interpretations
-    # Communication (using Absolute Score for bucket finding - wait, get_interpretation uses RAW VALUE usually?
-    # Let's check get_interpretation again. It compares raw_value <= bucket["max"].
-    # The buckets in config are defined for RAW VALUES (e.g. head speed 0.4, 0.6).
-    # So we must pass the MEAN RAW VALUE to get the correct communication interpretation.
+    # We must pass the MEAN RAW VALUE to get the correct communication interpretation.
 
     head_mean_val = df_head_5s["head_speed_val"].mean()
     gaze_mean_val = df_gaze_5s["gaze_jitter_val"].mean()
@@ -237,10 +233,8 @@ def compute_scores(raw_df):
         "smile_activation_consistency_coaching": coach_smile_cons
     }
 
-    # 6. Generate Timeline (1Hz)
     # Project Raw Values (_val) and Communication Scores (_comm_score)
-    # We can also project Consistency Scores if needed, but usually Comm Score is what we want to see on timeline.
-    # Let's project both for completeness.
+    # Comm Score is what we want to see on timeline.
     cols_to_project = [c for c in window_df.columns if "_val" in c or "_comm_score" in c or "_cons_score" in c]
     projection_input = window_df[["start_sec", "end_sec"] + cols_to_project]
 

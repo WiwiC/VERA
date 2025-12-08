@@ -154,7 +154,6 @@ def compute_scores(raw_df):
     # --- POSTURE OPENNESS ---
     open_val = df_open_5s["value"]
     # Absolute Score (Communication) - GAUSSIAN for optimal band
-    # FIX: Changed from sigmoid to Gaussian to properly reward optimal range
     open_comm_score = np.exp(-((open_val - BASELINE_POSTURE_OPTIMAL)**2) / BASELINE_POSTURE_VAR)
 
     # Relative Score (Consistency)
