@@ -111,14 +111,21 @@ def process_video(video_path):
     if enriched.exists():
         outputs["results_global_enriched.json"] = enriched.read_text()
 
+    expected_debug_files = {
+        "audio": "debug_audio.mp3",
+        "body": "debug_pose.mp4",
+        "face": "debug_face.mp4"
+    }
+
     for module in ["audio", "body", "face"]:
         csv_path = Path(output_dir) / f"metrics_{module}.csv"
         if csv_path.exists():
             outputs[f"metrics_{module}.csv"] = csv_path.read_text()
 
-        mp4_path = Path(output_dir) / f"debug_{module}.mp4"
-        if mp4_path.exists():
-            outputs[f"debug_{module}.mp4"] = mp4_path.read_bytes()
+        debug_filename = expected_debug_files.get(module)
+        debug_path = Path(output_dir) / debug_filename
+        if debug_path.exists():
+            outputs[debug_filename] = debug_path.read_bytes()
 
     return outputs
 
