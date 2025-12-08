@@ -62,6 +62,46 @@ BASELINE_POSTURE_VAR     = 100  # (10)² for Gaussian scoring
 
 
 # =========================================================
+# CHANGE THRESHOLDS (MVP Heuristics for Timeline Labels)
+# Used to label window-to-window changes as stable/shifting/erratic
+# These are empirical, not ground truth — tune based on user feedback
+# =========================================================
+
+CHANGE_THRESHOLDS = {
+    # gesture_magnitude (SW) - sweet spot metric
+    # Typical range: 1.0 - 3.0, so changes of 0.3 are small
+    "gesture_magnitude": {
+        "stable": 0.30,
+        "shifting": 0.80,
+    },
+    # gesture_activity (SW/sec) - sweet spot metric
+    # Typical range: 0.6 - 9.0, so changes of 0.5 are small
+    "gesture_activity": {
+        "stable": 0.50,
+        "shifting": 1.50,
+    },
+    # gesture_stability (variance) - lower is better
+    # Typical range: 2.7 - 13.5, so changes of 1.5 are small
+    "gesture_stability": {
+        "stable": 1.50,
+        "shifting": 4.00,
+    },
+    # body_sway (SW/sec) - sweet spot metric
+    # Typical range: 0.15 - 1.50, so changes of 0.10 are small
+    "body_sway": {
+        "stable": 0.10,
+        "shifting": 0.30,
+    },
+    # posture_openness (degrees) - sweet spot metric
+    # Typical range: 40 - 56, so changes of 3° are small
+    "posture_openness": {
+        "stable": 3.0,
+        "shifting": 8.0,
+    },
+}
+
+
+# =========================================================
 # INTERPRETATION RANGES (FPS-NORMALIZED)
 # Velocity thresholds scaled to per-second units (×30)
 # Variance thresholds scaled by ×900 (fps²)
@@ -84,7 +124,7 @@ INTERPRETATION_RANGES = {
         {"max": 9.0, "label": "high", "text": "Fast, energetic movement.", "coaching": "High energy! Just be careful not to look frantic."},
         {"max": 999, "label": "very_high", "text": "Chaotic, frantic waving.", "coaching": "Slow down. Your hands are moving faster than your audience can follow."}
     ],
-    "gesture_jitter": [
+    "gesture_stability": [
         # Buckets on jitter (variance of activity/sec) - scaled ×900 from per-frame
         # INVERTED: Lower values = better (more stable)
         {"max": 2.7, "label": "optimal", "text": "Extremely stable gestures (Excellent). Smooth, intentional movement.", "coaching": "Excellent stability. You look very composed."},

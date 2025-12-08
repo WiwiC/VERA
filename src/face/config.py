@@ -55,6 +55,35 @@ BASELINE_SMILE_VAR     = 0.0064  # (0.08)² for Gaussian scoring
 
 
 # =========================================================
+# CHANGE THRESHOLDS (MVP Heuristics for Timeline Labels)
+# Used to label window-to-window changes as stable/shifting/erratic
+# These are empirical, not ground truth — tune based on user feedback
+# =========================================================
+
+CHANGE_THRESHOLDS = {
+    # head_speed (IOD/sec) - sweet spot metric
+    # Typical range: 0.45 - 1.80, so changes of 0.15 are small
+    "head_stability": {
+        "stable": 0.15,    # |delta| <= 0.15 → stable
+        "shifting": 0.40,  # 0.15 < |delta| <= 0.40 → shifting
+        # > 0.40 → erratic
+    },
+    # gaze_jitter (variance) - lower is better
+    # Typical range: 0.08 - 0.14, so changes of 0.02 are small
+    "gaze_stability": {
+        "stable": 0.02,
+        "shifting": 0.05,
+    },
+    # smile (ratio) - sweet spot metric
+    # Typical range: 0.75 - 0.88, so changes of 0.03 are small
+    "smile_activation": {
+        "stable": 0.03,
+        "shifting": 0.08,
+    },
+}
+
+
+# =========================================================
 # INTERPRETATION RANGES (FPS-NORMALIZED & RECALIBRATED)
 # Thresholds aligned with observed data distributions
 # =========================================================
@@ -69,7 +98,7 @@ INTERPRETATION_RANGES = {
         {"max": 1.80, "label": "high", "text": "Active head movement.", "coaching": "High energy. Ensure your head movements are intentional, not random."},
         {"max": 999, "label": "distracting", "text": "Excessive head movement (Poor). Bobblehead effect.", "coaching": "Keep your head steady. Excessive nodding undermines your authority."}
     ],
-    "gaze_consistency": [
+    "gaze_stability": [
         # Buckets on gaze_jitter (variance of gaze_dg/sec)
         # RECALIBRATED: Data mean 0.108, Q25 0.09, Q75 0.12
         # INVERTED: Lower values = better (more stable gaze)
