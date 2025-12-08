@@ -228,7 +228,7 @@ def landing_page():
 # ANALYZER PAGE
 # ============================================================
 # ============================================================
-# ANALYZER PAGE (FULL REDESIGN)
+# ANALYZER PAGE (FULL REDESIGN + NO REPROCESSING)
 # ============================================================
 def analysis_page():
 
@@ -301,38 +301,48 @@ def analysis_page():
                 color: #555;
                 margin-bottom: 10px;
             }
-
         </style>
     """, unsafe_allow_html=True)
 
-    # -------------------------
-    # PROCESSING VIDEO
-    # -------------------------
+    # ============================================================
+    # TOP LAYOUT (VIDEO LEFT + GLOBAL SCORES RIGHT)
+    # ============================================================
     left, right = st.columns([1, 1])
 
+    # -------------------------
+    # VIDEO CARD
+    # -------------------------
     with left:
         st.markdown("<div class='dashboard-card'>", unsafe_allow_html=True)
         st.markdown("## 🎥 Video Preview")
         st.video(uploaded_video)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Save temp file
+    # -------------------------
+    # PROCESS VIDEO (ONLY ONCE)
+    # -------------------------
     suffix = Path(uploaded_video.name).suffix or ".mp4"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        tmp.write(uploaded_video.read())
-        temp_path = tmp.name
 
-    results_files = process_video(temp_path)
+    if "temp_video_path" not in st.session_state:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(uploaded_video.read())
+            st.session_state.temp_video_path = tmp.name
+
+    if "results_files" not in st.session_state:
+        with st.status("🔄 Processing video…", expanded=True):
+            st.session_state.results_files = process_video(st.session_state.temp_video_path)
+
+    results_files = st.session_state.results_files
     enriched_data = json.loads(results_files["results_global_enriched.json"])
 
-    # -------------------------
-    # GLOBAL SCORE PANEL
-    # -------------------------
+    # ============================================================
+    # GLOBAL SCORE PANEL (RIGHT SIDE)
+    # ============================================================
     with right:
         st.markdown("<div class='dashboard-card'>", unsafe_allow_html=True)
-
         st.markdown("<div class='section-title'>⭐ Global Scores</div>", unsafe_allow_html=True)
 
+        # Extract module global scores
         def get_global(module):
             block = enriched_data.get(module, {}).get("global", {})
             if module == "audio":
@@ -342,59 +352,73 @@ def analysis_page():
         sc1, sc2, sc3 = st.columns(3)
 
         with sc1:
-            st.markdown("""
+            st.markdown(
+                f"""
                 <div class="score-card">
                     <div class="score-title">🎤 Audio</div>
-                    <div class="score-value">""" + f"{get_global('audio'):.2f}" + """</div>
+                    <div class="score-value">{get_global('audio'):.2f}</div>
                 </div>
-            """, unsafe_allow_html=True)
+                """,
+                unsafe_allow_html=True,
+            )
 
         with sc2:
-            st.markdown("""
+            st.markdown(
+                f"""
                 <div class="score-card">
                     <div class="score-title">🕺 Body</div>
-                    <div class="score-value">""" + f"{get_global('body'):.2f}" + """</div>
+                    <div class="score-value">{get_global('body'):.2f}</div>
                 </div>
-            """, unsafe_allow_html=True)
+                """,
+                unsafe_allow_html=True,
+            )
 
         with sc3:
-            st.markdown("""
+            st.markdown(
+                f"""
                 <div class="score-card">
                     <div class="score-title">🙂 Face</div>
-                    <div class="score-value">""" + f"{get_global('face'):.2f}" + """</div>
+                    <div class="score-value">{get_global('face'):.2f}</div>
                 </div>
-            """, unsafe_allow_html=True)
+                """,
+                unsafe_allow_html=True,
+            )
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # -------------------------
-    # METRIC EXPLORER PANEL
-    # -------------------------
+    # ============================================================
+    # METRIC EXPLORER PANEL (BOTTOM)
+    # ============================================================
     st.markdown("<div class='dashboard-card'>", unsafe_allow_html=True)
     st.markdown("<div class='section-title'>🧭 Explore Your Communication</div>", unsafe_allow_html=True)
 
-    # Segmented control
+    # Segmented control (Audio | Body | Face)
     selected = st.segmented_control(
         "Select Module",
         options=["Audio", "Body", "Face"],
         default="Audio"
     )
 
-    # Helper function to render a metric card
+    # -------------------------
+    # METRIC CARD RENDERER
+    # -------------------------
     def show_metric(name, metric):
         st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
 
-        st.markdown(f"<div class='metric-name'>{name.replace('_', ' ').title()}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-name'>{name.replace('_', ' ').title()}</div>",
+                    unsafe_allow_html=True)
 
         score = metric.get("score") or metric.get("communication_score")
         if score is not None:
-            st.markdown(f"<div class='metric-score'>Score: {score:.2f}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='metric-score'>Score: {score:.2f}</div>",
+                        unsafe_allow_html=True)
 
         coaching = metric.get("coaching") or metric.get("communication_coaching")
         if coaching:
-            st.markdown(f"<div class='metric-coaching'><b>Coaching:</b> {coaching}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='metric-coaching'><b>Coaching:</b> {coaching}</div>",
+                        unsafe_allow_html=True)
 
-        # Expanders for details
+        # Detailed info in expander
         with st.expander("More Details"):
             interp = metric.get("interpretation") or metric.get("communication_interpretation")
             if interp:
@@ -410,7 +434,7 @@ def analysis_page():
         st.markdown("</div>", unsafe_allow_html=True)
 
     # -------------------------
-    # RENDER METRICS (BOTTOM)
+    # TWO-COLUMN METRIC GRID
     # -------------------------
     module_key = selected.lower()
     module_metrics = enriched_data[module_key]["metrics"]
@@ -420,18 +444,15 @@ def analysis_page():
     metric_names = list(module_metrics.keys())
 
     for i, m in enumerate(metric_names):
-        if i % 2 == 0:
-            with colA:
-                show_metric(m, module_metrics[m])
-        else:
-            with colB:
-                show_metric(m, module_metrics[m])
+        target_col = colA if i % 2 == 0 else colB
+        with target_col:
+            show_metric(m, module_metrics[m])
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # -------------------------
-    # FINAL DOWNLOAD BUTTON
-    # -------------------------
+    # ============================================================
+    # DOWNLOAD FULL REPORT
+    # ============================================================
     st.download_button(
         "📥 Download Full JSON",
         results_files["results_global_enriched.json"],
