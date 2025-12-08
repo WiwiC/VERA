@@ -8,7 +8,6 @@ Variances adjusted to provide meaningful discrimination.
 
 # =========================================================
 # SCORING BASELINES (Plateau Ranges)
-# RECALIBRATED for proper score/interpretation alignment
 # =========================================================
 
 # 1. Speech Rate (WPM)
@@ -20,21 +19,18 @@ BASELINE_WPM_VAR   = 225  # (15)² - unchanged, works correctly
 # 2. Pause Ratio
 # 10-25% is natural.
 # Plateau: 0.10 - 0.25 (Score 1.0)
-# RECALIBRATED: 0.01 deviation from optimal now scores ~0.78
 BASELINE_PAUSE_RANGE = (0.10, 0.25)
 BASELINE_PAUSE_VAR   = 0.0004  # (0.02)² - proper penalty for deviations
 
 # 3. Pitch Dynamic (Expressiveness)
 # 3.5-6.0 ST is lively.
 # Plateau: 3.5 - 6.0 Semitones (Score 1.0)
-# RECALIBRATED: 0.1 ST deviation from optimal now scores ~0.82
 BASELINE_PITCH_STD_RANGE = (3.5, 6.0)
 BASELINE_PITCH_STD_VAR   = 0.05  # (0.22)² - proper penalty for deviations
 
 # 4. Volume Dynamic (Emotionality)
 # High var = High arousal.
 # Plateau: 0.40 - 0.90 CV (Score 1.0)
-# Note: Speech is naturally bursty (syllables), so CV is high.
 BASELINE_VOLUME_CV_RANGE = (0.40, 0.90)
 BASELINE_VOLUME_CV_VAR   = 0.0625  # (0.25)² - unchanged, works correctly
 
@@ -45,7 +41,7 @@ BASELINE_CREST_VAR   = 12.25  # (3.5)² - unchanged, works correctly
 
 
 # =========================================================
-# INTERPRETATION RANGES (Directional Feedback)
+# INTERPRETATION RANGES + Directional Feedback
 # =========================================================
 
 INTERPRETATION_RANGES = {

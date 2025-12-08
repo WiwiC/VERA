@@ -28,3 +28,8 @@ google-cloud-pubsub
 
 # Model for Clustering
 sklearn
+
+# API dependencies
+fastapi
+uvicorn
+python-multipart
