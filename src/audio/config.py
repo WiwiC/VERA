@@ -1,11 +1,10 @@
 """
 Configuration parameters for the VERA Audio Module.
 Includes baselines for scoring and interpretation text ranges.
-"""
 
-# =========================================================
-# SCORING BASELINES (Gaussian Targets)
-# =========================================================
+RECALIBRATED: Based on empirical data analysis (2024-12).
+Variances adjusted to provide meaningful discrimination.
+"""
 
 # =========================================================
 # SCORING BASELINES (Plateau Ranges)
@@ -15,35 +14,34 @@ Includes baselines for scoring and interpretation text ranges.
 # 140-160 is ideal.
 # Plateau: 130 - 160 WPM (Score 1.0)
 BASELINE_WPM_RANGE = (130, 160)
-BASELINE_WPM_VAR   = 225  # (15)^2
+BASELINE_WPM_VAR   = 225  # (15)² - unchanged, works correctly
 
 # 2. Pause Ratio
-# 20-30% is natural.
+# 10-25% is natural.
 # Plateau: 0.10 - 0.25 (Score 1.0)
 BASELINE_PAUSE_RANGE = (0.10, 0.25)
-BASELINE_PAUSE_VAR   = 0.0056 # (0.075)^2
+BASELINE_PAUSE_VAR   = 0.0004  # (0.02)² - proper penalty for deviations
 
 # 3. Pitch Dynamic (Expressiveness)
-# 4-6 ST is lively.
+# 3.5-6.0 ST is lively.
 # Plateau: 3.5 - 6.0 Semitones (Score 1.0)
 BASELINE_PITCH_STD_RANGE = (3.5, 6.0)
-BASELINE_PITCH_STD_VAR   = 1.56 # (1.25)^2
+BASELINE_PITCH_STD_VAR   = 0.05  # (0.22)² - proper penalty for deviations
 
 # 4. Volume Dynamic (Emotionality)
 # High var = High arousal.
 # Plateau: 0.40 - 0.90 CV (Score 1.0)
-# Note: Speech is naturally bursty (syllables), so CV is high.
 BASELINE_VOLUME_CV_RANGE = (0.40, 0.90)
-BASELINE_VOLUME_CV_VAR   = 0.0625 # (0.25)^2
+BASELINE_VOLUME_CV_VAR   = 0.0625  # (0.25)² - unchanged, works correctly
 
 # 5. Vocal Punch (Energy)
 # Plateau: 13.0 - 20.0 dB (Score 1.0)
 BASELINE_CREST_RANGE = (13.0, 20.0)
-BASELINE_CREST_VAR   = 12.25 # (3.5)^2
+BASELINE_CREST_VAR   = 12.25  # (3.5)² - unchanged, works correctly
 
 
 # =========================================================
-# INTERPRETATION RANGES (Directional Feedback)
+# INTERPRETATION RANGES + Directional Feedback
 # =========================================================
 
 INTERPRETATION_RANGES = {

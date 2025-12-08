@@ -18,6 +18,7 @@ from src.audio.pipeline import run_audio_pipeline
 from src.body.pipeline import run_body_pipeline
 from src.face.pipeline import run_face_pipeline
 from src.analysis.data_processing import update_master_dataset
+from src.presentation.enrich import enrich_results
 
 
 def run_wrapper(pipeline_func, video_path, output_dir):
@@ -69,7 +70,7 @@ def run_pipelines(video_path):
                 print(f"❌ {module.capitalize()} module failed: {e}")
                 results[module] = {}
 
-    # Save global summary JSON
+    # Build global results (flat structure)
     global_results = {
         "meta": {
             "video_path": str(video_path),
@@ -80,10 +81,17 @@ def run_pipelines(video_path):
         "body": results.get("body", {}),
         "face": results.get("face", {}),
     }
-    # Save Global Results
+    
+    # Save original flat results
     global_results_path = output_dir / "results_global.json"
     with open(global_results_path, "w") as f:
         json.dump(global_results, f, indent=4)
+    
+    # Create enriched version (nested structure with context)
+    enriched_results = enrich_results(global_results)
+    enriched_results_path = output_dir / "results_global_enriched.json"
+    with open(enriched_results_path, "w") as f:
+        json.dump(enriched_results, f, indent=4)
 
     # Update Clustering Dataset
     print("\n--- Clustering Data Update ---")
@@ -92,7 +100,8 @@ def run_pipelines(video_path):
 
     print("\n" + "=" * 50)
     print(f"🎉 Analysis Completed in {global_results['meta']['duration_sec']:.2f}s")
-    print(f"📄 Global Results saved at: {global_results_path}")
+    print(f"📄 Results saved at: {global_results_path}")
+    print(f"📄 Enriched results saved at: {enriched_results_path}")
     print("=" * 50)
 
     return output_dir, results

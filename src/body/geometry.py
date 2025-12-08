@@ -44,19 +44,39 @@ def compute_gesture_magnitude(lm, shoulder_width=None):
 
 def compute_posture_openness(lm):
     """
-    Compute the angle of the shoulders relative to the neck.
+    Compute posture openness as the angle formed at the sternum.
+    
+    Measures the angle: Left Shoulder - Sternum - Right Shoulder
+    
+    - Larger angle (approaching 180°) = open, confident posture
+    - Smaller angle = hunched, closed posture
+    
+    The sternum is estimated as the midpoint between mid-shoulders and mid-hips.
+    This captures whether shoulders are rolled forward (closed) or back (open).
     """
+    # Shoulder positions
     L_sh = np.array([lm[11].x, lm[11].y, lm[11].z])
     R_sh = np.array([lm[12].x, lm[12].y, lm[12].z])
-    neck = (L_sh + R_sh) / 2
-
-    v1 = L_sh - neck
-    v2 = R_sh - neck
-
+    
+    # Hip positions
+    L_hp = np.array([lm[23].x, lm[23].y, lm[23].z])
+    R_hp = np.array([lm[24].x, lm[24].y, lm[24].z])
+    
+    # Estimate sternum: midpoint between shoulder-center and hip-center
+    mid_shoulder = (L_sh + R_sh) / 2
+    mid_hip = (L_hp + R_hp) / 2
+    sternum = (mid_shoulder + mid_hip) / 2
+    
+    # Vectors from sternum to each shoulder
+    v1 = L_sh - sternum
+    v2 = R_sh - sternum
+    
+    # Compute angle between these vectors
     dot = np.dot(v1, v2)
     norm = np.linalg.norm(v1) * np.linalg.norm(v2)
+    
     if norm == 0:
         return np.nan
-
+    
     angle = np.arccos(np.clip(dot / norm, -1, 1))
     return np.degrees(angle)

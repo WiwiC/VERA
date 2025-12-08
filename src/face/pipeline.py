@@ -48,7 +48,9 @@ def run_face_pipeline(video_path, output_dir=None):
 
     # 2. Scoring
     print("--- Step 2: Scoring ---")
-    scores, window_df = compute_scores(raw_df)
+    # Scoring
+    print("--- Step 2: Scoring ---")
+    # Moved compute_scores call down to capture return values correctly
 
     # 3. Save Results
     print("--- Step 3: Saving Results ---")
@@ -58,10 +60,18 @@ def run_face_pipeline(video_path, output_dir=None):
     raw_df.to_csv(raw_data_path)
     print(f"✅ Saved raw data to: {raw_data_path}")
 
+    # Compute Scores & Timeline
+    scores, window_df, timeline_df = compute_scores(raw_df)
+
     # Save Processed Metrics (Windowed/Smoothed)
     metrics_path = output_dir / "metrics_face.csv"
     window_df.to_csv(metrics_path, index=False)
     print(f"✅ Saved processed metrics to: {metrics_path}")
+
+    # Save Timeline (1s Projected)
+    timeline_path = output_dir / "timeline_face.csv"
+    timeline_df.to_csv(timeline_path, index=False)
+    print(f"✅ Saved timeline (1s) to: {timeline_path}")
 
     # Save results JSON
     results_path = output_dir / "results_face.json"
