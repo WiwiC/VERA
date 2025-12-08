@@ -81,12 +81,12 @@ def run_pipelines(video_path):
         "body": results.get("body", {}),
         "face": results.get("face", {}),
     }
-    
+
     # Save original flat results
     global_results_path = output_dir / "results_global.json"
     with open(global_results_path, "w") as f:
         json.dump(global_results, f, indent=4)
-    
+
     # Create enriched version (nested structure with context)
     enriched_results = enrich_results(global_results)
     enriched_results_path = output_dir / "results_global_enriched.json"
