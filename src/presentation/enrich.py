@@ -24,8 +24,8 @@ def load_spec():
 
 # Define which metrics belong to which module
 MODULE_METRICS = {
-    "face": ["head_stability", "gaze_consistency", "smile_activation"],
-    "body": ["gesture_magnitude", "gesture_activity", "gesture_jitter", "body_sway", "posture_openness"],
+    "face": ["head_stability", "gaze_stability", "smile_activation"],
+    "body": ["gesture_magnitude", "gesture_activity", "gesture_stability", "body_sway", "posture_openness"],
     "audio": ["speech_rate", "pause_ratio", "pitch_dynamic", "volume_dynamic", "vocal_punch"],
 }
 
@@ -34,9 +34,6 @@ KEY_MAPPINGS = {
     "_communication_score": "communication_score",
     "_communication_interpretation": "communication_interpretation", 
     "_communication_coaching": "communication_coaching",
-    "_consistency_score": "consistency_score",
-    "_consistency_interpretation": "consistency_interpretation",
-    "_consistency_coaching": "consistency_coaching",
     "_score": "score",  # For audio metrics (no comm/cons split)
     "_interpretation": "interpretation",
     "_coaching": "coaching",
@@ -88,21 +85,28 @@ def enrich_results(global_results: dict) -> dict:
     return enriched
 
 
+def _to_percent(score: float) -> int:
+    """Convert 0-1 score to 0-100 integer for UX display."""
+    clamped = max(0.0, min(1.0, score))
+    return round(clamped * 100)
+
+
 def _build_global_section(module_id: str, flat_data: dict, spec: dict) -> dict:
     """Build the global section for a module."""
     global_spec = spec.get(f"{module_id}_global_score", {})
     
     if module_id == "audio":
+        raw_score = flat_data.get("audio_global_score", 0)
         return {
-            "score": flat_data.get("audio_global_score", 0),
+            "score": _to_percent(raw_score),
             "interpretation": flat_data.get("audio_global_interpretation", ""),
             "what": global_spec.get("what_is_measured", ""),
             "why": global_spec.get("why_it_matters", ""),
         }
     else:
+        raw_score = flat_data.get("global_comm_score", 0)
         return {
-            "communication_score": flat_data.get("global_comm_score", 0),
-            "consistency_score": flat_data.get("global_consistency_score", 0),
+            "score": _to_percent(raw_score),
             "interpretation": flat_data.get(f"{module_id}_global_interpretation", ""),
             "what": global_spec.get("what_is_measured", ""),
             "why": global_spec.get("why_it_matters", ""),
@@ -122,16 +126,17 @@ def _extract_metric_data(metric_id: str, flat_data: dict, module_id: str) -> dic
         ]
     else:
         prefixes = [
-            (f"{metric_id}_communication_score", "communication_score"),
-            (f"{metric_id}_communication_interpretation", "communication_interpretation"),
-            (f"{metric_id}_communication_coaching", "communication_coaching"),
-            (f"{metric_id}_consistency_score", "consistency_score"),
-            (f"{metric_id}_consistency_interpretation", "consistency_interpretation"),
-            (f"{metric_id}_consistency_coaching", "consistency_coaching"),
+            (f"{metric_id}_communication_score", "score"),
+            (f"{metric_id}_communication_interpretation", "interpretation"),
+            (f"{metric_id}_communication_coaching", "coaching"),
         ]
     
     for flat_key, nested_key in prefixes:
         if flat_key in flat_data:
-            result[nested_key] = flat_data[flat_key]
+            value = flat_data[flat_key]
+            # Convert scores to 0-100 for UX
+            if nested_key == "score":
+                value = _to_percent(value)
+            result[nested_key] = value
     
     return result

@@ -60,17 +60,22 @@ def run_body_pipeline(video_path, output_dir=None):
     print(f"✅ Saved raw data to: {raw_data_path}")
 
     # Compute Scores & Timeline
-    scores, window_df, timeline_df = compute_scores(raw_df)
+    scores, window_df, timeline_smooth_df, raw_1s_df = compute_scores(raw_df)
 
     # Save Processed Metrics (Windowed/Smoothed)
     metrics_path = output_dir / "metrics_body.csv"
     window_df.to_csv(metrics_path, index=False)
     print(f"✅ Saved processed metrics to: {metrics_path}")
 
-    # Save Timeline (1s Projected)
-    timeline_path = output_dir / "timeline_body.csv"
-    timeline_df.to_csv(timeline_path, index=False)
-    print(f"✅ Saved timeline (1s) to: {timeline_path}")
+    # Save Raw 1-Second Timeline (direct aggregation from frames)
+    raw_timeline_path = output_dir / "1s_raw_timeline_body.csv"
+    raw_1s_df.to_csv(raw_timeline_path, index=False)
+    print(f"✅ Saved raw 1s timeline to: {raw_timeline_path}")
+
+    # Save Smooth 1-Second Timeline (projected from 5s windows)
+    smooth_timeline_path = output_dir / "1s_smooth_timeline_body.csv"
+    timeline_smooth_df.to_csv(smooth_timeline_path, index=False)
+    print(f"✅ Saved smooth 1s timeline to: {smooth_timeline_path}")
 
     # Save results JSON (results_body.json)
     results_path = output_dir / "results_body.json"

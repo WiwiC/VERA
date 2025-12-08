@@ -138,7 +138,7 @@ Running the pipeline returns a global JSON object:
   },
   "face": {
     "head_stability": 0.85,
-    "gaze_consistency": 0.92,
+    "gaze_stability": 0.92,
     "smile_activation": 0.45
   },
   "body": {

@@ -12,9 +12,40 @@ from src.face.config import (
     BASELINE_GAZE_SCALE,
     BASELINE_SMILE_OPTIMAL,
     BASELINE_SMILE_VAR,
-    INTERPRETATION_RANGES
+    INTERPRETATION_RANGES,
+    CHANGE_THRESHOLDS
 )
 from src.utils.temporal import project_windows_to_seconds
+
+
+def compute_change_labels(values, metric_id):
+    """
+    Compute window-to-window deltas and labels for temporal stability analysis.
+    
+    Args:
+        values: Series or array of raw metric values per window
+        metric_id: Metric name to look up thresholds
+        
+    Returns:
+        tuple: (deltas array, labels list)
+    """
+    values = np.asarray(values, dtype=float)
+    if len(values) < 2:
+        return np.array([]), []
+    
+    deltas = np.abs(np.diff(values))
+    thresholds = CHANGE_THRESHOLDS.get(metric_id, {"stable": 0.1, "shifting": 0.3})
+    
+    labels = []
+    for d in deltas:
+        if d <= thresholds["stable"]:
+            labels.append("stable")
+        elif d <= thresholds["shifting"]:
+            labels.append("shifting")
+        else:
+            labels.append("erratic")
+    
+    return deltas, labels
 
 def sliding_windows(series, window=5):
     """
@@ -62,16 +93,6 @@ def get_global_interpretation(score):
             return text
     return "Score out of range"
 
-def get_consistency_interpretation(score):
-    """
-    Get generic interpretation for consistency scores (0-1).
-    """
-    if score >= 0.7:
-        return "High consistency. Very stable behavior.", "Excellent stability. Keep it up."
-    elif score >= 0.4:
-        return "Moderate consistency. Some variations.", "Good balance, but try to be more consistent."
-    else:
-        return "Low consistency. Highly variable.", "Try to maintain a more steady behavior."
 
 def compute_scores(raw_df):
     """
@@ -92,6 +113,14 @@ def compute_scores(raw_df):
     jitter_gaze_1s = raw_df.groupby("second")["gaze_dg"].var().fillna(0)
     smile_1s       = raw_df.groupby("second")["smile"].mean().fillna(0)
 
+    # Build 1-second raw timeline DataFrame (before windowing)
+    raw_1s_df = pd.DataFrame({
+        "second": head_speed_1s.index,
+        "head_speed": head_speed_1s.values,
+        "gaze_jitter": jitter_gaze_1s.values,
+        "smile": smile_1s.values
+    })
+
     # 2. Sliding Windows (5s)
     df_head_5s  = sliding_windows(head_speed_1s)
     df_gaze_5s  = sliding_windows(jitter_gaze_1s)
@@ -101,7 +130,7 @@ def compute_scores(raw_df):
     if df_head_5s.empty:
         return {
             "error": "Video too short for analysis (needs > 5 seconds)"
-        }, pd.DataFrame(), pd.DataFrame()
+        }, pd.DataFrame(), pd.DataFrame(), raw_1s_df
 
     # 3. Scoring Logic
 
@@ -109,100 +138,99 @@ def compute_scores(raw_df):
     head_val = df_head_5s["value"]
     # Absolute (Communication Score)
     head_comm_score = np.exp(-((head_val - BASELINE_HEAD_STABILITY_OPTIMAL)**2) / BASELINE_HEAD_STABILITY_VAR)
-
-    # Relative (Consistency Score)
-    z_head = (head_val - head_val.mean()) / (head_val.std() + 1e-9)
-    head_cons_score = 1 / (1 + np.exp(z_head))
-
     df_head_5s["comm_score"] = head_comm_score
-    df_head_5s["cons_score"] = head_cons_score
 
     # --- GAZE CONSISTENCY ---
     gaze_val = df_gaze_5s["value"]
     # Absolute (Communication Score) - Inverted logistic (lower jitter = higher score)
-    # MIDPOINT is the logistic center; optimal values are below this (≤0.08)
     gaze_comm_score = 1 / (1 + np.exp((gaze_val - BASELINE_GAZE_MIDPOINT) / BASELINE_GAZE_SCALE))
-
-    # Relative (Consistency Score)
-    z_gaze = (gaze_val - gaze_val.mean()) / (gaze_val.std() + 1e-9)
-    gaze_cons_score = 1 / (1 + np.exp(z_gaze))
-
     df_gaze_5s["comm_score"] = gaze_comm_score
-    df_gaze_5s["cons_score"] = gaze_cons_score
 
     # --- SMILE ACTIVATION ---
     smile_val = df_smile_5s["value"]
     # Absolute (Communication Score) - GAUSSIAN for optimal band
     smile_comm_score = np.exp(-((smile_val - BASELINE_SMILE_OPTIMAL)**2) / BASELINE_SMILE_VAR)
-
-    # Relative (Consistency Score)
-    z_smile = (smile_val - smile_val.mean()) / (smile_val.std() + 1e-9)
-    smile_cons_score = 1 / (1 + np.exp(-z_smile))
-
     df_smile_5s["comm_score"] = smile_comm_score
-    df_smile_5s["cons_score"] = smile_cons_score
 
-    # --- GLOBAL SCORES ---
-    # Global Communication Score (Mean of Absolute Scores)
+    # --- GLOBAL SCORE ---
     global_comm_score = (
         df_head_5s["comm_score"].mean() +
         df_gaze_5s["comm_score"].mean() +
         df_smile_5s["comm_score"].mean()
     ) / 3
 
-    # Global Consistency Score (Mean of Relative Scores)
-    global_consistency_score = (
-        df_head_5s["cons_score"].mean() +
-        df_gaze_5s["cons_score"].mean() +
-        df_smile_5s["cons_score"].mean()
-    ) / 3
+    # --- WINDOW-TO-WINDOW DELTAS (for timeline stability analysis) ---
+    head_deltas, head_labels = compute_change_labels(head_val.values, "head_stability")
+    gaze_deltas, gaze_labels = compute_change_labels(gaze_val.values, "gaze_stability")
+    smile_deltas, smile_labels = compute_change_labels(smile_val.values, "smile_activation")
+    
+    # Add deltas/labels to window_df (aligned to transition between windows)
+    # Delta at index i represents change from window i to window i+1
+    df_head_5s["delta"] = np.nan
+    df_head_5s["change_label"] = ""
+    if len(head_deltas) > 0:
+        df_head_5s.iloc[:-1, df_head_5s.columns.get_loc("delta")] = head_deltas
+        df_head_5s.iloc[:-1, df_head_5s.columns.get_loc("change_label")] = head_labels
+    
+    df_gaze_5s["delta"] = np.nan
+    df_gaze_5s["change_label"] = ""
+    if len(gaze_deltas) > 0:
+        df_gaze_5s.iloc[:-1, df_gaze_5s.columns.get_loc("delta")] = gaze_deltas
+        df_gaze_5s.iloc[:-1, df_gaze_5s.columns.get_loc("change_label")] = gaze_labels
+    
+    df_smile_5s["delta"] = np.nan
+    df_smile_5s["change_label"] = ""
+    if len(smile_deltas) > 0:
+        df_smile_5s.iloc[:-1, df_smile_5s.columns.get_loc("delta")] = smile_deltas
+        df_smile_5s.iloc[:-1, df_smile_5s.columns.get_loc("change_label")] = smile_labels
 
     # 4. Prepare Outputs
 
     # Merge window dataframes for export
     # Rename columns to be clear
-    df_head_5s = df_head_5s.rename(columns={"value": "head_speed_val", "comm_score": "head_stability_comm_score", "cons_score": "head_stability_cons_score"})
-    df_gaze_5s = df_gaze_5s.rename(columns={"value": "gaze_jitter_val", "comm_score": "gaze_consistency_comm_score", "cons_score": "gaze_consistency_cons_score"})
-    df_smile_5s = df_smile_5s.rename(columns={"value": "smile_val", "comm_score": "smile_activation_comm_score", "cons_score": "smile_activation_cons_score"})
+    df_head_5s = df_head_5s.rename(columns={
+        "value": "head_speed_val",
+        "comm_score": "head_stability_comm_score",
+        "delta": "head_stability_delta",
+        "change_label": "head_stability_change_label"
+    })
+    df_gaze_5s = df_gaze_5s.rename(columns={
+        "value": "gaze_jitter_val",
+        "comm_score": "gaze_stability_comm_score",
+        "delta": "gaze_stability_delta",
+        "change_label": "gaze_stability_change_label"
+    })
+    df_smile_5s = df_smile_5s.rename(columns={
+        "value": "smile_val",
+        "comm_score": "smile_activation_comm_score",
+        "delta": "smile_activation_delta",
+        "change_label": "smile_activation_change_label"
+    })
 
     # Merge on start_sec/end_sec
     window_df = df_head_5s.merge(df_gaze_5s, on=["start_sec", "end_sec"]).merge(df_smile_5s, on=["start_sec", "end_sec"])
 
-    # Add Global Scores to window_df (constant columns)
+    # Add Global Score to window_df (constant column)
     window_df["global_comm_score"] = global_comm_score
-    window_df["global_consistency_score"] = global_consistency_score
 
     # 5. Get Interpretations & Coaching
 
     # Communication Scores (Absolute)
     head_mean_comm = df_head_5s["head_stability_comm_score"].mean()
-    gaze_mean_comm = df_gaze_5s["gaze_consistency_comm_score"].mean()
+    gaze_mean_comm = df_gaze_5s["gaze_stability_comm_score"].mean()
     smile_mean_comm = df_smile_5s["smile_activation_comm_score"].mean()
 
-    # Consistency Scores (Relative)
-    head_mean_cons = df_head_5s["head_stability_cons_score"].mean()
-    gaze_mean_cons = df_gaze_5s["gaze_consistency_cons_score"].mean()
-    smile_mean_cons = df_smile_5s["smile_activation_cons_score"].mean()
-
-    # Interpretations
-    # We must pass the MEAN RAW VALUE to get the correct communication interpretation.
-
+    # Mean raw values for interpretation
     head_mean_val = df_head_5s["head_speed_val"].mean()
     gaze_mean_val = df_gaze_5s["gaze_jitter_val"].mean()
     smile_mean_val = df_smile_5s["smile_val"].mean()
 
     interp_head_comm, coach_head_comm = get_interpretation("head_stability", head_mean_val)
-    interp_gaze_comm, coach_gaze_comm = get_interpretation("gaze_consistency", gaze_mean_val)
+    interp_gaze_comm, coach_gaze_comm = get_interpretation("gaze_stability", gaze_mean_val)
     interp_smile_comm, coach_smile_comm = get_interpretation("smile_activation", smile_mean_val)
-
-    # Consistency Interpretations
-    interp_head_cons, coach_head_cons = get_consistency_interpretation(head_mean_cons)
-    interp_gaze_cons, coach_gaze_cons = get_consistency_interpretation(gaze_mean_cons)
-    interp_smile_cons, coach_smile_cons = get_consistency_interpretation(smile_mean_cons)
 
     scores = {
         "global_comm_score": float(global_comm_score),
-        "global_consistency_score": float(global_consistency_score),
         "face_global_interpretation": get_global_interpretation(global_comm_score),
 
         # Head Stability
@@ -210,34 +238,23 @@ def compute_scores(raw_df):
         "head_stability_communication_interpretation": interp_head_comm,
         "head_stability_communication_coaching": coach_head_comm,
 
-        "head_stability_consistency_score": float(head_mean_cons),
-        "head_stability_consistency_interpretation": interp_head_cons,
-        "head_stability_consistency_coaching": coach_head_cons,
-
         # Gaze Consistency
-        "gaze_consistency_communication_score": float(gaze_mean_comm),
-        "gaze_consistency_communication_interpretation": interp_gaze_comm,
-        "gaze_consistency_communication_coaching": coach_gaze_comm,
-
-        "gaze_consistency_consistency_score": float(gaze_mean_cons),
-        "gaze_consistency_consistency_interpretation": interp_gaze_cons,
-        "gaze_consistency_consistency_coaching": coach_gaze_cons,
+        "gaze_stability_communication_score": float(gaze_mean_comm),
+        "gaze_stability_communication_interpretation": interp_gaze_comm,
+        "gaze_stability_communication_coaching": coach_gaze_comm,
 
         # Smile Activation
         "smile_activation_communication_score": float(smile_mean_comm),
         "smile_activation_communication_interpretation": interp_smile_comm,
         "smile_activation_communication_coaching": coach_smile_comm,
-
-        "smile_activation_consistency_score": float(smile_mean_cons),
-        "smile_activation_consistency_interpretation": interp_smile_cons,
-        "smile_activation_consistency_coaching": coach_smile_cons
     }
 
-    # Project Raw Values (_val) and Communication Scores (_comm_score)
-    # Comm Score is what we want to see on timeline.
-    cols_to_project = [c for c in window_df.columns if "_val" in c or "_comm_score" in c or "_cons_score" in c]
+    # Project Raw Values (_val), Communication Scores (_comm_score), and deltas (numeric only)
+    # Note: change_label columns are strings and cannot be projected via mean
+    cols_to_project = [c for c in window_df.columns 
+                       if "_val" in c or "_comm_score" in c or "_delta" in c]
     projection_input = window_df[["start_sec", "end_sec"] + cols_to_project]
 
     timeline_1s = project_windows_to_seconds(projection_input)
 
-    return scores, window_df, timeline_1s
+    return scores, window_df, timeline_1s, raw_1s_df
