@@ -565,16 +565,23 @@ def analysis_page():
         module_metrics = enriched_data[module_key]["metrics"]
 
         def show_metric(name, metric):
-            with st.container(border=True):
-                st.markdown(f"<div class='metric-name'>{name.replace('_', ' ').title()}</div>", unsafe_allow_html=True)
-                score = metric.get("score") or metric.get("communication_score")
-                if score is not None:
-                    st.markdown(f"<div class='metric-score'>Score: {score:.2f}</div>", unsafe_allow_html=True)
-                coaching = metric.get("coaching") or metric.get("communication_coaching")
-                if coaching:
-                    st.markdown(f"<div class='metric-coaching'><b>Coaching:</b> {coaching}</div>", unsafe_allow_html=True)
+            # We use a container without border for items, or maybe a light background
+            # But let's keep it simple: straight into the column
 
-                with st.expander("More Details"):
+            st.markdown(f"<div class='metric-name'>{name.replace('_', ' ').title()}</div>", unsafe_allow_html=True)
+
+            score = metric.get("score")
+            if score is None:
+                score = metric.get("communication_score")
+
+            if score is not None:
+                st.markdown(f"<div class='metric-score'>Score: {score:.0f}</div>", unsafe_allow_html=True)
+
+            coaching = metric.get("coaching") or metric.get("communication_coaching")
+            if coaching:
+                st.markdown(f"<div class='metric-coaching'><b>Tip:</b> {coaching}</div>", unsafe_allow_html=True)
+
+            with st.expander("More Details"):
                     interp = metric.get("interpretation") or metric.get("communication_interpretation")
                     if interp:
                         st.write(f"**Interpretation:** {interp}")
