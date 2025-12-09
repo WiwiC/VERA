@@ -27,7 +27,7 @@ gunicorn
 google-cloud-pubsub
 
 # Model for Clustering
-sklearn
+scikit-learn
 
 # API dependencies
 fastapi
