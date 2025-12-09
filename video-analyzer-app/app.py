@@ -400,17 +400,64 @@ def landing_page():
 # ANALYZER PAGE
 # ============================================================
 def analysis_page():
+    """
+    Updated analysis_page: forces the top area to be purple, nudges the top row down,
+    and ensures the video preview and global scores sit fully inside the purple zone.
+    """
 
-    # 💜 Full purple background
-    st.markdown("""
+    # Stronger CSS: make block container purple, push the top row down, and make the top
+    # bordered containers appear transparent so the purple shows through.
+    st.markdown(
+        """
         <style>
-            .stApp { background-color: #E7E7FF !important; }
-            .block-container {
-                background-color: transparent !important;
-                padding-top: 20px;
+            :root {
+                /* tweak this to push panels further down if needed */
+                --top-row-offset: 56px;
             }
 
+            /* page background */
+            .stApp { background-color: #E7E7FF !important; }
 
+            /*
+             * Make the main block-container use the purple background so the "top area"
+             * appears inside the purple zone.
+             */
+            .block-container {
+                background-color: #E7E7FF !important;
+                padding-top: 12px !important;
+                padding-left: 36px !important;
+                padding-right: 36px !important;
+                padding-bottom: 32px !important;
+            }
+
+            /*
+             * Top-row wrapper: move it down more so its child panels are fully within the purple.
+             * You can increase --top-row-offset if you still want it lower.
+             */
+            .top-row {
+                margin-top: var(--top-row-offset) !important;
+                display: block;
+                width: 100%;
+            }
+
+            /* Make any bordered containers inside the top-row visually transparent
+               so the purple background shows through while preserving the border and shadow. */
+            .top-row div[data-testid="stVerticalBlockBorderWrapper"] {
+                background-color: transparent !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+
+            /* Keep inner card styling for the score blocks (they will be white cards on top of purple) */
+            .top-inner-card {
+                background: rgba(255,255,255,0.98);
+                border-radius: 14px;
+                padding: 16px;
+                box-shadow: 0px 2px 10px rgba(0,0,0,0.06);
+            }
+
+            /* Score card styling (unchanged look) */
             .score-card {
                 background: #F4F4FF;
                 border-radius: 16px;
@@ -418,58 +465,22 @@ def analysis_page():
                 text-align: center;
                 box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
             }
+            .score-title { font-size: 18px; font-weight: 600; color: #2B3A8B; }
+            .score-value { font-size: 32px; font-weight: 700; color: #1A237E; margin-top: -5px; }
 
-            .score-title {
-                font-size: 18px;
-                font-weight: 600;
-                color: #2B3A8B;
-            }
+            .section-title { font-size: 22px; font-weight: 700; color: #2B3A8B; margin-bottom: 10px; }
 
-            .score-value {
-                font-size: 32px;
-                font-weight: 700;
-                color: #1A237E;
-                margin-top: -5px;
-            }
-
-            .section-title {
-                font-size: 22px;
-                font-weight: 700;
-                color: #2B3A8B;
-                margin-bottom: 15px;
-            }
-
-            .metric-card {
-                background: #FFFFFF;
-                padding: 18px;
-                border-radius: 14px;
-                box-shadow: 0px 2px 10px rgba(0,0,0,0.06);
-                margin-bottom: 18px;
-            }
-
-            .metric-name {
-                font-size: 18px;
-                font-weight: 600;
-                margin-bottom: 6px;
-            }
-
-            .metric-score {
-                font-size: 16px;
-                font-weight: 500;
-                color: #303F9F;
-                margin-bottom: 5px;
-            }
-
-            .metric-coaching {
-                font-size: 14px;
-                color: #555;
-                margin-bottom: 10px;
+            /* Don't accidentally style other containers below the top area */
+            div[data-testid="stVerticalBlockBorderWrapper"] ~ div[data-testid="stVerticalBlockBorderWrapper"] {
+                /* nothing */
             }
         </style>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
     uploaded_video = st.session_state.uploaded_video
-    results_files = st.session_state.get("results_files", None)
+    results_files = st.session_state.get("results_files")
 
     if results_files is None:
         st.error("No analysis results found. Please upload and analyze a video first.")
@@ -477,69 +488,70 @@ def analysis_page():
 
     enriched_data = json.loads(results_files["results_global_enriched.json"])
 
-    # ============================================================
-    # TOP: VIDEO + GLOBAL SCORES
-    # ============================================================
+    # -----------------------------
+    # TOP ROW: wrap everything in a div.top-row so CSS can target it
+    # -----------------------------
+    st.markdown("<div class='top-row'>", unsafe_allow_html=True)
+
+    # Create layout: left video, right global scores
     col_left, col_right = st.columns([1.2, 1])
 
-    # -------------------------
-    # VIDEO CARD
-    # -------------------------
+    # VIDEO: put the video inside a small inner card so purple shows around it
     with col_left:
-        with st.container(border=True):
-            st.markdown("## 🎥 Video Preview")
-            st.video(uploaded_video)
+        # we use a tiny HTML wrapper for the inner visual card to keep it white while outer remains purple
+        st.markdown("<div class='top-inner-card'>", unsafe_allow_html=True)
+        st.markdown("## 🎥 Video Preview")
+        st.video(uploaded_video)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    # -------------------------
-    # GLOBAL SCORES CARD
-    # -------------------------
+    # GLOBAL SCORES: similarly use inner card so their white background sits on top of purple
     with col_right:
-        with st.container(border=True):
-            st.markdown("<div class='section-title'>⭐ Global Scores</div>", unsafe_allow_html=True)
+        st.markdown("<div class='top-inner-card'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-title'>⭐ Global Scores</div>", unsafe_allow_html=True)
 
-            def get_global(module):
-                block = enriched_data.get(module, {}).get("global", {})
-                # enrich.py normalizes the key to "score" for all modules
-                return float(block.get("score", 0))
+        def get_global(module):
+            block = enriched_data.get(module, {}).get("global", {})
+            return float(block.get("score", 0))
 
-            g1, g2, g3 = st.columns(3)
+        g1, g2, g3 = st.columns(3)
 
-            with g1:
-                st.markdown(
-                    f"""
-                    <div class="score-card">
-                        <div class="score-title">🎤 Audio</div>
-                        <div class="score-value">{get_global('audio'):.2f}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+        with g1:
+            st.markdown(
+                f"""
+                <div class="score-card">
+                    <div class="score-title">🎤 Audio</div>
+                    <div class="score-value">{get_global('audio'):.2f}</div>
+                </div>
+                """, unsafe_allow_html=True
+            )
 
-            with g2:
-                st.markdown(
-                    f"""
-                    <div class="score-card">
-                        <div class="score-title">🕺 Body</div>
-                        <div class="score-value">{get_global('body'):.2f}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+        with g2:
+            st.markdown(
+                f"""
+                <div class="score-card">
+                    <div class="score-title">🕺 Body</div>
+                    <div class="score-value">{get_global('body'):.2f}</div>
+                </div>
+                """, unsafe_allow_html=True
+            )
 
-            with g3:
-                st.markdown(
-                    f"""
-                    <div class="score-card">
-                        <div class="score-title">🙂 Face</div>
-                        <div class="score-value">{get_global('face'):.2f}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+        with g3:
+            st.markdown(
+                f"""
+                <div class="score-card">
+                    <div class="score-title">🙂 Face</div>
+                    <div class="score-value">{get_global('face'):.2f}</div>
+                </div>
+                """, unsafe_allow_html=True
+            )
 
-    # ============================================================
-    # DETAILED ANALYSIS SECTION (FIXED)
-    # ============================================================
+        st.markdown("</div>", unsafe_allow_html=True)  # close top-inner-card
+
+    st.markdown("</div>", unsafe_allow_html=True)  # close top-row
+
+    # -----------------------------
+    # DETAILED ANALYSIS SECTION (unchanged)
+    # -----------------------------
     with st.container(border=True):
         st.markdown("<div class='section-title'>Detailed Analysis</div>", unsafe_allow_html=True)
 
@@ -552,59 +564,41 @@ def analysis_page():
         module_key = selected.lower()
         module_metrics = enriched_data[module_key]["metrics"]
 
-        # Metric rendering component
         def show_metric(name, metric):
-
             with st.container(border=True):
-                st.markdown(
-                    f"<div class='metric-name'>{name.replace('_', ' ').title()}</div>",
-                    unsafe_allow_html=True,
-                )
-
+                st.markdown(f"<div class='metric-name'>{name.replace('_', ' ').title()}</div>", unsafe_allow_html=True)
                 score = metric.get("score") or metric.get("communication_score")
                 if score is not None:
-                    st.markdown(
-                        f"<div class='metric-score'>Score: {score:.2f}</div>",
-                        unsafe_allow_html=True
-                    )
-
+                    st.markdown(f"<div class='metric-score'>Score: {score:.2f}</div>", unsafe_allow_html=True)
                 coaching = metric.get("coaching") or metric.get("communication_coaching")
                 if coaching:
-                    st.markdown(
-                        f"<div class='metric-coaching'><b>Coaching:</b> {coaching}</div>",
-                        unsafe_allow_html=True
-                    )
+                    st.markdown(f"<div class='metric-coaching'><b>Coaching:</b> {coaching}</div>", unsafe_allow_html=True)
 
                 with st.expander("More Details"):
                     interp = metric.get("interpretation") or metric.get("communication_interpretation")
                     if interp:
                         st.write(f"**Interpretation:** {interp}")
-
                     st.write(f"**What:** {metric.get('what', 'N/A')}")
                     st.write(f"**How:** {metric.get('how', 'N/A')}")
                     st.write(f"**Why:** {metric.get('why', 'N/A')}")
-
                     if "score_semantics" in metric:
                         st.json(metric["score_semantics"])
 
-        # Two column layout
         colA, colB = st.columns(2)
-
         for i, (name, metric) in enumerate(module_metrics.items()):
-            target_col = colA if i % 2 == 0 else colB
-            with target_col:
+            target = colA if i % 2 == 0 else colB
+            with target:
                 show_metric(name, metric)
 
-    # ============================================================
-    # DOWNLOAD JSON
-    # ============================================================
+    # -----------------------------
+    # DOWNLOAD BUTTON
+    # -----------------------------
     st.download_button(
         "📥 Download Full JSON Report",
         results_files["results_global_enriched.json"],
         "results_global_enriched.json",
         "application/json"
     )
-
 
 # ============================================================
 # PAGE ROUTING
