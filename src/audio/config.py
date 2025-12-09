@@ -14,7 +14,7 @@ Variances adjusted to provide meaningful discrimination.
 # 140-160 is ideal.
 # Plateau: 130 - 160 WPM (Score 1.0)
 BASELINE_WPM_RANGE = (130, 160)
-BASELINE_WPM_VAR   = 225  # (15)² - unchanged, works correctly
+BASELINE_WPM_VAR   = 625  # (25)² - balanced sensitivity
 
 # 2. Pause Ratio
 # 10-25% is natural.
