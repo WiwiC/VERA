@@ -10,12 +10,13 @@ import soundfile as sf
 import webrtcvad
 import pyloudnorm as pyln
 from faster_whisper import WhisperModel
-from moviepy import VideoFileClip
+import subprocess
+import imageio_ffmpeg
 from pathlib import Path
 
 def extract_audio_from_video(video_path, output_dir):
     """
-    Extract audio track from video file to .mp3.
+    Extract audio track from video file to .mp3 using ffmpeg directly.
     """
     video_path = Path(video_path)
     output_path = Path(output_dir) / f"{video_path.stem}.mp3"
@@ -24,10 +25,23 @@ def extract_audio_from_video(video_path, output_dir):
         return str(output_path)
 
     try:
-        video = VideoFileClip(str(video_path))
-        video.audio.write_audiofile(str(output_path), codec='mp3', bitrate='192k', logger=None)
-        video.close()
+        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        command = [
+            ffmpeg_exe,
+            "-y", # Overwrite if exists (though we check exists above)
+            "-i", str(video_path),
+            "-vn", # No video
+            "-acodec", "libmp3lame",
+            "-q:a", "2", # High quality VBR
+            "-loglevel", "error",
+            str(output_path)
+        ]
+
+        subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return str(output_path)
+    except subprocess.CalledProcessError as e:
+        print(f"Error extracting audio (ffmpeg): {e.stderr.decode()}")
+        return None
     except Exception as e:
         print(f"Error extracting audio: {e}")
         return None

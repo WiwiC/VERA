@@ -15,6 +15,7 @@ webrtcvad
 faster-whisper
 pyloudnorm
 moviepy
+imageio-ffmpeg
 soundfile
 
 # Frontend dependencies
