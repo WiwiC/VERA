@@ -236,6 +236,7 @@ def get_analysis_css():
                 padding: 18px;
                 text-align: center;
                 box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
+                margin-bottom: 16px;
             }
             .score-title { font-size: 18px; font-weight: 600; color: #2B3A8B; }
             .score-value { font-size: 32px; font-weight: 700; color: #1A237E; margin-top: -5px; }
@@ -252,9 +253,12 @@ def get_analysis_css():
 def render_metric_card(name, metric):
     st.markdown(f"<div class='metric-name'>{name.replace('_', ' ').title()}</div>", unsafe_allow_html=True)
 
-    score = metric.get("score") or metric.get("communication_score")
+    # Some metrics use "value", some use "score"
+    score = metric.get("score") or metric.get("communication_score") or metric.get("value")
     if score is not None:
-        st.markdown(f"<div class='metric-score'>Score: {score:.0f}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='metric-score'>Score: {float(score):.0f}</div>", unsafe_allow_html=True)
+    else:
+        st.markdown("<div class='metric-score'>Score: N/A</div>", unsafe_allow_html=True)
 
     coaching = metric.get("coaching") or metric.get("communication_coaching")
     if coaching:
@@ -550,7 +554,7 @@ def analysis_page():
     st.markdown("<div class='top-row'>", unsafe_allow_html=True)
 
     # Create layout: left video, right global scores
-    col_left, col_right = st.columns([1.2, 1])
+    col_left, col_right = st.columns([1, 1])
 
     # VIDEO: put the video inside a small inner card so purple shows around it
     with col_left:
@@ -569,37 +573,36 @@ def analysis_page():
             block = enriched_data.get(module, {}).get("global", {})
             return float(block.get("score", 0))
 
-        g1, g2, g3 = st.columns(3)
+        # Vertical layout (NO columns)
+        st.markdown(
+            f"""
+            <div class="score-card">
+                <div class="score-title">🎤 Audio</div>
+                <div class="score-value">{int(get_global('audio'))}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-        with g1:
-            st.markdown(
-                f"""
-                <div class="score-card">
-                    <div class="score-title">🎤 Audio</div>
-                    <div class="score-value">{get_global('audio'):.2f}</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
+        st.markdown(
+            f"""
+            <div class="score-card">
+                <div class="score-title">🕺 Body</div>
+                <div class="score-value">{int(get_global('body'))}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-        with g2:
-            st.markdown(
-                f"""
-                <div class="score-card">
-                    <div class="score-title">🕺 Body</div>
-                    <div class="score-value">{get_global('body'):.2f}</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
-
-        with g3:
-            st.markdown(
-                f"""
-                <div class="score-card">
-                    <div class="score-title">🙂 Face</div>
-                    <div class="score-value">{get_global('face'):.2f}</div>
-                </div>
-                """, unsafe_allow_html=True
-            )
+        st.markdown(
+            f"""
+            <div class="score-card">
+                <div class="score-title">🙂 Face</div>
+                <div class="score-value">{int(get_global('face'))}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         st.markdown("</div>", unsafe_allow_html=True)  # close top-inner-card
 
