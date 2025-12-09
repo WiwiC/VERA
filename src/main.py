@@ -32,13 +32,15 @@ def run_wrapper(pipeline_func, video_path, output_dir):
         return {}
 
 
-def run_pipelines(video_path):
+def run_pipelines_iterator(video_path):
     """
-    Runs audio, body, and face pipelines in parallel.
-    Returns (output_dir, results_dict).
-    Suitable for Streamlit or any external caller.
+    Generator that yields progress updates during pipeline execution.
+    Yields:
+        ("start", output_dir)
+        ("progress", module_name, result)
+        ("error", module_name, exception)
+        ("final", output_dir, results_dict)
     """
-
     video_path = Path(video_path)
     if not video_path.exists():
         raise FileNotFoundError(f"❌ Video not found: {video_path}")
@@ -49,6 +51,8 @@ def run_pipelines(video_path):
 
     print(f"🚀 Starting VERA Analysis for: {video_path.name}")
     print(f"📂 Output directory: {output_dir}")
+
+    yield ("start", output_dir)
 
     start_time = time.time()
     results = {}
@@ -64,11 +68,14 @@ def run_pipelines(video_path):
         for future in as_completed(futures):
             module = futures[future]
             try:
-                results[module] = future.result()
+                res = future.result()
+                results[module] = res
                 print(f"✅ {module.capitalize()} module finished.")
+                yield ("progress", module, res)
             except Exception as e:
                 print(f"❌ {module.capitalize()} module failed: {e}")
                 results[module] = {}
+                yield ("error", module, e)
 
     # Build global results (flat structure)
     global_results = {
@@ -103,6 +110,22 @@ def run_pipelines(video_path):
     print(f"📄 Results saved at: {global_results_path}")
     print(f"📄 Enriched results saved at: {enriched_results_path}")
     print("=" * 50)
+
+    yield ("final", output_dir, results)
+
+
+def run_pipelines(video_path):
+    """
+    Wrapper for backward compatibility.
+    Runs the iterator to completion and returns the final result.
+    """
+    iterator = run_pipelines_iterator(video_path)
+    output_dir = None
+    results = {}
+
+    for event_type, *args in iterator:
+        if event_type == "final":
+            output_dir, results = args
 
     return output_dir, results
 
