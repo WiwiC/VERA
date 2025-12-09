@@ -250,15 +250,9 @@ def get_analysis_css():
     """
 
 def render_metric_card(name, metric):
-    """
-    Renders a single metric card with score, coaching, and details.
-    """
     st.markdown(f"<div class='metric-name'>{name.replace('_', ' ').title()}</div>", unsafe_allow_html=True)
 
-    score = metric.get("score")
-    if score is None:
-        score = metric.get("communication_score")
-
+    score = metric.get("score") or metric.get("communication_score")
     if score is not None:
         st.markdown(f"<div class='metric-score'>Score: {score:.0f}</div>", unsafe_allow_html=True)
 
@@ -267,7 +261,20 @@ def render_metric_card(name, metric):
         st.markdown(f"<div class='metric-coaching'><b>Tip:</b> {coaching}</div>", unsafe_allow_html=True)
 
     with st.expander("More Details"):
-            interp = metric.get("interpretation") or metric.get("communication_interpretation")
+        interp = metric.get("interpretation") or metric.get("communication_interpretation")
+        if interp:
+            st.write(f"**Interpretation:** {interp}")
+
+        st.write(f"**What:** {metric.get('what', 'N/A')}")
+        st.write(f"**How:** {metric.get('how', 'N/A')}")
+        st.write(f"**Why:** {metric.get('why', 'N/A')}")
+
+        semantics = metric.get("score_semantics")
+        if semantics:
+            st.write("**Score meaning:**")
+            st.json(semantics)
+
+
 def render_metric_panel(metric_name: str, metric_data: dict):
     """Renders a metric with score, interpretation, coaching, what/how/why, semantics."""
     nice_name = metric_name.replace("_", " ").title()
