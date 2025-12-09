@@ -130,8 +130,144 @@ with st.sidebar:
 
 
 # ============================================================
-# CUSTOM METRIC UI PANEL
+# HELPER FUNCTIONS
 # ============================================================
+
+def get_landing_css():
+    return """
+        <style>
+            .stApp { background-color: #E7E7FF !important; }
+
+            .landing-container {
+                text-align: center;
+                padding-top: 80px;
+            }
+
+            .tagline {
+                font-size: 22px;
+                color: #2B3A8B;
+                margin-top: 10px;
+                margin-bottom: 30px;
+                font-weight: 600;
+            }
+
+            .upload-card {
+                background: white;
+                padding: 30px;
+                border-radius: 18px;
+                width: 480px;
+                margin-left: auto;
+                margin-right: auto;
+                box-shadow: 0px 4px 18px rgba(0,0,0,0.12);
+            }
+
+            .start-button-container {
+                margin-top: 25px;
+                width: 480px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            /* Target the bordered container to look like a card */
+            div[data-testid="stVerticalBlockBorderWrapper"] {
+                background-color: white;
+                border-radius: 18px;
+                padding: 20px;
+                box-shadow: 0px 4px 18px rgba(0,0,0,0.12);
+                border: none; /* Remove default gray border */
+            }
+        </style>
+    """
+
+def get_analysis_css():
+    return """
+        <style>
+            :root {
+                /* tweak this to push panels further down if needed */
+                --top-row-offset: 56px;
+            }
+
+            /* page background */
+            .stApp { background-color: #E7E7FF !important; }
+
+            /*
+             * Make the main block-container use the purple background so the "top area"
+             * appears inside the purple zone.
+             */
+            .block-container {
+                background-color: #E7E7FF !important;
+                padding-top: 12px !important;
+                padding-left: 36px !important;
+                padding-right: 36px !important;
+                padding-bottom: 32px !important;
+            }
+
+            /*
+             * Top-row wrapper: move it down more so its child panels are fully within the purple.
+             * You can increase --top-row-offset if you still want it lower.
+             */
+            .top-row {
+                margin-top: var(--top-row-offset) !important;
+                display: block;
+                width: 100%;
+            }
+
+            /* Make any bordered containers inside the top-row visually transparent
+               so the purple background shows through while preserving the border and shadow. */
+            .top-row div[data-testid="stVerticalBlockBorderWrapper"] {
+                background-color: transparent !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+
+            /* Keep inner card styling for the score blocks (they will be white cards on top of purple) */
+            .top-inner-card {
+                background: rgba(255,255,255,0.98);
+                border-radius: 14px;
+                padding: 16px;
+                box-shadow: 0px 2px 10px rgba(0,0,0,0.06);
+            }
+
+            /* Score card styling (unchanged look) */
+            .score-card {
+                background: #F4F4FF;
+                border-radius: 16px;
+                padding: 18px;
+                text-align: center;
+                box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
+            }
+            .score-title { font-size: 18px; font-weight: 600; color: #2B3A8B; }
+            .score-value { font-size: 32px; font-weight: 700; color: #1A237E; margin-top: -5px; }
+
+            .section-title { font-size: 22px; font-weight: 700; color: #2B3A8B; margin-bottom: 10px; }
+
+            /* Don't accidentally style other containers below the top area */
+            div[data-testid="stVerticalBlockBorderWrapper"] ~ div[data-testid="stVerticalBlockBorderWrapper"] {
+                /* nothing */
+            }
+        </style>
+    """
+
+def render_metric_card(name, metric):
+    """
+    Renders a single metric card with score, coaching, and details.
+    """
+    st.markdown(f"<div class='metric-name'>{name.replace('_', ' ').title()}</div>", unsafe_allow_html=True)
+
+    score = metric.get("score")
+    if score is None:
+        score = metric.get("communication_score")
+
+    if score is not None:
+        st.markdown(f"<div class='metric-score'>Score: {score:.0f}</div>", unsafe_allow_html=True)
+
+    coaching = metric.get("coaching") or metric.get("communication_coaching")
+    if coaching:
+        st.markdown(f"<div class='metric-coaching'><b>Tip:</b> {coaching}</div>", unsafe_allow_html=True)
+
+    with st.expander("More Details"):
+            interp = metric.get("interpretation") or metric.get("communication_interpretation")
 def render_metric_panel(metric_name: str, metric_data: dict):
     """Renders a metric with score, interpretation, coaching, what/how/why, semantics."""
     nice_name = metric_name.replace("_", " ").title()
@@ -199,7 +335,11 @@ def render_metric_panel(metric_name: str, metric_data: dict):
 # ============================================================
 def process_video(video_path):
 
-    with st.status("🔄 Running VERA analysis...", expanded=True) as status:
+    # Create a placeholder for the progress bar
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+
+    with st.status("🔄 analyzing your video...", expanded=True) as status:
 
         iterator = run_pipelines_iterator(video_path)
         output_dir = None
@@ -212,11 +352,29 @@ def process_video(video_path):
             if event_type == "start":
                 output_dir = args[0]
                 st.write("📂 Output directory created.")
+                status_text.text("Preparing workspace...")
 
             elif event_type == "progress":
                 module, res = args
                 completed_modules += 1
-                st.write(f"✅ **{module.capitalize()}** analysis complete.")
+
+                # Update progress bar
+                progress = completed_modules / total_modules
+                progress_bar.progress(progress)
+
+                # Fun descriptive text per module
+                if module == "audio":
+                    st.write(f"✅ **Audio** analysis complete.")
+                    status_text.text("Listening to vocal tone & pacing... Done! 🎤")
+                elif module == "body":
+                    st.write(f"✅ **Body** analysis complete.")
+                    status_text.text("Analyzing posture & gestures... Done! 💃")
+                elif module == "face":
+                    st.write(f"✅ **Face** analysis complete.")
+                    status_text.text("Reading facial expressions... Done! 🙂")
+                else:
+                    st.write(f"✅ **{module.capitalize()}** analysis complete.")
+
 
             elif event_type == "error":
                 module, err = args
@@ -226,6 +384,8 @@ def process_video(video_path):
             elif event_type == "final":
                 output_dir, results = args
 
+        progress_bar.progress(100)
+        status_text.text("✨ Analysis complete! Preparing results...")
         status.update(label="🎉 All pipelines complete!", state="complete")
 
     outputs = {}
@@ -260,50 +420,7 @@ def process_video(video_path):
 # ============================================================
 def landing_page():
 
-    st.markdown("""
-        <style>
-            .stApp { background-color: #E7E7FF !important; }
-
-            .landing-container {
-                text-align: center;
-                padding-top: 80px;
-            }
-
-            .tagline {
-                font-size: 22px;
-                color: #2B3A8B;
-                margin-top: 10px;
-                margin-bottom: 30px;
-                font-weight: 600;
-            }
-
-            .upload-card {
-                background: white;
-                padding: 30px;
-                border-radius: 18px;
-                width: 480px;
-                margin-left: auto;
-                margin-right: auto;
-                box-shadow: 0px 4px 18px rgba(0,0,0,0.12);
-            }
-
-            .start-button-container {
-                margin-top: 25px;
-                width: 480px;
-                margin-left: auto;
-                margin-right: auto;
-            }
-
-            /* Target the bordered container to look like a card */
-            div[data-testid="stVerticalBlockBorderWrapper"] {
-                background-color: white;
-                border-radius: 18px;
-                padding: 20px;
-                box-shadow: 0px 4px 18px rgba(0,0,0,0.12);
-                border: none; /* Remove default gray border */
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    st.markdown(get_landing_css(), unsafe_allow_html=True)
 
     # --------------------------
     # HERO SECTION
@@ -407,77 +524,9 @@ def analysis_page():
 
     # Stronger CSS: make block container purple, push the top row down, and make the top
     # bordered containers appear transparent so the purple shows through.
-    st.markdown(
-        """
-        <style>
-            :root {
-                /* tweak this to push panels further down if needed */
-                --top-row-offset: 56px;
-            }
-
-            /* page background */
-            .stApp { background-color: #E7E7FF !important; }
-
-            /*
-             * Make the main block-container use the purple background so the "top area"
-             * appears inside the purple zone.
-             */
-            .block-container {
-                background-color: #E7E7FF !important;
-                padding-top: 12px !important;
-                padding-left: 36px !important;
-                padding-right: 36px !important;
-                padding-bottom: 32px !important;
-            }
-
-            /*
-             * Top-row wrapper: move it down more so its child panels are fully within the purple.
-             * You can increase --top-row-offset if you still want it lower.
-             */
-            .top-row {
-                margin-top: var(--top-row-offset) !important;
-                display: block;
-                width: 100%;
-            }
-
-            /* Make any bordered containers inside the top-row visually transparent
-               so the purple background shows through while preserving the border and shadow. */
-            .top-row div[data-testid="stVerticalBlockBorderWrapper"] {
-                background-color: transparent !important;
-                box-shadow: none !important;
-                border: none !important;
-                padding: 0 !important;
-            }
-
-            /* Keep inner card styling for the score blocks (they will be white cards on top of purple) */
-            .top-inner-card {
-                background: rgba(255,255,255,0.98);
-                border-radius: 14px;
-                padding: 16px;
-                box-shadow: 0px 2px 10px rgba(0,0,0,0.06);
-            }
-
-            /* Score card styling (unchanged look) */
-            .score-card {
-                background: #F4F4FF;
-                border-radius: 16px;
-                padding: 18px;
-                text-align: center;
-                box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
-            }
-            .score-title { font-size: 18px; font-weight: 600; color: #2B3A8B; }
-            .score-value { font-size: 32px; font-weight: 700; color: #1A237E; margin-top: -5px; }
-
-            .section-title { font-size: 22px; font-weight: 700; color: #2B3A8B; margin-bottom: 10px; }
-
-            /* Don't accidentally style other containers below the top area */
-            div[data-testid="stVerticalBlockBorderWrapper"] ~ div[data-testid="stVerticalBlockBorderWrapper"] {
-                /* nothing */
-            }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    # Stronger CSS: make block container purple, push the top row down, and make the top
+    # bordered containers appear transparent so the purple shows through.
+    st.markdown(get_analysis_css(), unsafe_allow_html=True)
 
     uploaded_video = st.session_state.uploaded_video
     results_files = st.session_state.get("results_files")
@@ -564,38 +613,11 @@ def analysis_page():
         module_key = selected.lower()
         module_metrics = enriched_data[module_key]["metrics"]
 
-        def show_metric(name, metric):
-            # We use a container without border for items, or maybe a light background
-            # But let's keep it simple: straight into the column
-
-            st.markdown(f"<div class='metric-name'>{name.replace('_', ' ').title()}</div>", unsafe_allow_html=True)
-
-            score = metric.get("score")
-            if score is None:
-                score = metric.get("communication_score")
-
-            if score is not None:
-                st.markdown(f"<div class='metric-score'>Score: {score:.0f}</div>", unsafe_allow_html=True)
-
-            coaching = metric.get("coaching") or metric.get("communication_coaching")
-            if coaching:
-                st.markdown(f"<div class='metric-coaching'><b>Tip:</b> {coaching}</div>", unsafe_allow_html=True)
-
-            with st.expander("More Details"):
-                    interp = metric.get("interpretation") or metric.get("communication_interpretation")
-                    if interp:
-                        st.write(f"**Interpretation:** {interp}")
-                    st.write(f"**What:** {metric.get('what', 'N/A')}")
-                    st.write(f"**How:** {metric.get('how', 'N/A')}")
-                    st.write(f"**Why:** {metric.get('why', 'N/A')}")
-                    if "score_semantics" in metric:
-                        st.json(metric["score_semantics"])
-
         colA, colB = st.columns(2)
         for i, (name, metric) in enumerate(module_metrics.items()):
             target = colA if i % 2 == 0 else colB
             with target:
-                show_metric(name, metric)
+                render_metric_card(name, metric)
 
     # -----------------------------
     # DOWNLOAD BUTTON
