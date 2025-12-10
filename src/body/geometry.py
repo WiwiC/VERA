@@ -45,38 +45,97 @@ def compute_gesture_magnitude(lm, shoulder_width=None):
 def compute_posture_openness(lm):
     """
     Compute posture openness as the angle formed at the sternum.
-    
+
     Measures the angle: Left Shoulder - Sternum - Right Shoulder
-    
+
     - Larger angle (approaching 180°) = open, confident posture
     - Smaller angle = hunched, closed posture
-    
+
     The sternum is estimated as the midpoint between mid-shoulders and mid-hips.
     This captures whether shoulders are rolled forward (closed) or back (open).
     """
     # Shoulder positions
     L_sh = np.array([lm[11].x, lm[11].y, lm[11].z])
     R_sh = np.array([lm[12].x, lm[12].y, lm[12].z])
-    
+
     # Hip positions
     L_hp = np.array([lm[23].x, lm[23].y, lm[23].z])
     R_hp = np.array([lm[24].x, lm[24].y, lm[24].z])
-    
+
     # Estimate sternum: midpoint between shoulder-center and hip-center
     mid_shoulder = (L_sh + R_sh) / 2
     mid_hip = (L_hp + R_hp) / 2
     sternum = (mid_shoulder + mid_hip) / 2
-    
+
     # Vectors from sternum to each shoulder
     v1 = L_sh - sternum
     v2 = R_sh - sternum
-    
+
     # Compute angle between these vectors
     dot = np.dot(v1, v2)
     norm = np.linalg.norm(v1) * np.linalg.norm(v2)
-    
+
     if norm == 0:
         return np.nan
-    
+
     angle = np.arccos(np.clip(dot / norm, -1, 1))
     return np.degrees(angle)
+
+
+def compute_midplane_depth_normalized(lm):
+    """
+    Compute normalized wrist depth relative to torso midplane.
+
+    Uses cross-product to find the true forward direction of the torso,
+    making the measurement camera-invariant and posture-invariant.
+
+    Returns:
+        float: Normalized depth (in shoulder width units)
+               Positive = wrists in front of torso (defensive)
+               Negative = wrists behind torso (confident)
+               Typical values:
+                 > +0.5 = defensive posture (hands forward, clasped/crossed)
+                 -0.3 to +0.5 = neutral (hands at sides)
+                 < -0.3 = hands behind back (confident)
+    """
+    # Landmarks
+    L_sh = np.array([lm[11].x, lm[11].y, lm[11].z])
+    R_sh = np.array([lm[12].x, lm[12].y, lm[12].z])
+    L_hip = np.array([lm[23].x, lm[23].y, lm[23].z])
+    R_hip = np.array([lm[24].x, lm[24].y, lm[24].z])
+    L_wrist = np.array([lm[15].x, lm[15].y, lm[15].z])
+    R_wrist = np.array([lm[16].x, lm[16].y, lm[16].z])
+
+    # Shoulder/hip vectors
+    shoulder_line = R_sh - L_sh
+    hip_line = R_hip - L_hip
+
+    # Shoulder width for normalization
+    shoulder_width = np.linalg.norm(shoulder_line)
+    if shoulder_width < 1e-9:
+        return np.nan
+
+    # Forward vector (normal to body plane via cross product)
+    forward = np.cross(shoulder_line, hip_line)
+
+    # Z-SIGN ENFORCEMENT: forward must point toward camera (positive Z in MediaPipe)
+    if forward[2] < 0:
+        forward = -forward
+
+    forward_norm = np.linalg.norm(forward)
+
+    # Fallback for edge cases (parallel shoulder/hip lines)
+    if forward_norm < 1e-6:
+        # Use simple z-based depth as fallback
+        torso_z = (L_sh[2] + R_sh[2] + L_hip[2] + R_hip[2]) / 4
+        depth_L = (L_wrist[2] - torso_z) / shoulder_width
+        depth_R = (R_wrist[2] - torso_z) / shoulder_width
+    else:
+        # Midplane projection
+        forward_unit = forward / forward_norm
+        mid = (L_sh + R_sh + L_hip + R_hip) / 4
+        depth_L = np.dot(L_wrist - mid, forward_unit) / shoulder_width
+        depth_R = np.dot(R_wrist - mid, forward_unit) / shoulder_width
+
+    # Return single mean value
+    return (depth_L + depth_R) / 2

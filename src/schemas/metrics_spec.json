@@ -134,8 +134,8 @@
       "raw_value_unit": "ratio (lip width / inter-ocular distance)",
       "raw_value_directionality": "sweet_spot",
       "raw_value_ideal_range": [
-        0.80,
-        0.88
+        0.76,
+        0.80
       ],
       "score_range": [
         0,
@@ -554,65 +554,52 @@
       "metric_id": "posture_openness",
       "metric_type": "raw_derived_metric",
       "display_name": "Posture Openness",
-      "what_is_measured": "How open and confident your posture is. This captures whether your shoulders are rolled back and open versus hunched forward and closed.",
-      "how_it_is_measured": "We measure the angle formed by your shoulders relative to your chest — a wider angle means a more open posture.",
+      "what_is_measured": "How open and confident your posture is. This captures whether your arms are open and natural versus closed and defensive.",
+      "how_it_is_measured": "We use a 2-component composite: (1) arm closeness (from gesture magnitude) and (2) wrist position relative to torso (depth). A defensive posture penalty is applied when arms are close to the body AND wrists are in front of the torso, indicating crossed arms or a barrier posture.",
       "why_it_matters": "Open posture signals confidence and approachability. Closed, hunched posture can make you appear defensive or insecure.",
-      "raw_value_unit": "degrees",
-      "raw_value_directionality": "sweet_spot",
+      "raw_value_unit": "shoulder_width_units",
+      "raw_value_directionality": "higher_better",
       "raw_value_ideal_range": [
-        50,
-        58
+        1.5,
+        3.0
       ],
       "score_range": [
         0,
         1
       ],
       "score_semantics": {
-        "0": "Posture is far from ideal (either hunched closed or unnaturally forced open).",
-        "1": "Confident, approachable posture within the optimal range."
+        "0.2": "Closed, defensive posture (arms close + wrists forward).",
+        "0.6": "Neutral posture (arms at rest, hands at sides or behind).",
+        "1.0": "Open, expressive posture (gesturing)."
       },
-      "scoring_function_type": "gaussian",
+      "scoring_function_type": "discrete_3state",
       "uses_consistency_score": false,
       "interpretation_buckets": [
         {
           "min_raw": null,
-          "max_raw": 46,
+          "max_raw": 0.3,
           "label": "closed",
-          "user_text": "Closed, collapsed posture (Poor). Strong inward rotation.",
-          "coaching": "Roll your shoulders back. You look defensive."
+          "user_text": "Closed, defensive posture (Poor). Arms close to body with hands forward.",
+          "coaching": "Open up your arms. You look guarded and defensive."
         },
         {
-          "min_raw": 46,
-          "max_raw": 50,
-          "label": "constricted",
-          "user_text": "Slightly constricted posture (Weak). Shoulders rolled forward.",
-          "coaching": "Open your chest. Let your arms hang naturally."
+          "min_raw": 0.3,
+          "max_raw": 0.7,
+          "label": "neutral",
+          "user_text": "Neutral posture (Ok). Arms at rest, hands at sides or behind.",
+          "coaching": "Try using more hand gestures to engage your audience."
         },
         {
-          "min_raw": 50,
-          "max_raw": 58,
-          "label": "optimal",
-          "user_text": "Optimal posture (Excellent). Confident and approachable.",
-          "coaching": "Perfect posture. You look confident and open."
-        },
-        {
-          "min_raw": 58,
-          "max_raw": 65,
-          "label": "good",
-          "user_text": "Open posture (Good). Slightly expansive.",
-          "coaching": "Good openness. You look approachable."
-        },
-        {
-          "min_raw": 65,
+          "min_raw": 0.7,
           "max_raw": 999,
-          "label": "exaggerated",
-          "user_text": "Exaggerated openness (Weak). May look unnatural or stiff.",
-          "coaching": "Relax your shoulders slightly. You look overly rigid."
+          "label": "open",
+          "user_text": "Open, expressive posture (Excellent). Good use of gestures.",
+          "coaching": "Great body language! You look confident and approachable."
         }
       ],
       "global_aggregation": null,
       "frontend_short_label": "Posture Openness",
-      "notes": null
+      "notes": "Refactored from shoulder angle to arms-based scoring (gesture_magnitude + wrist_depth)."
     },
     {
       "module_id": "body",
