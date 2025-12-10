@@ -14,7 +14,8 @@ from src.face.geometry import (
     compute_iris_centers,
     compute_face_center,
     compute_smile_activation,
-    compute_inter_ocular_distance
+    compute_inter_ocular_distance,
+    compute_head_tilt
 )
 
 def process_video(video_path):
@@ -28,6 +29,7 @@ def process_video(video_path):
         pd.DataFrame: DataFrame containing timestamped metrics:
                       - head_speed (IOD/sec, fps-normalized)
                       - gaze_dg (gaze direction change per sec, fps-normalized)
+                      - head_tilt (nose-to-ear Y difference, positive = down)
                       - smile (activation intensity, normalized by IOD)
     """
     # Initialize MediaPipe FaceMesh
@@ -47,6 +49,8 @@ def process_video(video_path):
     if fps <= 0:
         fps = 30.0  # Fallback to 30fps if detection fails
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    img_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    img_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     features = []
     prev_head_center = None
@@ -65,6 +69,7 @@ def process_video(video_path):
 
         head_speed = np.nan
         dg = np.nan
+        head_tilt = np.nan
         smile = np.nan
 
         if results.multi_face_landmarks:
@@ -104,11 +109,14 @@ def process_video(video_path):
             else:
                 smile = 0.0
 
-        # Append ALL features (even if NaN)
+            # ----- HEAD TILT (Head Pitch via solvePnP) -----
+            head_tilt = compute_head_tilt(lm, img_w, img_h)
+
         features.append({
             "timestamp": timestamp,
             "head_speed": head_speed,
             "gaze_dg": dg,
+            "head_tilt": head_tilt,
             "smile": smile
         })
 

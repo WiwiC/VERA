@@ -38,6 +38,7 @@ METRIC_MAPPING = {
     "head_stability": ("face", "head_stability_communication_score", "head_stability"),
     "gaze_stability": ("face", "gaze_stability_communication_score", "gaze_stability"),
     "smile_activation": ("face", "smile_activation_communication_score", "smile_activation"),
+    "head_down_ratio": ("face", "head_down_ratio_communication_score", "head_down_ratio"),
 
     # Audio metrics
     "speech_rate": ("audio", "speech_rate_score", "speech_rate"),

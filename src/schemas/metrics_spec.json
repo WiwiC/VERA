@@ -183,11 +183,69 @@
     },
     {
       "module_id": "face",
+      "metric_id": "head_down_ratio",
+      "metric_type": "raw_derived_metric",
+      "display_name": "Head Down Ratio",
+      "what_is_measured": "How much time your head is tilted downward during your presentation. This captures whether you maintain forward-facing posture or spend time looking at notes, the floor, or avoiding the audience.",
+      "how_it_is_measured": "We use 3D head pose estimation (solvePnP) to calculate your head pitch angle. When your head pitch exceeds 14°, you are considered to be looking down. The ratio is the percentage of time spent in this position.",
+      "why_it_matters": "Looking down too much signals nervousness, lack of preparation, or avoidance. Maintaining forward posture builds connection and projects confidence.",
+      "raw_value_unit": "ratio (0-1)",
+      "raw_value_directionality": "lower_is_better",
+      "raw_value_ideal_range": [
+        0,
+        0.10
+      ],
+      "score_range": [
+        0,
+        1
+      ],
+      "score_semantics": {
+        "0": "Spends most of the time with head tilted down (reading notes, avoiding audience).",
+        "1": "Maintains excellent forward posture, rarely looking down."
+      },
+      "scoring_function_type": "logistic",
+      "uses_consistency_score": false,
+      "interpretation_buckets": [
+        {
+          "min_raw": null,
+          "max_raw": 0.10,
+          "label": "forward",
+          "user_text": "Excellent posture. Head facing audience.",
+          "coaching": "Great presence! You maintain strong forward posture."
+        },
+        {
+          "min_raw": 0.10,
+          "max_raw": 0.25,
+          "label": "occasional_down",
+          "user_text": "Good posture with occasional glances down.",
+          "coaching": "Good balance. Try to look up more between points."
+        },
+        {
+          "min_raw": 0.25,
+          "max_raw": 0.40,
+          "label": "frequent_down",
+          "user_text": "Head often tilted down.",
+          "coaching": "Practice your content so you can look up more."
+        },
+        {
+          "min_raw": 0.40,
+          "max_raw": 999,
+          "label": "mostly_down",
+          "user_text": "Head mostly facing down. Avoids audience.",
+          "coaching": "Look at your audience. You're reading too much."
+        }
+      ],
+      "global_aggregation": null,
+      "frontend_short_label": "Head Posture",
+      "notes": "Uses 3D head pose estimation (solvePnP with 6 landmarks) to compute pitch angle in degrees. The ratio represents % of time with pitch > 14°. Robust to head rotation and camera angle."
+    },
+    {
+      "module_id": "face",
       "metric_id": "face_global_score",
       "metric_type": "global_score",
       "display_name": "Facial Communication",
-      "what_is_measured": "Your overall facial expressiveness and presence during the presentation, combining head movement, eye contact, and smile.",
-      "how_it_is_measured": "We average the scores from head stability, gaze consistency, and smile activation.",
+      "what_is_measured": "Your overall facial expressiveness and presence during the presentation, combining head movement, eye contact, smile, and head posture.",
+      "how_it_is_measured": "We average the scores from head stability, gaze consistency, smile activation, and head down ratio.",
       "why_it_matters": "Your face is the primary channel for conveying warmth, confidence, and engagement. A strong facial communication score means you connect well visually.",
       "raw_value_unit": null,
       "raw_value_directionality": null,
@@ -229,10 +287,11 @@
         "sub_metrics": [
           "head_stability",
           "gaze_stability",
-          "smile_activation"
+          "smile_activation",
+          "head_down_ratio"
         ],
-        "weights": "equal (1/3 each)",
-        "formula": "Average of head stability, gaze stability, and smile activation communication scores."
+        "weights": "equal (1/4 each)",
+        "formula": "Average of head stability, gaze stability, smile activation, and head down ratio communication scores."
       },
       "frontend_short_label": "Facial Communication",
       "notes": "Global interpretation uses the score (0-1), not raw values. Buckets are score-based."

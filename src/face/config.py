@@ -57,6 +57,11 @@ BASELINE_GAZE_SCALE    = 0.08   # Logistic scale - widened from 0.03 for softer 
 BASELINE_SMILE_OPTIMAL = 0.77   # (was 0.82)
 BASELINE_SMILE_VAR     = 0.001  # (0.032)² - widened significantly
 
+# Head Down Ratio (head pitch angle in degrees)
+# Positive pitch = head tilted down
+# Based on FACS research: +10-15° = obvious head-down behavior
+BASELINE_HEAD_DOWN_THRESHOLD = 14.0  # degrees (calibrate later)
+
 
 # =========================================================
 # CHANGE THRESHOLDS (MVP Heuristics for Timeline Labels)
@@ -83,6 +88,12 @@ CHANGE_THRESHOLDS = {
     "smile_activation": {
         "stable": 0.03,
         "shifting": 0.08,
+    },
+    # head_down_ratio (percentage) - lower is better
+    # Typical range: 0.05 - 0.40
+    "head_down_ratio": {
+        "stable": 0.05,
+        "shifting": 0.15,
     },
 }
 
@@ -117,6 +128,14 @@ INTERPRETATION_RANGES = {
         {"max": 0.76, "label": "neutral", "text": "Low smile activation (Weak). Professional but reserved.", "coaching": "Try to smile at the start and end of your sentences."},
         {"max": 0.80, "label": "optimal", "text": "Balanced, natural smile (Excellent). Warm and approachable.", "coaching": "Nice warmth. Your expression is welcoming."},
         {"max": 999, "label": "excessive", "text": "Very high smile (Good). Highly radiant, possibly over-expressive.", "coaching": "Great energy! Just ensure your smile matches the content."}
+    ],
+    "head_down_ratio": [
+        # Lower is better (less time looking down)
+        # TBD: Calibrate bucket boundaries with real data
+        {"max": 0.10, "label": "forward", "text": "Excellent posture. Head facing audience.", "coaching": "Great presence! You maintain strong forward posture."},
+        {"max": 0.25, "label": "occasional_down", "text": "Good posture with occasional glances down.", "coaching": "Good balance. Try to look up more between points."},
+        {"max": 0.40, "label": "frequent_down", "text": "Head often tilted down.", "coaching": "Practice your content so you can look up more."},
+        {"max": 999, "label": "mostly_down", "text": "Head mostly facing down. Avoids audience.", "coaching": "Look at your audience. You're reading too much."}
     ],
     "face_global_score": [
         (0.70, 1.00, "Excellent facial communication. High presence, warmth, and control."),
