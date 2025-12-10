@@ -251,32 +251,98 @@ def get_analysis_css():
     """
 
 def render_metric_card(name, metric):
-    st.markdown(f"<div class='metric-name'>{name.replace('_', ' ').title()}</div>", unsafe_allow_html=True)
-
-    # Some metrics use "value", some use "score"
+    label = name.replace("_", " ").title()
     score = metric.get("score") or metric.get("communication_score") or metric.get("value")
-    if score is not None:
-        st.markdown(f"<div class='metric-score'>Score: {float(score):.0f}</div>", unsafe_allow_html=True)
-    else:
-        st.markdown("<div class='metric-score'>Score: N/A</div>", unsafe_allow_html=True)
-
     coaching = metric.get("coaching") or metric.get("communication_coaching")
-    if coaching:
-        st.markdown(f"<div class='metric-coaching'><b>Tip:</b> {coaching}</div>", unsafe_allow_html=True)
+    interpretation = metric.get("interpretation") or metric.get("communication_interpretation")
 
-    with st.expander("More Details"):
-        interp = metric.get("interpretation") or metric.get("communication_interpretation")
-        if interp:
-            st.write(f"**Interpretation:** {interp}")
+    st.markdown(
+        """
+        <style>
+            .metric-card {
+                background: #FFFFFF;
+                border-radius: 12px;
+                padding: 16px 22px;
+                margin-bottom: 18px;
+                box-shadow: 0px 2px 10px rgba(0,0,0,0.05);
+            }
+            .metric-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 6px;
+            }
+            .metric-title {
+                font-size: 20px;
+                font-weight: 600;
+                color: #2B3A8B;
+            }
+            .metric-score {
+                font-size: 32px;
+                font-weight: 800;
+                color: #1A237E;
+                min-width: 50px;
+                text-align: right;
+            }
+            .metric-bottom {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 4px;
+            }
+            .metric-tip {
+                font-size: 15px;
+                color: #444;
+                max-width: 70%;
+            }
+            .metric-details-btn {
+                font-size: 14px;
+                color: #2B3A8B;
+                cursor: pointer;
+                text-decoration: underline;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Main card container
+    st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
+
+    # Top row: Title left, Score right
+    st.markdown(
+        f"""
+        <div class='metric-header'>
+            <div class='metric-title'>{label}</div>
+            <div class='metric-score'>{int(score) if score else "N/A"}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Bottom row: Tip left, expander button right
+    st.markdown("<div class='metric-bottom'>", unsafe_allow_html=True)
+
+    if coaching:
+        st.markdown(f"<div class='metric-tip'><b>Coaching: </b> {coaching}</div>", unsafe_allow_html=True)
+    else:
+        st.markdown(f"<div class='metric-tip'>No coaching available.</div>", unsafe_allow_html=True)
+
+    # Right side: details button
+    details_expander = st.expander("Info")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Expander content
+    with details_expander:
+        if interpretation:
+            st.write(f"**Interpretation:** {interpretation}")
 
         st.write(f"**What:** {metric.get('what', 'N/A')}")
         st.write(f"**How:** {metric.get('how', 'N/A')}")
         st.write(f"**Why:** {metric.get('why', 'N/A')}")
 
-        semantics = metric.get("score_semantics")
-        if semantics:
-            st.write("**Score meaning:**")
-            st.json(semantics)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_metric_panel(metric_name: str, metric_data: dict):
@@ -490,7 +556,6 @@ def landing_page():
     # --------------------------
     st.markdown("<div class='start-button-container'>", unsafe_allow_html=True)
 
-    # center the button nicely
     col_left, col_center, col_right = st.columns([1, 2, 1])
 
     with col_center:
@@ -499,30 +564,33 @@ def landing_page():
             if st.session_state.uploaded_video is None:
                 st.error("Please upload a video first.")
             else:
-                # Save uploaded file temporarily
                 uploaded_video = st.session_state.uploaded_video
+
+                # -------------------------------
+                # USE ORIGINAL FILENAME
+                # -------------------------------
+                original_name = Path(uploaded_video.name).stem   # e.g., "my_pitch_video"
                 suffix = Path(uploaded_video.name).suffix or ".mp4"
 
-                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-                    tmp.write(uploaded_video.read())
-                    temp_path = tmp.name
+                # Save temporarily but with the REAL NAME (not tmpxxxxxx)
+                temp_path = f"/tmp/{original_name}{suffix}"
+                with open(temp_path, "wb") as f:
+                    f.write(uploaded_video.read())
 
-                # Run pipeline once
-                # Removed st.spinner to avoid double-spinner look, relying on st.status inside process_video
+                # Run pipeline
                 st.session_state.results_files = process_video(temp_path)
 
                 # Navigate to analysis page
                 st.session_state.page = "analyze"
 
-                # Set query param for persistence
-                video_name = Path(temp_path).stem
+                # Now the HISTORY entry uses the original filename
+                video_name = original_name
                 st.query_params["video"] = video_name
                 st.session_state.current_video_name = video_name
 
                 st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
-
 
 # ============================================================
 # ANALYZER PAGE
@@ -623,21 +691,9 @@ def analysis_page():
         module_key = selected.lower()
         module_metrics = enriched_data[module_key]["metrics"]
 
-        colA, colB = st.columns(2)
-        for i, (name, metric) in enumerate(module_metrics.items()):
-            target = colA if i % 2 == 0 else colB
-            with target:
-                render_metric_card(name, metric)
+        for name, metric in module_metrics.items():
+            render_metric_card(name, metric)
 
-    # -----------------------------
-    # DOWNLOAD BUTTON
-    # -----------------------------
-    st.download_button(
-        "📥 Download Full JSON Report",
-        results_files["results_global_enriched.json"],
-        "results_global_enriched.json",
-        "application/json"
-    )
 
 # ============================================================
 # PAGE ROUTING
