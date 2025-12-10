@@ -72,17 +72,17 @@ def sliding_windows(series, window=5):
 
 def get_interpretation(metric_type, raw_value):
     """
-    Get text interpretation and coaching based on raw value and buckets.
+    Get text interpretation, coaching, and label based on raw value and buckets.
     """
     buckets = INTERPRETATION_RANGES.get(metric_type, [])
 
     # Iterate through buckets to find the matching range
     for bucket in buckets:
         if raw_value <= bucket["max"]:
-            return bucket["text"], bucket["coaching"]
+            return bucket["text"], bucket["coaching"], bucket["label"]
 
     # Fallback (should not happen with max=999)
-    return "Value out of range", "Check your settings."
+    return "Value out of range", "Check your settings.", "unknown"
 
 def get_global_interpretation(score):
     """
@@ -241,7 +241,7 @@ def compute_scores(raw_df):
     # Add Global Score to window_df (constant column)
     window_df["global_comm_score"] = global_comm_score
 
-    # 5. Get Interpretations & Coaching
+    # 5. Get Interpretations & Coaching & Labels
 
     # Communication Scores (Absolute)
     head_mean_comm = df_head_5s["head_stability_comm_score"].mean()
@@ -255,10 +255,10 @@ def compute_scores(raw_df):
     smile_mean_val = df_smile_5s["smile_val"].mean()
     head_down_mean_val = df_head_down_5s["head_down_ratio_val"].mean()
 
-    interp_head_comm, coach_head_comm = get_interpretation("head_stability", head_mean_val)
-    interp_gaze_comm, coach_gaze_comm = get_interpretation("gaze_stability", gaze_mean_val)
-    interp_smile_comm, coach_smile_comm = get_interpretation("smile_activation", smile_mean_val)
-    interp_head_down_comm, coach_head_down_comm = get_interpretation("head_down_ratio", head_down_mean_val)
+    interp_head_comm, coach_head_comm, label_head_comm = get_interpretation("head_stability", head_mean_val)
+    interp_gaze_comm, coach_gaze_comm, label_gaze_comm = get_interpretation("gaze_stability", gaze_mean_val)
+    interp_smile_comm, coach_smile_comm, label_smile_comm = get_interpretation("smile_activation", smile_mean_val)
+    interp_head_down_comm, coach_head_down_comm, label_head_down_comm = get_interpretation("head_down_ratio", head_down_mean_val)
 
     scores = {
         "global_comm_score": float(global_comm_score),
@@ -266,23 +266,31 @@ def compute_scores(raw_df):
 
         # Head Stability
         "head_stability_communication_score": float(head_mean_comm),
+        "head_stability_val": float(head_mean_val),
         "head_stability_communication_interpretation": interp_head_comm,
         "head_stability_communication_coaching": coach_head_comm,
+        "head_stability_label": label_head_comm,
 
         # Gaze Consistency
         "gaze_stability_communication_score": float(gaze_mean_comm),
+        "gaze_stability_val": float(gaze_mean_val),
         "gaze_stability_communication_interpretation": interp_gaze_comm,
         "gaze_stability_communication_coaching": coach_gaze_comm,
+        "gaze_stability_label": label_gaze_comm,
 
         # Smile Activation
         "smile_activation_communication_score": float(smile_mean_comm),
+        "smile_activation_val": float(smile_mean_val),
         "smile_activation_communication_interpretation": interp_smile_comm,
         "smile_activation_communication_coaching": coach_smile_comm,
+        "smile_activation_label": label_smile_comm,
 
         # Head Down Ratio
         "head_down_ratio_communication_score": float(head_down_mean_comm),
+        "head_down_ratio_val": float(head_down_mean_val),
         "head_down_ratio_communication_interpretation": interp_head_down_comm,
         "head_down_ratio_communication_coaching": coach_head_down_comm,
+        "head_down_ratio_label": label_head_down_comm,
     }
 
     # Project Raw Values (_val), Communication Scores (_comm_score), and deltas (numeric only)

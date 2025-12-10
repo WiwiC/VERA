@@ -66,7 +66,7 @@ BASELINE_BODY_SWAY_VAR     = 0.06   # (0.24)² - based on IQR/1.35
 #   - "open" = NOT arms_close (gesturing)
 
 # Component 1: Arms close to body
-BASELINE_ARMS_CLOSE_THRESHOLD = 1.8   # SW units - gesture_mag < this = "close"
+BASELINE_ARMS_CLOSE_THRESHOLD = 2.0   # SW units - gesture_mag < this = "close"
 
 # Component 2: Wrist depth (midplane-normalized)
 # NOTE: In MediaPipe, smaller Z = closer to camera, so NEGATIVE depth = forward

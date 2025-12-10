@@ -51,6 +51,8 @@ def enrich_results(global_results: dict) -> dict:
         {"face": {"global": {...}, "metrics": {"head_stability": {...}}}}
     """
     spec = load_spec()
+    interp_map = _build_interpretation_map(spec)
+
     enriched = {
         "meta": global_results.get("meta", {})
     }
@@ -69,7 +71,7 @@ def enrich_results(global_results: dict) -> dict:
 
         # Process each metric
         for metric_id in metric_ids:
-            metric_data = _extract_metric_data(metric_id, flat_data, module_id)
+            metric_data = _extract_metric_data(metric_id, flat_data, spec)
             metric_spec = spec.get(metric_id, {})
 
             # Add enrichment from spec
@@ -113,30 +115,86 @@ def _build_global_section(module_id: str, flat_data: dict, spec: dict) -> dict:
         }
 
 
-def _extract_metric_data(metric_id: str, flat_data: dict, module_id: str) -> dict:
-    """Extract all data for a single metric from flat structure."""
-    result = {}
+def _extract_metric_data(metric_id: str, results: dict, spec: dict) -> dict:
+    """
+    Extract score, interpretation, coaching, and label for a metric.
+    Uses the explicit label from the results if available.
+    """
+    # 1. Get metric definition from spec (not directly used here, but good for context)
+    # metric_def = spec.get(metric_id, {})
 
-    # Audio has simpler structure (no comm/cons split in keys)
-    if module_id == "audio":
-        prefixes = [
-            (f"{metric_id}_score", "score"),
-            (f"{metric_id}_interpretation", "interpretation"),
-            (f"{metric_id}_coaching", "coaching"),
-        ]
-    else:
-        prefixes = [
-            (f"{metric_id}_communication_score", "score"),
-            (f"{metric_id}_communication_interpretation", "interpretation"),
-            (f"{metric_id}_communication_coaching", "coaching"),
-        ]
+    # 2. Extract score
+    score_key = f"{metric_id}_score"
+    # Some body metrics use _communication_score suffix
+    if score_key not in results:
+        score_key = f"{metric_id}_communication_score"
 
-    for flat_key, nested_key in prefixes:
-        if flat_key in flat_data:
-            value = flat_data[flat_key]
-            # Convert scores to 0-100 for UX
-            if nested_key == "score":
-                value = _to_percent(value)
-            result[nested_key] = value
+    score = results.get(score_key)
+    if score is not None:
+        score = _to_percent(score)
 
-    return result
+    # 3. Extract interpretation & coaching
+    # Try standard keys first
+    interp_key = f"{metric_id}_interpretation"
+    coach_key = f"{metric_id}_coaching"
+
+    # Try communication keys if standard not found
+    if interp_key not in results:
+        interp_key = f"{metric_id}_communication_interpretation"
+    if coach_key not in results:
+        coach_key = f"{metric_id}_communication_coaching"
+
+    interpretation = results.get(interp_key)
+    coaching = results.get(coach_key)
+
+    # 4. Extract Label (NEW: Explicit label from scoring)
+    # Try standard key first
+    label_key = f"{metric_id}_label"
+    label = results.get(label_key)
+
+    # If not found, try to look it up (fallback for backward compatibility)
+    if not label and interpretation:
+        # This fallback should ideally not be needed after refactor
+        # But keeping it for safety
+        interp_map = _build_interpretation_map(spec)
+        metric_map = interp_map.get(metric_id, {})
+        # Normalize text for lookup
+        label = metric_map.get(interpretation.strip())
+
+    # 5. Extract Raw Value (NEW: For calibration distance)
+    # Try standard key first
+    raw_key = f"{metric_id}_val"
+    raw_value = results.get(raw_key)
+
+    return {
+        "score": score,
+        "raw_value": raw_value,
+        "interpretation": interpretation,
+        "coaching": coaching,
+        "label": label
+    }
+
+
+def _build_interpretation_map(spec: dict) -> dict:
+    """
+    Build a mapping from interpretation text (user_text) to bucket label.
+    Returns: {metric_id: {user_text: label}}
+    """
+    interp_map = {}
+
+    # spec is {metric_id: metric_data}
+    for metric in spec.values():
+        metric_id = metric.get("metric_id")
+        buckets = metric.get("interpretation_buckets", [])
+
+        metric_map = {}
+        for bucket in buckets:
+            label = bucket.get("label")
+            user_text = bucket.get("user_text")
+            if label and user_text:
+                # Normalize text for robust matching
+                metric_map[user_text.strip()] = label.lower()
+
+        interp_map[metric_id] = metric_map
+
+    return interp_map

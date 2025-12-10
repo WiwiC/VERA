@@ -77,17 +77,17 @@ def sliding_windows(series, window=5):
 
 def get_interpretation(metric_type, raw_value):
     """
-    Get text interpretation and coaching based on raw value and buckets.
+    Get text interpretation, coaching, and label based on raw value and buckets.
     """
     buckets = INTERPRETATION_RANGES.get(metric_type, [])
 
     # Iterate through buckets to find the matching range
     for bucket in buckets:
         if raw_value <= bucket["max"]:
-            return bucket["text"], bucket["coaching"]
+            return bucket["text"], bucket["coaching"], bucket["label"]
 
     # Fallback (should not happen with max=999)
-    return "Value out of range", "Check your settings."
+    return "Value out of range", "Check your settings.", "unknown"
 
 def get_global_interpretation(score):
     """
@@ -263,7 +263,7 @@ def compute_scores(raw_df):
     # Add Global Score to window_df (constant column)
     window_df["global_comm_score"] = global_comm_score
 
-    # 5. Get Interpretations & Coaching
+    # 5. Get Interpretations & Coaching & Labels
 
     # Communication Scores (Absolute)
     mag_mean_comm = df_mag_5s["gesture_magnitude_comm_score"].mean()
@@ -279,13 +279,13 @@ def compute_scores(raw_df):
     sway_mean_val = df_sway_5s["body_sway_val"].mean()
     open_mean_val = df_open_5s["posture_openness_val"].mean()
 
-    interp_mag_comm, coach_mag_comm = get_interpretation("gesture_magnitude", mag_mean_val)
-    interp_act_comm, coach_act_comm = get_interpretation("gesture_activity", act_mean_val)
-    interp_jit_comm, coach_jit_comm = get_interpretation("gesture_stability", jit_mean_val)
-    interp_sway_comm, coach_sway_comm = get_interpretation("body_sway", sway_mean_val)
+    interp_mag_comm, coach_mag_comm, label_mag_comm = get_interpretation("gesture_magnitude", mag_mean_val)
+    interp_act_comm, coach_act_comm, label_act_comm = get_interpretation("gesture_activity", act_mean_val)
+    interp_jit_comm, coach_jit_comm, label_jit_comm = get_interpretation("gesture_stability", jit_mean_val)
+    interp_sway_comm, coach_sway_comm, label_sway_comm = get_interpretation("body_sway", sway_mean_val)
 
     # Posture interpretation now uses score-based buckets via get_interpretation
-    interp_open_comm, coach_open_comm = get_interpretation("posture_openness", open_mean_comm)
+    interp_open_comm, coach_open_comm, label_open_comm = get_interpretation("posture_openness", open_mean_comm)
 
     scores = {
         "global_comm_score": float(global_comm_score),
@@ -293,28 +293,38 @@ def compute_scores(raw_df):
 
         # Gesture Magnitude
         "gesture_magnitude_communication_score": float(mag_mean_comm),
+        "gesture_magnitude_val": float(mag_mean_val),
         "gesture_magnitude_communication_interpretation": interp_mag_comm,
         "gesture_magnitude_communication_coaching": coach_mag_comm,
+        "gesture_magnitude_label": label_mag_comm,
 
         # Gesture Activity
         "gesture_activity_communication_score": float(act_mean_comm),
+        "gesture_activity_val": float(act_mean_val),
         "gesture_activity_communication_interpretation": interp_act_comm,
         "gesture_activity_communication_coaching": coach_act_comm,
+        "gesture_activity_label": label_act_comm,
 
         # Gesture Jitter
         "gesture_stability_communication_score": float(jit_mean_comm),
+        "gesture_stability_val": float(jit_mean_val),
         "gesture_stability_communication_interpretation": interp_jit_comm,
         "gesture_stability_communication_coaching": coach_jit_comm,
+        "gesture_stability_label": label_jit_comm,
 
         # Body Sway
         "body_sway_communication_score": float(sway_mean_comm),
+        "body_sway_val": float(sway_mean_val),
         "body_sway_communication_interpretation": interp_sway_comm,
         "body_sway_communication_coaching": coach_sway_comm,
+        "body_sway_label": label_sway_comm,
 
         # Posture Openness
         "posture_openness_communication_score": float(open_mean_comm),
+        "posture_openness_val": float(open_mean_val),
         "posture_openness_communication_interpretation": interp_open_comm,
         "posture_openness_communication_coaching": coach_open_comm,
+        "posture_openness_label": label_open_comm,
     }
 
     # 6. Generate Timeline (1Hz)

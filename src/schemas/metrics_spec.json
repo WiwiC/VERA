@@ -134,8 +134,8 @@
       "raw_value_unit": "ratio (lip width / inter-ocular distance)",
       "raw_value_directionality": "sweet_spot",
       "raw_value_ideal_range": [
-        0.80,
-        0.88
+        0.76,
+        0.80
       ],
       "score_range": [
         0,

@@ -124,48 +124,25 @@ def load_results(video_id: str) -> dict:
         return json.load(f)
 
 
-def get_label_from_score(score: float, metric_id: str, metrics_spec: dict) -> str:
-    """
-    Given a score (0-1), determine which interpretation bucket it falls into
-    by looking up the ranges in metrics_spec.json.
 
-    Args:
-        score: The model's communication score (0-1)
-        metric_id: The metric ID from metrics_spec.json
-        metrics_spec: The loaded metrics_spec dictionary
 
-    Returns:
-        The bucket label, or None if not found
-    """
-    if score is None:
+
+def load_enriched_results(video_id: str) -> dict:
+    """Load results_global_enriched.json for a video."""
+    results_path = PROCESSED_DIR / video_id / "results_global_enriched.json"
+
+    if not results_path.exists():
         return None
 
-    # Find the metric in metrics_spec
-    for metric in metrics_spec.get("metrics", []):
-        if metric.get("metric_id") == metric_id:
-            buckets = metric.get("interpretation_buckets", [])
-
-            # Find which bucket the score falls into
-            for bucket in buckets:
-                min_raw = bucket.get("min_raw")
-                max_raw = bucket.get("max_raw", 999)
-
-                # Handle None min_raw (first bucket)
-                if min_raw is None:
-                    min_raw = -999
-
-                if min_raw <= score < max_raw:
-                    return bucket.get("label", "").lower()
-
-            # Edge case: score exactly equals last bucket's max
-            if buckets and score >= buckets[-1].get("min_raw", 0):
-                return buckets[-1].get("label", "").lower()
-
-    return None
+    with open(results_path) as f:
+        return json.load(f)
 
 
-def generate_report():
+def generate_report(manifest_path=None):
     """Generate the calibration report CSV."""
+
+    target_manifest = Path(manifest_path) if manifest_path else MANIFEST_PATH
+    print(f"Using manifest: {target_manifest}")
 
     # Load metrics spec for bucket definitions
     with open(METRICS_SPEC_PATH) as f:
@@ -174,7 +151,11 @@ def generate_report():
     bucket_order = load_bucket_order(metrics_spec)
 
     # Load manifest
-    manifest = pd.read_csv(MANIFEST_PATH, sep=";")
+    if not target_manifest.exists():
+        print(f"❌ Manifest not found: {target_manifest}")
+        return None
+
+    manifest = pd.read_csv(target_manifest, sep=";")
 
     # Prepare report rows
     report_rows = []
@@ -183,8 +164,8 @@ def generate_report():
         video_id = str(row["file_video_name"]).strip()
         notes = row.get("notes", "")
 
-        # Load model results
-        results = load_results(video_id)
+        # Load enriched results
+        results = load_enriched_results(video_id)
 
         if results is None:
             print(f"Warning: No results found for video {video_id}")
@@ -199,22 +180,74 @@ def generate_report():
 
             human_label = str(human_label).strip().lower()
 
-            # Get model data
-            module_data = results.get(module, {})
-            model_score = module_data.get(score_key)
+            # Get metric data from enriched structure
+            # Structure: results[module]["metrics"][metric_id]
+            module_data = results.get(module, {}).get("metrics", {})
+            metric_data = module_data.get(spec_metric_id, {})
 
-            # Get interpretation text to extract model label
-            interp_key = score_key.replace("_score", "_interpretation")
-            interpretation = module_data.get(interp_key, "")
+            # Get score (0-100) directly from enriched data
+            model_score = metric_data.get("score")
+
+            # Get raw value directly from enriched data
+            model_raw = metric_data.get("raw_value")
+
+            # Get label directly from enriched data
+            model_label = metric_data.get("label")
+
+            # Get interpretation
+            interpretation = metric_data.get("interpretation", "")
 
             # Get bucket labels for this metric
             buckets = bucket_order.get(spec_metric_id, [])
 
-            # Extract model label from score using metrics_spec ranges
-            model_label = get_label_from_score(model_score, spec_metric_id, metrics_spec)
-
             # Calculate bucket distance
             distance = get_bucket_distance(human_label, model_label, buckets)
+
+            # Calculate Raw Distance to Human Label Range
+            human_range_str = ""
+            raw_distance = None
+
+            # Find the bucket corresponding to the human label
+            human_bucket = None
+            for b in metrics_spec.get("metrics", []):
+                if b.get("metric_id") == spec_metric_id:
+                    for bucket in b.get("interpretation_buckets", []):
+                        if bucket.get("label") and bucket.get("label").lower() == human_label:
+                            human_bucket = bucket
+                            break
+                    break
+
+            if human_bucket and model_raw is not None:
+                min_raw = human_bucket.get("min_raw")
+                max_raw = human_bucket.get("max_raw")
+
+                # Format range string
+                if min_raw is not None and max_raw is not None:
+                    human_range_str = f"[{min_raw}, {max_raw}]"
+                    # Distance calculation
+                    if model_raw < min_raw:
+                        raw_distance = min_raw - model_raw
+                    elif model_raw > max_raw:
+                        raw_distance = model_raw - max_raw
+                    else:
+                        raw_distance = 0.0
+                elif min_raw is None and max_raw is not None:
+                    human_range_str = f"[< {max_raw}]"
+                    if model_raw > max_raw:
+                        raw_distance = model_raw - max_raw
+                    else:
+                        raw_distance = 0.0
+                elif min_raw is not None and max_raw is None: # Should be 999 or similar
+                    human_range_str = f"[> {min_raw}]"
+                    if model_raw < min_raw:
+                        raw_distance = min_raw - model_raw
+                    else:
+                        raw_distance = 0.0
+
+                # Handle max=999 case for display
+                if max_raw == 999:
+                     human_range_str = f"[> {min_raw}]"
+
 
             # Determine match status
             if distance is None:
@@ -232,7 +265,11 @@ def generate_report():
                 "human_label": human_label,
                 "model_label": model_label,
                 "model_score": round(model_score, 4) if model_score is not None else None,
+                "model_raw": round(model_raw, 4) if model_raw is not None else None,
+                "human_range": human_range_str,
+                "raw_distance": round(raw_distance, 4) if raw_distance is not None else None,
                 "bucket_distance": distance,
+                "total_buckets": len(buckets),
                 "match_status": match_status,
                 "interpretation": interpretation[:80] + "..." if len(str(interpretation)) > 80 else interpretation,
                 "notes": notes if manifest_col == list(METRIC_MAPPING.keys())[0] else ""  # Only show notes once per video
@@ -251,11 +288,17 @@ def generate_report():
     # Sort by video_id, then by metric
     report_df = report_df.sort_values(["video_id", "metric"])
 
+    # Generate timestamped output path
+    import time
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    output_filename = f"calibration_report_{timestamp}.csv"
+    output_path = PROCESSED_DIR.parent / output_filename
+
     # Save to CSV
-    report_df.to_csv(OUTPUT_PATH, index=False)
+    report_df.to_csv(output_path, index=False)
 
     print(f"\n{'='*60}")
-    print(f"Calibration Report Generated: {OUTPUT_PATH}")
+    print(f"Calibration Report Generated: {output_path}")
     print(f"{'='*60}")
     print(f"Total entries: {len(report_df)}")
     print(f"Videos processed: {report_df['video_id'].nunique()}")
@@ -275,7 +318,11 @@ def generate_report():
         total = len(metric_df)
         pct = exact_matches / total * 100 if total > 0 else 0
         avg_distance = metric_df["bucket_distance"].mean()
-        print(f"  {metric}: {exact_matches}/{total} exact ({pct:.0f}%), avg distance: {avg_distance:.2f}")
+
+        # Get total buckets for this metric
+        total_buckets = metric_df["total_buckets"].iloc[0] if "total_buckets" in metric_df.columns else "?"
+
+        print(f"  {metric} (buckets: {total_buckets}): {exact_matches}/{total} exact ({pct:.0f}%), avg distance: {avg_distance:.2f}")
 
     # Outliers (distance >= 2)
     outliers = report_df[report_df["bucket_distance"] >= 2]
@@ -288,4 +335,6 @@ def generate_report():
 
 
 if __name__ == "__main__":
-    generate_report()
+    import sys
+    manifest_arg = sys.argv[1] if len(sys.argv) > 1 else None
+    generate_report(manifest_arg)
