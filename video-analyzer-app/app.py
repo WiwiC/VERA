@@ -6,24 +6,30 @@ from pathlib import Path
 import sys
 import base64
 
+# ----------------------------------------------------------
+# PAGE CONFIG
+# ----------------------------------------------------------
 st.set_page_config(
     page_title="VERA Analyzer",
-    layout="wide",
+    page_icon="🎥",
+    layout="wide"
 )
 
-# ============================================================
+# ----------------------------------------------------------
 # PROJECT IMPORTS
-# ============================================================
+# ----------------------------------------------------------
 current_dir = Path(__file__).parent.resolve()
 project_root = current_dir.parent.resolve()
 if str(project_root) not in sys.path:
     sys.path.append(str(project_root))
 
-from src.main import run_pipelines, run_pipelines_iterator  # Your parallel pipeline runner
+from src.main import run_pipelines, run_pipelines_iterator
 
 
+# ----------------------------------------------------------
+# UTILITY: Read results
+# ----------------------------------------------------------
 def load_results_from_dir(output_dir):
-    """Loads results from an existing directory."""
     output_dir = Path(output_dir)
     outputs = {}
 
@@ -31,10 +37,10 @@ def load_results_from_dir(output_dir):
     if enriched.exists():
         outputs["results_global_enriched.json"] = enriched.read_text()
 
-    expected_debug_files = {
+    debug_files = {
         "audio": "debug_audio.mp3",
         "body": "debug_pose.mp4",
-        "face": "debug_face.mp4"
+        "face": "debug_face.mp4",
     }
 
     for module in ["audio", "body", "face"]:
@@ -42,27 +48,22 @@ def load_results_from_dir(output_dir):
         if csv_path.exists():
             outputs[f"metrics_{module}.csv"] = csv_path.read_text()
 
-        debug_filename = expected_debug_files.get(module)
-        debug_path = output_dir / debug_filename
+        debug_path = output_dir / debug_files[module]
         if debug_path.exists():
-            outputs[debug_filename] = debug_path.read_bytes()
+            outputs[debug_files[module]] = debug_path.read_bytes()
 
     return outputs
 
 
-# ============================================================
-# PAGE STATE CONTROLLER
-# ============================================================
-
-# 1. Handle Query Params (Persistent State)
+# ----------------------------------------------------------
+# SESSION STATE INITIALIZATION
+# ----------------------------------------------------------
 if "page" not in st.session_state:
-    # Check if a video is specified in URL
     video_param = st.query_params.get("video")
     if video_param:
-        # Try to load it
-        target_dir = Path("data/processed") / video_param
-        if target_dir.exists():
-            st.session_state.results_files = load_results_from_dir(target_dir)
+        folder = Path("data/processed") / video_param
+        if folder.exists():
+            st.session_state.results_files = load_results_from_dir(folder)
             st.session_state.page = "analyze"
             st.session_state.current_video_name = video_param
         else:
@@ -74,13 +75,87 @@ if "uploaded_video" not in st.session_state:
     st.session_state.uploaded_video = None
 
 
-# ============================================================
-# SIDEBAR NAVIGATION
-# ============================================================
+# ----------------------------------------------------------
+# UNIVERSAL SIMPLE CSS (minimal & clean)
+# ----------------------------------------------------------
+st.markdown("""
+<style>
+    body { background-color: #ECECFF !important; }
+
+    .vera-card {
+        background: white;
+        #padding: 22px;
+        border-radius: 14px;
+        #box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+        margin-bottom: 18px;
+    }
+
+    .vera-section-title {
+        font-size: 26px;
+        font-weight: 700;
+        color: #2A2B7A;
+        margin-bottom: 14px;
+        margin-top: 6px;
+    }
+
+    .vera-subtitle {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2A2B7A;
+    }
+
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+
+    .metric-title-text {
+        font-size: 18px;
+        font-weight: 600;
+        color: #2A2B7A;
+    }
+
+    .metric-score-pill {
+        background: #E6DEFF;
+        padding: 6px 14px;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1A2080;
+    }
+
+    /* Global Score Cards */
+    .score-grid {
+        display: flex;
+        gap: 14px;
+    }
+    .score-item {
+        flex: 1;
+        text-align: center;
+        background: #ECECFF;
+        border-radius: 14px;
+        padding: 20px;
+    }
+    .score-value {
+        font-size: 34px;
+        font-weight: 800;
+        color: #1A2080;
+        margin-top: -4px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+
+
+# ----------------------------------------------------------
+# SIDEBAR
+# ----------------------------------------------------------
 with st.sidebar:
     st.title("VERA Analyzer")
 
-    if st.button("🏠 New Analysis", use_container_width=True):
+    if st.button("🏡 New Analysis", use_container_width=True):
         st.session_state.page = "landing"
         st.session_state.uploaded_video = None
         st.session_state.results_files = None
@@ -90,616 +165,213 @@ with st.sidebar:
     st.markdown("---")
     st.subheader("📜 History")
 
-    # List processed videos
     processed_dir = Path("data/processed")
+    videos = []
     if processed_dir.exists():
-        # Find directories that contain results
-        videos = []
         for d in processed_dir.iterdir():
             if d.is_dir() and (d / "results_global_enriched.json").exists():
                 videos.append(d.name)
 
-        videos.sort(reverse=True) # Show newest first (if named by timestamp, otherwise alphabetical)
-
-        if videos:
-            def load_selected_video_from_sidebar():
-                selected = st.session_state.history_selector
-                if selected:
-                    target_dir = processed_dir / selected
-                    st.session_state.results_files = load_results_from_dir(target_dir)
-                    st.session_state.page = "analyze"
-                    st.session_state.current_video_name = selected
-                    st.query_params["video"] = selected
-
-            # Determine index of current video to keep radio in sync
-            current_video = st.session_state.get("current_video_name")
-            try:
-                default_index = videos.index(current_video)
-            except (ValueError, TypeError):
-                default_index = None
-
-            st.radio(
-                "Select a past analysis:",
-                options=videos,
-                index=default_index,
-                key="history_selector",
-                on_change=load_selected_video_from_sidebar
-            )
-        else:
-            st.info("No history found yet.")
-
-
-# ============================================================
-# HELPER FUNCTIONS
-# ============================================================
-
-def get_landing_css():
-    return """
-        <style>
-            .stApp { background-color: #E7E7FF !important; }
-
-            .landing-container {
-                text-align: center;
-                padding-top: 80px;
-            }
-
-            .tagline {
-                font-size: 22px;
-                color: #2B3A8B;
-                margin-top: 10px;
-                margin-bottom: 30px;
-                font-weight: 600;
-            }
-
-            .upload-card {
-                background: white;
-                padding: 30px;
-                border-radius: 18px;
-                width: 480px;
-                margin-left: auto;
-                margin-right: auto;
-                box-shadow: 0px 4px 18px rgba(0,0,0,0.12);
-            }
-
-            .start-button-container {
-                margin-top: 25px;
-                width: 480px;
-                margin-left: auto;
-                margin-right: auto;
-            }
-
-            /* Target the bordered container to look like a card */
-            div[data-testid="stVerticalBlockBorderWrapper"] {
-                background-color: white;
-                border-radius: 18px;
-                padding: 20px;
-                box-shadow: 0px 4px 18px rgba(0,0,0,0.12);
-                border: none; /* Remove default gray border */
-            }
-        </style>
-    """
-
-def get_analysis_css():
-    return """
-        <style>
-            :root {
-                /* tweak this to push panels further down if needed */
-                --top-row-offset: 56px;
-            }
-
-            /* page background */
-            .stApp { background-color: #E7E7FF !important; }
-
-            /*
-             * Make the main block-container use the purple background so the "top area"
-             * appears inside the purple zone.
-             */
-            .block-container {
-                background-color: #E7E7FF !important;
-                padding-top: 12px !important;
-                padding-left: 36px !important;
-                padding-right: 36px !important;
-                padding-bottom: 32px !important;
-            }
-
-            /*
-             * Top-row wrapper: move it down more so its child panels are fully within the purple.
-             * You can increase --top-row-offset if you still want it lower.
-             */
-            .top-row {
-                margin-top: var(--top-row-offset) !important;
-                display: block;
-                width: 100%;
-            }
-
-            /* Make any bordered containers inside the top-row visually transparent
-               so the purple background shows through while preserving the border and shadow. */
-            .top-row div[data-testid="stVerticalBlockBorderWrapper"] {
-                background-color: transparent !important;
-                box-shadow: none !important;
-                border: none !important;
-                padding: 0 !important;
-            }
-
-            /* Keep inner card styling for the score blocks (they will be white cards on top of purple) */
-            .top-inner-card {
-                background: rgba(255,255,255,0.98);
-                border-radius: 14px;
-                padding: 16px;
-                box-shadow: 0px 2px 10px rgba(0,0,0,0.06);
-            }
-
-            /* Score card styling (unchanged look) */
-            .score-card {
-                background: #F4F4FF;
-                border-radius: 16px;
-                padding: 18px;
-                text-align: center;
-                box-shadow: 0px 2px 10px rgba(0,0,0,0.08);
-                margin-bottom: 16px;
-            }
-            .score-title { font-size: 18px; font-weight: 600; color: #2B3A8B; }
-            .score-value { font-size: 32px; font-weight: 700; color: #1A237E; margin-top: -5px; }
-
-            .section-title { font-size: 22px; font-weight: 700; color: #2B3A8B; margin-bottom: 10px; }
-
-            /* Don't accidentally style other containers below the top area */
-            div[data-testid="stVerticalBlockBorderWrapper"] ~ div[data-testid="stVerticalBlockBorderWrapper"] {
-                /* nothing */
-            }
-        </style>
-    """
-
-def render_metric_card(name, metric):
-    label = name.replace("_", " ").title()
-    score = metric.get("score") or metric.get("communication_score") or metric.get("value")
-    coaching = metric.get("coaching") or metric.get("communication_coaching")
-    interpretation = metric.get("interpretation") or metric.get("communication_interpretation")
-
-    st.markdown(
-        """
-        <style>
-            .metric-card {
-                background: #FFFFFF;
-                border-radius: 12px;
-                padding: 16px 22px;
-                margin-bottom: 18px;
-                box-shadow: 0px 2px 10px rgba(0,0,0,0.05);
-            }
-            .metric-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 6px;
-            }
-            .metric-title {
-                font-size: 20px;
-                font-weight: 600;
-                color: #2B3A8B;
-            }
-            .metric-score {
-                font-size: 32px;
-                font-weight: 800;
-                color: #1A237E;
-                min-width: 50px;
-                text-align: right;
-            }
-            .metric-bottom {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-top: 4px;
-            }
-            .metric-tip {
-                font-size: 15px;
-                color: #444;
-                max-width: 70%;
-            }
-            .metric-details-btn {
-                font-size: 14px;
-                color: #2B3A8B;
-                cursor: pointer;
-                text-decoration: underline;
-            }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Main card container
-    st.markdown("<div class='metric-card'>", unsafe_allow_html=True)
-
-    # Top row: Title left, Score right
-    st.markdown(
-        f"""
-        <div class='metric-header'>
-            <div class='metric-title'>{label}</div>
-            <div class='metric-score'>{int(score) if score else "N/A"}</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Bottom row: Tip left, expander button right
-    st.markdown("<div class='metric-bottom'>", unsafe_allow_html=True)
-
-    if coaching:
-        st.markdown(f"<div class='metric-tip'><b>Coaching: </b> {coaching}</div>", unsafe_allow_html=True)
-    else:
-        st.markdown(f"<div class='metric-tip'>No coaching available.</div>", unsafe_allow_html=True)
-
-    # Right side: details button
-    details_expander = st.expander("Info")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # Expander content
-    with details_expander:
-        if interpretation:
-            st.write(f"**Interpretation:** {interpretation}")
-
-        st.write(f"**What:** {metric.get('what', 'N/A')}")
-        st.write(f"**How:** {metric.get('how', 'N/A')}")
-        st.write(f"**Why:** {metric.get('why', 'N/A')}")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-def render_metric_panel(metric_name: str, metric_data: dict):
-    """Renders a metric with score, interpretation, coaching, what/how/why, semantics."""
-    nice_name = metric_name.replace("_", " ").title()
-
-    st.markdown("---")
-    st.markdown(f"### 🧩 **{nice_name}**")
-
-    # Extract scores
-    main_score = metric_data.get("score")
-    comm_score = metric_data.get("communication_score")
-    cons_score = metric_data.get("consistency_score")
-
-    cols = st.columns(2)
-
-    with cols[0]:
-        if main_score is not None:
-            st.metric("Score", f"{float(main_score):.2f}")
-        elif comm_score is not None:
-            st.metric("Communication Score", f"{float(comm_score):.2f}")
-
-    with cols[1]:
-        if comm_score is not None and main_score is not None:
-            st.metric("Communication Score", f"{float(comm_score):.2f}")
-        elif cons_score is not None:
-            st.metric("Consistency Score", f"{float(cons_score):.2f}")
-
-    interpretation = (
-        metric_data.get("interpretation")
-        or metric_data.get("communication_interpretation")
-    )
-    if interpretation:
-        st.info(f"**Interpretation:** {interpretation}")
-
-    coaching = (
-        metric_data.get("coaching")
-        or metric_data.get("communication_coaching")
-    )
-    if coaching:
-        st.warning(f"**Coaching:** {coaching}")
-
-    has_consistency_text = (
-        metric_data.get("consistency_interpretation")
-        or metric_data.get("consistency_coaching")
-    )
-
-    if has_consistency_text:
-        with st.expander("📏 Consistency details"):
-            if metric_data.get("consistency_interpretation"):
-                st.write(f"**Interpretation:** {metric_data['consistency_interpretation']}")
-            if metric_data.get("consistency_coaching"):
-                st.write(f"**Coaching:** {metric_data['consistency_coaching']}")
-
-    with st.expander("ℹ️ What / How / Why"):
-        st.write(f"**What:** {metric_data.get('what', 'N/A')}")
-        st.write(f"**How:** {metric_data.get('how', 'N/A')}")
-        st.write(f"**Why:** {metric_data.get('why', 'N/A')}")
-
-    if "score_semantics" in metric_data:
-        with st.expander("📘 Score Meaning"):
-            st.json(metric_data["score_semantics"])
-
-
-# ============================================================
-# VIDEO PROCESSING
-# ============================================================
-def process_video(video_path):
-
-    # Create a placeholder for the progress bar
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-
-    with st.status("🔄 analyzing your video...", expanded=True) as status:
-
-        iterator = run_pipelines_iterator(video_path)
-        output_dir = None
-        results = {}
-
-        completed_modules = 0
-        total_modules = 3 # Audio, Body, Face
-
-        for event_type, *args in iterator:
-            if event_type == "start":
-                output_dir = args[0]
-                st.write("📂 Output directory created.")
-                status_text.text("Preparing workspace...")
-
-            elif event_type == "progress":
-                module, res = args
-                completed_modules += 1
-
-                # Update progress bar
-                progress = completed_modules / total_modules
-                progress_bar.progress(progress)
-
-                # Fun descriptive text per module
-                if module == "audio":
-                    st.write(f"✅ **Audio** analysis complete.")
-                    status_text.text("Listening to vocal tone & pacing... Done! 🎤")
-                elif module == "body":
-                    st.write(f"✅ **Body** analysis complete.")
-                    status_text.text("Analyzing posture & gestures... Done! 💃")
-                elif module == "face":
-                    st.write(f"✅ **Face** analysis complete.")
-                    status_text.text("Reading facial expressions... Done! 🙂")
-                else:
-                    st.write(f"✅ **{module.capitalize()}** analysis complete.")
-
-
-            elif event_type == "error":
-                module, err = args
-                completed_modules += 1
-                st.error(f"❌ **{module.capitalize()}** failed: {err}")
-
-            elif event_type == "final":
-                output_dir, results = args
-
-        progress_bar.progress(100)
-        status_text.text("✨ Analysis complete! Preparing results...")
-        status.update(label="🎉 All pipelines complete!", state="complete")
-
-    outputs = {}
-
-    enriched = Path(output_dir) / "results_global_enriched.json"
-    if enriched.exists():
-        outputs["results_global_enriched.json"] = enriched.read_text()
-
-    expected_debug_files = {
-        "audio": "debug_audio.mp3",
-        "body": "debug_pose.mp4",
-        "face": "debug_face.mp4"
-    }
-
-    for module in ["audio", "body", "face"]:
-        csv_path = Path(output_dir) / f"metrics_{module}.csv"
-        if csv_path.exists():
-            outputs[f"metrics_{module}.csv"] = csv_path.read_text()
-
-        debug_filename = expected_debug_files.get(module)
-        debug_path = Path(output_dir) / debug_filename
-        if debug_path.exists():
-            outputs[debug_filename] = debug_path.read_bytes()
-
-    return outputs
-
-
-
-
-# ============================================================
-# LANDING PAGE
-# ============================================================
-def landing_page():
-
-    st.markdown(get_landing_css(), unsafe_allow_html=True)
-
-    # --------------------------
-    # HERO SECTION
-    # --------------------------
-
-    # Helper to encode image
-    def get_base64_image(image_path):
-        with open(image_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode()
-
-    # Logo (Centered via HTML/Flexbox)
-    logo_path = Path(__file__).parent / "logoVERA.png"
-    if logo_path.exists():
-        img_base64 = get_base64_image(logo_path)
-        st.markdown(
-            f"""
-            <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-                <img src="data:image/png;base64,{img_base64}" width="200">
-            </div>
-            """,
-            unsafe_allow_html=True
+    videos.sort(reverse=True)
+
+    if videos:
+        def on_select():
+            sel = st.session_state.history_selector
+            folder = processed_dir / sel
+            st.session_state.results_files = load_results_from_dir(folder)
+            st.session_state.current_video_name = sel
+            st.session_state.page = "analyze"
+            st.query_params["video"] = sel
+
+        current = st.session_state.get("current_video_name")
+        default_idx = videos.index(current) if current in videos else None
+
+        st.radio(
+            "Select a past analysis:",
+            options=videos,
+            index=default_idx,
+            key="history_selector",
+            on_change=on_select,
         )
+    else:
+        st.info("No history found.")
 
-    # 2. Tagline (Centered via CSS class)
-    st.markdown("""
-        <div style="text-align: center;">
-            <p class="tagline">
-                <b>VERA (Vocal, Expressive & Relational Analyzer)</b><br>
-                evaluates how you communicate during pitches, interviews, or presentations.
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
 
-    # --------------------------
-    # UPLOAD CARD
-    # --------------------------
-    # --------------------------
-    # UPLOAD CARD
-    # --------------------------
-    # Use columns to center the card (width approx 50%)
-    c1, c2, c3 = st.columns([1, 2, 1])
 
-    with c2:
-        with st.container(border=True):
-            uploaded = st.file_uploader(
-                "Upload your video:",
-                type=["mp4", "mov", "avi", "mkv"]
-            )
+# ----------------------------------------------------------
+# VIDEO PROCESSING
+# ----------------------------------------------------------
+def process_video(video_path):
+    progress = st.progress(0)
+    status = st.status("Analyzing...", expanded=True)
 
-        if uploaded:
-            st.session_state.uploaded_video = uploaded
-            st.success("Video uploaded successfully!")
+    iterator = run_pipelines_iterator(video_path)
+    completed = 0
+    total = 3
 
-    # --------------------------
-    # START BUTTON (NO EMPTY WHITE BAR)
-    # --------------------------
-    st.markdown("<div class='start-button-container'>", unsafe_allow_html=True)
+    for event_type, *args in iterator:
+        if event_type == "progress":
+            module, _ = args
+            completed += 1
+            progress.progress(completed / total)
+            st.write(f"✔ {module.capitalize()} completed.")
+        elif event_type == "final":
+            outdir, results = args
 
-    col_left, col_center, col_right = st.columns([1, 2, 1])
+    progress.progress(1.0)
+    status.update(label="Complete!", state="complete")
 
-    with col_center:
+
+    return load_results_from_dir(outdir)
+
+
+
+# ----------------------------------------------------------
+# LANDING PAGE
+# ----------------------------------------------------------
+def landing_page():
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+    st.markdown("<h1 style='text-align:center;'>🎥 VERA Analyzer</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;font-size:18px;color:#303082;'>Analyze your communication performance in pitches, interviews, or presentations.</p>", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        with st.container():
+            with st.container(border=True):
+                uploaded = st.file_uploader("Upload your video:", type=["mp4", "mov", "avi"])
+                if uploaded:
+                    st.session_state.uploaded_video = uploaded
+                    st.success("Uploaded!")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    colA, colB, colC = st.columns([1, 2, 1])
+    with colB:
         if st.button("🚀 Start Analyzer", use_container_width=True):
-
             if st.session_state.uploaded_video is None:
                 st.error("Please upload a video first.")
-            else:
-                uploaded_video = st.session_state.uploaded_video
+                return
 
-                # -------------------------------
-                # USE ORIGINAL FILENAME
-                # -------------------------------
-                original_name = Path(uploaded_video.name).stem   # e.g., "my_pitch_video"
-                suffix = Path(uploaded_video.name).suffix or ".mp4"
+            file = st.session_state.uploaded_video
+            temp_path = f"/tmp/{Path(file.name).name}"
+            open(temp_path, "wb").write(file.read())
 
-                # Save temporarily but with the REAL NAME (not tmpxxxxxx)
-                temp_path = f"/tmp/{original_name}{suffix}"
-                with open(temp_path, "wb") as f:
-                    f.write(uploaded_video.read())
+            st.session_state.results_files = process_video(temp_path)
+            st.session_state.page = "analyze"
+            st.session_state.current_video_name = Path(file.name).stem
+            st.query_params["video"] = Path(file.name).stem
+            st.rerun()
 
-                # Run pipeline
-                st.session_state.results_files = process_video(temp_path)
 
-                # Navigate to analysis page
-                st.session_state.page = "analyze"
 
-                # Now the HISTORY entry uses the original filename
-                video_name = original_name
-                st.query_params["video"] = video_name
-                st.session_state.current_video_name = video_name
-
-                st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# ============================================================
+# ----------------------------------------------------------
 # ANALYZER PAGE
-# ============================================================
+# ----------------------------------------------------------
 def analysis_page():
-    """
-    Updated analysis_page: forces the top area to be purple, nudges the top row down,
-    and ensures the video preview and global scores sit fully inside the purple zone.
-    """
-
-    # Stronger CSS: make block container purple, push the top row down, and make the top
-    # bordered containers appear transparent so the purple shows through.
-    # Stronger CSS: make block container purple, push the top row down, and make the top
-    # bordered containers appear transparent so the purple shows through.
-    st.markdown(get_analysis_css(), unsafe_allow_html=True)
-
-    uploaded_video = st.session_state.uploaded_video
-    results_files = st.session_state.get("results_files")
-
-    if results_files is None:
-        st.error("No analysis results found. Please upload and analyze a video first.")
+    results = st.session_state.results_files
+    if not results:
+        st.error("No results found.")
         return
 
-    enriched_data = json.loads(results_files["results_global_enriched.json"])
+    enriched = json.loads(results["results_global_enriched.json"])
 
-    # -----------------------------
-    # TOP ROW: wrap everything in a div.top-row so CSS can target it
-    # -----------------------------
-    st.markdown("<div class='top-row'>", unsafe_allow_html=True)
+    # -------------------------
+    # VIDEO + GLOBAL SCORES ROW
+    # -------------------------
+    st.markdown("<div class='vera-section-title'>Analysis Overview</div>", unsafe_allow_html=True)
 
-    # Create layout: left video, right global scores
-    col_left, col_right = st.columns([1, 1])
+    col_video, col_scores = st.columns([2, 1.3])
 
-    # VIDEO: put the video inside a small inner card so purple shows around it
-    with col_left:
-        # we use a tiny HTML wrapper for the inner visual card to keep it white while outer remains purple
-        st.markdown("<div class='top-inner-card'>", unsafe_allow_html=True)
-        st.markdown("## 🎥 Video Preview")
-        st.video(uploaded_video)
+    with col_video:
+        st.markdown("<div class='vera-card'>", unsafe_allow_html=True)
+        st.subheader("🎥 Video Preview")
+        st.video(st.session_state.uploaded_video)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # GLOBAL SCORES: similarly use inner card so their white background sits on top of purple
-    with col_right:
-        st.markdown("<div class='top-inner-card'>", unsafe_allow_html=True)
-        st.markdown("<div class='section-title'>⭐ Global Scores</div>", unsafe_allow_html=True)
+    with col_scores:
+        st.markdown("<div class='vera-card'>", unsafe_allow_html=True)
+        st.subheader("⭐ Global Scores")
 
-        def get_global(module):
-            block = enriched_data.get(module, {}).get("global", {})
-            return float(block.get("score", 0))
+        def get_score(m):
+            return int(enriched.get(m, {}).get("global", {}).get("score", 0))
 
-        # Vertical layout (NO columns)
-        st.markdown(
-            f"""
-            <div class="score-card">
-                <div class="score-title">🎤 Audio</div>
-                <div class="score-value">{int(get_global('audio'))}</div>
+        st.markdown("""
+            <div class="score-grid">
+                <div class="score-item">
+                    <div>🎤 Audio</div>
+                    <div class="score-value">""" + str(get_score("audio")) + """</div>
+                </div>
+                <div class="score-item">
+                    <div>🕺 Body</div>
+                    <div class="score-value">""" + str(get_score("body")) + """</div>
+                </div>
+                <div class="score-item">
+                    <div>🙂 Face</div>
+                    <div class="score-value">""" + str(get_score("face")) + """</div>
+                </div>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+        """, unsafe_allow_html=True)
 
-        st.markdown(
-            f"""
-            <div class="score-card">
-                <div class="score-title">🕺 Body</div>
-                <div class="score-value">{int(get_global('body'))}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            f"""
-            <div class="score-card">
-                <div class="score-title">🙂 Face</div>
-                <div class="score-value">{int(get_global('face'))}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        st.markdown("</div>", unsafe_allow_html=True)  # close top-inner-card
-
-    st.markdown("</div>", unsafe_allow_html=True)  # close top-row
-
-    # -----------------------------
-    # DETAILED ANALYSIS SECTION (unchanged)
-    # -----------------------------
-    with st.container(border=True):
-        st.markdown("<div class='section-title'>Detailed Analysis</div>", unsafe_allow_html=True)
-
-        selected = st.segmented_control(
-            "Select Module",
-            options=["Audio", "Body", "Face"],
-            default="Audio"
-        )
-
-        module_key = selected.lower()
-        module_metrics = enriched_data[module_key]["metrics"]
-
-        for name, metric in module_metrics.items():
-            render_metric_card(name, metric)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
-# ============================================================
-# PAGE ROUTING
-# ============================================================
+    # -------------------------
+    # DETAILED METRICS SECTION
+    # -------------------------
+    st.markdown("<div class='vera-section-title'>Detailed Analysis</div>", unsafe_allow_html=True)
+
+    tabs = st.tabs(["🎧 Audio", "🕺 Body", "🙂 Face"])
+    modules = ["audio", "body", "face"]
+
+    for tab, module in zip(tabs, modules):
+        with tab:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("<div class='vera-card'>", unsafe_allow_html=True)
+
+            metrics = enriched[module]["metrics"]
+            for name, metric in metrics.items():
+                title = name.replace("_"," ").title()
+                score = int(metric.get("score", 0))
+
+                st.markdown(f"""
+                <div class="metric-row">
+                    <div class="metric-title-text">{title}</div>
+                    <div class="metric-score-pill">{score}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+
+                coaching = metric.get("coaching")
+                if coaching:
+                    st.markdown(f"""
+                    <div style="
+                        background-color:#E9E4FF;
+                        border-left: 6px solid #6A4CFF;
+                        padding: 14px 16px;
+                        border-radius: 8px;
+                        margin: 10px 0;
+                    ">
+                    <b style="color:#2A2B7A;">Coaching:</b> {coaching}
+                    </div>
+                    """, unsafe_allow_html=True)
+
+
+                with st.expander("More Details"):
+                    st.write(metric)
+
+                st.markdown("---")
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+
+
+# ----------------------------------------------------------
+# ROUTING
+# ----------------------------------------------------------
 if st.session_state.page == "landing":
     landing_page()
-
-elif st.session_state.page == "analyze":
+else:
     analysis_page()
