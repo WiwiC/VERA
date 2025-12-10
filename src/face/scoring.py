@@ -12,6 +12,7 @@ from src.face.config import (
     BASELINE_GAZE_SCALE,
     BASELINE_SMILE_OPTIMAL,
     BASELINE_SMILE_VAR,
+    BASELINE_HEAD_DOWN_THRESHOLD,
     INTERPRETATION_RANGES,
     CHANGE_THRESHOLDS
 )
@@ -21,21 +22,21 @@ from src.utils.temporal import project_windows_to_seconds
 def compute_change_labels(values, metric_id):
     """
     Compute window-to-window deltas and labels for temporal stability analysis.
-    
+
     Args:
         values: Series or array of raw metric values per window
         metric_id: Metric name to look up thresholds
-        
+
     Returns:
         tuple: (deltas array, labels list)
     """
     values = np.asarray(values, dtype=float)
     if len(values) < 2:
         return np.array([]), []
-    
+
     deltas = np.abs(np.diff(values))
     thresholds = CHANGE_THRESHOLDS.get(metric_id, {"stable": 0.1, "shifting": 0.3})
-    
+
     labels = []
     for d in deltas:
         if d <= thresholds["stable"]:
@@ -44,7 +45,7 @@ def compute_change_labels(values, metric_id):
             labels.append("shifting")
         else:
             labels.append("erratic")
-    
+
     return deltas, labels
 
 def sliding_windows(series, window=5):
@@ -99,7 +100,7 @@ def compute_scores(raw_df):
     Compute aggregated scores from raw frame data.
 
     Args:
-        raw_df (pd.DataFrame): DataFrame with 'head_speed', 'gaze_dg', 'smile', 'second'.
+        raw_df (pd.DataFrame): DataFrame with 'head_speed', 'gaze_dg', 'head_tilt', 'smile', 'second'.
 
     Returns:
         tuple: (scores_dict, window_df, timeline_1s)
@@ -113,11 +114,17 @@ def compute_scores(raw_df):
     jitter_gaze_1s = raw_df.groupby("second")["gaze_dg"].var().fillna(0)
     smile_1s       = raw_df.groupby("second")["smile"].mean().fillna(0)
 
+    # Head Down Ratio: % of frames per second where head is tilted down
+    head_down_1s = raw_df.groupby("second")["head_tilt"].apply(
+        lambda x: (x > BASELINE_HEAD_DOWN_THRESHOLD).mean()
+    ).fillna(0)
+
     # Build 1-second raw timeline DataFrame (before windowing)
     raw_1s_df = pd.DataFrame({
         "second": head_speed_1s.index,
         "head_speed": head_speed_1s.values,
         "gaze_jitter": jitter_gaze_1s.values,
+        "head_down_ratio": head_down_1s.values,
         "smile": smile_1s.values
     })
 
@@ -125,6 +132,7 @@ def compute_scores(raw_df):
     df_head_5s  = sliding_windows(head_speed_1s)
     df_gaze_5s  = sliding_windows(jitter_gaze_1s)
     df_smile_5s = sliding_windows(smile_1s)
+    df_head_down_5s = sliding_windows(head_down_1s)
 
     # If video is too short for windows, handle gracefully
     if df_head_5s.empty:
@@ -152,18 +160,25 @@ def compute_scores(raw_df):
     smile_comm_score = np.exp(-((smile_val - BASELINE_SMILE_OPTIMAL)**2) / BASELINE_SMILE_VAR)
     df_smile_5s["comm_score"] = smile_comm_score
 
+    # --- HEAD DOWN RATIO ---
+    head_down_val = df_head_down_5s["value"]
+    # Inverted logistic: Lower ratio = better score
+    head_down_comm_score = 1 / (1 + np.exp((head_down_val - 0.30) / 0.10))
+    df_head_down_5s["comm_score"] = head_down_comm_score
+
     # --- GLOBAL SCORE ---
     global_comm_score = (
         df_head_5s["comm_score"].mean() +
         df_gaze_5s["comm_score"].mean() +
-        df_smile_5s["comm_score"].mean()
-    ) / 3
+        df_smile_5s["comm_score"].mean() +
+        df_head_down_5s["comm_score"].mean()
+    ) / 4
 
     # --- WINDOW-TO-WINDOW DELTAS (for timeline stability analysis) ---
     head_deltas, head_labels = compute_change_labels(head_val.values, "head_stability")
     gaze_deltas, gaze_labels = compute_change_labels(gaze_val.values, "gaze_stability")
     smile_deltas, smile_labels = compute_change_labels(smile_val.values, "smile_activation")
-    
+
     # Add deltas/labels to window_df (aligned to transition between windows)
     # Delta at index i represents change from window i to window i+1
     df_head_5s["delta"] = np.nan
@@ -171,18 +186,25 @@ def compute_scores(raw_df):
     if len(head_deltas) > 0:
         df_head_5s.iloc[:-1, df_head_5s.columns.get_loc("delta")] = head_deltas
         df_head_5s.iloc[:-1, df_head_5s.columns.get_loc("change_label")] = head_labels
-    
+
     df_gaze_5s["delta"] = np.nan
     df_gaze_5s["change_label"] = ""
     if len(gaze_deltas) > 0:
         df_gaze_5s.iloc[:-1, df_gaze_5s.columns.get_loc("delta")] = gaze_deltas
         df_gaze_5s.iloc[:-1, df_gaze_5s.columns.get_loc("change_label")] = gaze_labels
-    
+
     df_smile_5s["delta"] = np.nan
     df_smile_5s["change_label"] = ""
     if len(smile_deltas) > 0:
         df_smile_5s.iloc[:-1, df_smile_5s.columns.get_loc("delta")] = smile_deltas
         df_smile_5s.iloc[:-1, df_smile_5s.columns.get_loc("change_label")] = smile_labels
+
+    head_down_deltas, head_down_labels = compute_change_labels(head_down_val.values, "head_down_ratio")
+    df_head_down_5s["delta"] = np.nan
+    df_head_down_5s["change_label"] = ""
+    if len(head_down_deltas) > 0:
+        df_head_down_5s.iloc[:-1, df_head_down_5s.columns.get_loc("delta")] = head_down_deltas
+        df_head_down_5s.iloc[:-1, df_head_down_5s.columns.get_loc("change_label")] = head_down_labels
 
     # 4. Prepare Outputs
 
@@ -206,9 +228,15 @@ def compute_scores(raw_df):
         "delta": "smile_activation_delta",
         "change_label": "smile_activation_change_label"
     })
+    df_head_down_5s = df_head_down_5s.rename(columns={
+        "value": "head_down_ratio_val",
+        "comm_score": "head_down_ratio_comm_score",
+        "delta": "head_down_ratio_delta",
+        "change_label": "head_down_ratio_change_label"
+    })
 
     # Merge on start_sec/end_sec
-    window_df = df_head_5s.merge(df_gaze_5s, on=["start_sec", "end_sec"]).merge(df_smile_5s, on=["start_sec", "end_sec"])
+    window_df = df_head_5s.merge(df_gaze_5s, on=["start_sec", "end_sec"]).merge(df_smile_5s, on=["start_sec", "end_sec"]).merge(df_head_down_5s, on=["start_sec", "end_sec"])
 
     # Add Global Score to window_df (constant column)
     window_df["global_comm_score"] = global_comm_score
@@ -219,15 +247,18 @@ def compute_scores(raw_df):
     head_mean_comm = df_head_5s["head_stability_comm_score"].mean()
     gaze_mean_comm = df_gaze_5s["gaze_stability_comm_score"].mean()
     smile_mean_comm = df_smile_5s["smile_activation_comm_score"].mean()
+    head_down_mean_comm = df_head_down_5s["head_down_ratio_comm_score"].mean()
 
     # Mean raw values for interpretation
     head_mean_val = df_head_5s["head_speed_val"].mean()
     gaze_mean_val = df_gaze_5s["gaze_jitter_val"].mean()
     smile_mean_val = df_smile_5s["smile_val"].mean()
+    head_down_mean_val = df_head_down_5s["head_down_ratio_val"].mean()
 
     interp_head_comm, coach_head_comm = get_interpretation("head_stability", head_mean_val)
     interp_gaze_comm, coach_gaze_comm = get_interpretation("gaze_stability", gaze_mean_val)
     interp_smile_comm, coach_smile_comm = get_interpretation("smile_activation", smile_mean_val)
+    interp_head_down_comm, coach_head_down_comm = get_interpretation("head_down_ratio", head_down_mean_val)
 
     scores = {
         "global_comm_score": float(global_comm_score),
@@ -247,11 +278,16 @@ def compute_scores(raw_df):
         "smile_activation_communication_score": float(smile_mean_comm),
         "smile_activation_communication_interpretation": interp_smile_comm,
         "smile_activation_communication_coaching": coach_smile_comm,
+
+        # Head Down Ratio
+        "head_down_ratio_communication_score": float(head_down_mean_comm),
+        "head_down_ratio_communication_interpretation": interp_head_down_comm,
+        "head_down_ratio_communication_coaching": coach_head_down_comm,
     }
 
     # Project Raw Values (_val), Communication Scores (_comm_score), and deltas (numeric only)
     # Note: change_label columns are strings and cannot be projected via mean
-    cols_to_project = [c for c in window_df.columns 
+    cols_to_project = [c for c in window_df.columns
                        if "_val" in c or "_comm_score" in c or "_delta" in c]
     projection_input = window_df[["start_sec", "end_sec"] + cols_to_project]
 

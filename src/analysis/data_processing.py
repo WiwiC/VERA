@@ -89,7 +89,9 @@ def update_master_dataset(video_name, processed_dir):
 
     # Remove existing entry for this video if it exists (to overwrite)
     if "video_name" in master_df.columns:
-        master_df = master_df[master_df["video_name"] != video_name]
+        # Convert to string for consistent comparison (CSV may store as int)
+        master_df["video_name"] = master_df["video_name"].astype(str)
+        master_df = master_df[master_df["video_name"] != str(video_name)]
 
     # Append new row
     row_df = pd.DataFrame([features])
