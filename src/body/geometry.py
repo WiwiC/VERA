@@ -45,38 +45,70 @@ def compute_gesture_magnitude(lm, shoulder_width=None):
 def compute_posture_openness(lm):
     """
     Compute posture openness as the angle formed at the sternum.
-    
+
     Measures the angle: Left Shoulder - Sternum - Right Shoulder
-    
+
     - Larger angle (approaching 180°) = open, confident posture
     - Smaller angle = hunched, closed posture
-    
+
     The sternum is estimated as the midpoint between mid-shoulders and mid-hips.
     This captures whether shoulders are rolled forward (closed) or back (open).
     """
     # Shoulder positions
     L_sh = np.array([lm[11].x, lm[11].y, lm[11].z])
     R_sh = np.array([lm[12].x, lm[12].y, lm[12].z])
-    
+
     # Hip positions
     L_hp = np.array([lm[23].x, lm[23].y, lm[23].z])
     R_hp = np.array([lm[24].x, lm[24].y, lm[24].z])
-    
+
     # Estimate sternum: midpoint between shoulder-center and hip-center
     mid_shoulder = (L_sh + R_sh) / 2
     mid_hip = (L_hp + R_hp) / 2
     sternum = (mid_shoulder + mid_hip) / 2
-    
+
     # Vectors from sternum to each shoulder
     v1 = L_sh - sternum
     v2 = R_sh - sternum
-    
+
     # Compute angle between these vectors
     dot = np.dot(v1, v2)
     norm = np.linalg.norm(v1) * np.linalg.norm(v2)
-    
+
     if norm == 0:
         return np.nan
-    
+
     angle = np.arccos(np.clip(dot / norm, -1, 1))
     return np.degrees(angle)
+
+
+def compute_wrist_depth_norm(lm, shoulder_width):
+    """
+    Compute normalized wrist depth relative to torso (z-axis).
+
+    Args:
+        lm: MediaPipe pose landmarks
+        shoulder_width: Shoulder width for normalization
+
+    Returns:
+        float: Normalized depth (in shoulder width units)
+               Negative = wrists in front of torso
+               Positive = wrists behind torso
+               Typical values:
+                 -0.5 = relaxed arms
+                 -1.0 = gesturing forward
+                 -1.5 to -2.0 = defensive posture (hands clasped/crossed)
+    """
+    L_wrist_z = lm[15].z
+    R_wrist_z = lm[16].z
+    torso_z = (lm[11].z + lm[12].z + lm[23].z + lm[24].z) / 4
+
+    if shoulder_width <= 0:
+        return 0.0
+
+    # Normalize depth difference by shoulder width
+    depth_L = (L_wrist_z - torso_z) / shoulder_width
+    depth_R = (R_wrist_z - torso_z) / shoulder_width
+
+    # Return mean depth (more negative = more forward)
+    return (depth_L + depth_R) / 2

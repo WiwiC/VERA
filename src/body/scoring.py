@@ -14,8 +14,8 @@ from src.body.config import (
     BASELINE_GESTURE_JITTER_RANGE,
     BASELINE_BODY_SWAY_OPTIMAL,
     BASELINE_BODY_SWAY_VAR,
-    BASELINE_POSTURE_OPTIMAL,
-    BASELINE_POSTURE_VAR,
+    BASELINE_ARMS_CLOSE_THRESHOLD,
+    BASELINE_WRIST_FORWARD_THRESHOLD,
     INTERPRETATION_RANGES,
     CHANGE_THRESHOLDS
 )
@@ -25,21 +25,21 @@ from src.utils.temporal import project_windows_to_seconds
 def compute_change_labels(values, metric_id):
     """
     Compute window-to-window deltas and labels for temporal stability analysis.
-    
+
     Args:
         values: Series or array of raw metric values per window
         metric_id: Metric name to look up thresholds
-        
+
     Returns:
         tuple: (deltas array, labels list)
     """
     values = np.asarray(values, dtype=float)
     if len(values) < 2:
         return np.array([]), []
-    
+
     deltas = np.abs(np.diff(values))
     thresholds = CHANGE_THRESHOLDS.get(metric_id, {"stable": 0.1, "shifting": 0.3})
-    
+
     labels = []
     for d in deltas:
         if d <= thresholds["stable"]:
@@ -48,7 +48,7 @@ def compute_change_labels(values, metric_id):
             labels.append("shifting")
         else:
             labels.append("erratic")
-    
+
     return deltas, labels
 
 def sliding_windows(series, window=5):
@@ -113,8 +113,10 @@ def compute_scores(raw_df):
     gesture_stability_1s = raw_df.groupby("second")["gesture_activity"].var().fillna(0)
     body_sway_1s      = raw_df.groupby("second")["body_sway"].mean().fillna(0)
     posture_open_1s   = raw_df.groupby("second")["posture_openness"].mean().fillna(0)
+    # wrist_depth_norm is aggregated in scoring section (internal use only)
 
     # Build 1-second raw timeline DataFrame (before windowing)
+    # NOTE: wrist_depth_norm is NOT included - it's internal for posture scoring only
     raw_1s_df = pd.DataFrame({
         "second": gesture_mag_1s.index,
         "gesture_magnitude": gesture_mag_1s.values,
@@ -156,10 +158,42 @@ def compute_scores(raw_df):
     sway_comm_score = np.exp(-((sway_val - BASELINE_BODY_SWAY_OPTIMAL)**2) / BASELINE_BODY_SWAY_VAR)
     df_sway_5s["comm_score"] = sway_comm_score
 
-    # --- POSTURE OPENNESS ---
-    open_val = df_open_5s["value"]
-    open_comm_score = np.exp(-((open_val - BASELINE_POSTURE_OPTIMAL)**2) / BASELINE_POSTURE_VAR)
-    df_open_5s["comm_score"] = open_comm_score
+    # --- POSTURE OPENNESS (arms-based, 2-component) ---
+    # No longer uses shoulder angle — proven to not discriminate well
+    # Classification:
+    #   - "closed" = arms_close AND wrists_forward (defensive barrier)
+    #   - "neutral" = arms_close only (hands at rest)
+    #   - "open" = arms expanded (gesturing)
+
+    # Component A: Arm closeness (from gesture magnitude)
+    arms_close = mag_val < BASELINE_ARMS_CLOSE_THRESHOLD  # < 1.0 SW
+
+    # Component B: Wrist depth (raw normalized depth, not binary)
+    wrist_depth_1s = raw_df.groupby("second")["wrist_depth_norm"].mean().fillna(0)
+    df_wrist_depth_5s = sliding_windows(wrist_depth_1s)
+    wrist_depth_val = df_wrist_depth_5s["value"]
+    wrists_forward = wrist_depth_val < BASELINE_WRIST_FORWARD_THRESHOLD  # < -1.5 SW
+
+    # Posture classification per window
+    defensive_mask = arms_close & wrists_forward  # "closed"
+    neutral_mask = arms_close & (~wrists_forward)  # "neutral"
+    open_mask = ~arms_close  # "open"
+
+    # Calculate ratios (for global interpretation)
+    defensive_ratio = defensive_mask.sum() / len(defensive_mask) if len(defensive_mask) > 0 else 0
+    neutral_ratio = neutral_mask.sum() / len(neutral_mask) if len(neutral_mask) > 0 else 0
+    open_ratio = open_mask.sum() / len(open_mask) if len(open_mask) > 0 else 0
+
+    # Arms-based posture score:
+    # - closed = 0.0 to 0.3
+    # - neutral = 0.5
+    # - open = 0.7 to 1.0
+    posture_comm_score = pd.Series(index=defensive_mask.index, dtype=float)
+    posture_comm_score[open_mask] = 1.0
+    posture_comm_score[neutral_mask] = 0.5
+    posture_comm_score[defensive_mask] = 0.2
+    df_open_5s["comm_score"] = posture_comm_score
+    df_open_5s["value"] = mag_val  # Override: show gesture_mag as the "posture" value for timeline
 
     # --- GLOBAL SCORE ---
     global_comm_score = (
@@ -175,8 +209,9 @@ def compute_scores(raw_df):
     act_deltas, act_labels = compute_change_labels(act_val.values, "gesture_activity")
     jit_deltas, jit_labels = compute_change_labels(jit_val.values, "gesture_stability")
     sway_deltas, sway_labels = compute_change_labels(sway_val.values, "body_sway")
-    open_deltas, open_labels = compute_change_labels(open_val.values, "posture_openness")
-    
+    # Posture uses gesture_magnitude now (arms-based)
+    open_deltas, open_labels = compute_change_labels(mag_val.values, "posture_openness")
+
     # Add deltas/labels to window dataframes
     for df, deltas, labels, prefix in [
         (df_mag_5s, mag_deltas, mag_labels, ""),
@@ -252,7 +287,17 @@ def compute_scores(raw_df):
     interp_act_comm, coach_act_comm = get_interpretation("gesture_activity", act_mean_val)
     interp_jit_comm, coach_jit_comm = get_interpretation("gesture_stability", jit_mean_val)
     interp_sway_comm, coach_sway_comm = get_interpretation("body_sway", sway_mean_val)
-    interp_open_comm, coach_open_comm = get_interpretation("posture_openness", open_mean_val)
+
+    # Arms-based posture interpretation (replaces angle-based buckets)
+    if defensive_ratio > 0.5:
+        interp_open_comm = "Closed, defensive posture (Poor). Arms close to body with hands in front."
+        coach_open_comm = "Open up your arms. You look guarded and defensive."
+    elif neutral_ratio > 0.5:
+        interp_open_comm = "Neutral posture (Ok). Arms at rest but not gesturing."
+        coach_open_comm = "Try using more hand gestures to engage your audience."
+    else:
+        interp_open_comm = "Open, expressive posture (Excellent). Good use of gestures."
+        coach_open_comm = "Great body language! You look confident and approachable."
 
     scores = {
         "global_comm_score": float(global_comm_score),
@@ -287,7 +332,7 @@ def compute_scores(raw_df):
     # 6. Generate Timeline (1Hz)
     # Project Raw Values (_val), Communication Scores (_comm_score), and deltas (numeric only)
     # Note: change_label columns are strings and cannot be projected via mean
-    cols_to_project = [c for c in window_df.columns 
+    cols_to_project = [c for c in window_df.columns
                        if "_val" in c or "_comm_score" in c or "_delta" in c]
     projection_input = window_df[["start_sec", "end_sec"] + cols_to_project]
 

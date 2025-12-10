@@ -13,7 +13,8 @@ from src.body.geometry import (
     compute_torso_center,
     compute_gesture_magnitude,
     compute_posture_openness,
-    compute_shoulder_width
+    compute_shoulder_width,
+    compute_wrist_depth_norm
 )
 
 def process_video(video_path):
@@ -69,6 +70,7 @@ def process_video(video_path):
         gesture_activity = np.nan
         body_sway = np.nan
         posture_openness = np.nan
+        wrist_depth_norm = np.nan
 
         if results.pose_landmarks:
             lm = results.pose_landmarks.landmark
@@ -113,12 +115,16 @@ def process_video(video_path):
             # ----- METRIC 4 : Posture Openness -----
             posture_openness = compute_posture_openness(lm)
 
+            # ----- METRIC 5 : Wrist Depth (for posture composite) -----
+            wrist_depth_norm = compute_wrist_depth_norm(lm, shoulder_width)
+
         features.append({
             "timestamp": timestamp,
             "gesture_magnitude": gesture_magnitude,
             "gesture_activity": gesture_activity,
             "body_sway": body_sway,
-            "posture_openness": posture_openness
+            "posture_openness": posture_openness,
+            "wrist_depth_norm": wrist_depth_norm
         })
 
     cap.release()

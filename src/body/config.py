@@ -55,13 +55,23 @@ BASELINE_GESTURE_JITTER_RANGE   = 8.0    # (was 4.5) - widened scale
 # Previous optimal=0.45 was too low (favored unnaturally still speakers)
 BASELINE_BODY_SWAY_OPTIMAL = 0.75   # SW/sec (was 0.45)
 BASELINE_BODY_SWAY_VAR     = 0.06   # (0.24)² - based on IQR/1.35
+# Posture Openness (arms-based, NOT shoulder angle)
+# REFACTORED: Shoulder angle doesn't discriminate well between open/closed postures.
+# Now based purely on arm/hand position which matches body language research.
 
-# Posture Openness (degrees - NOT fps-dependent)
-# CRITICAL FIX: Previous optimal=48° was inverted!
-# "closed" postures (~47°) scored high, "good" postures (~54°) scored low
-# RECALIBRATED: "good"/"optimal" samples = 50-73°, mean=57°
-BASELINE_POSTURE_OPTIMAL = 54.0    # degrees (was 48)
-BASELINE_POSTURE_VAR     = 64.0    # (8)² - tighter than before, asymmetric penalty
+# --- Posture Openness Scoring (2-component, arms-based) ---
+# Posture classification:
+#   - "closed" = arms_close AND wrists_forward (defensive barrier)
+#   - "neutral" = arms_close only (hands at rest)
+#   - "open" = arms expanded (gesturing)
+#
+# Component 1: Arms close to body
+BASELINE_ARMS_CLOSE_THRESHOLD = 1.5  # SW units - gesture_mag < this = "close"
+                                      # Arms crossed: 0.3-0.6, Clasped: 0.7-0.9, Relaxed: 1.2+
+
+# Component 2: Wrists forward (in front of torso)
+BASELINE_WRIST_FORWARD_THRESHOLD = -1.5  # depth_norm < this = "forward"
+                                          # Relaxed: -0.5, Gesturing: -1.0, Defensive: -1.5 to -2.0
 
 
 # =========================================================
@@ -143,14 +153,12 @@ INTERPRETATION_RANGES = {
         {"max": 999, "label": "distracting", "text": "Strong body sway (Poor). Sea-sickness inducing sway.", "coaching": "Stop moving your torso. Imagine a string pulling you up from the crown of your head."}
     ],
     "posture_openness": [
-        # CRITICAL FIX: Previous buckets were inverted!
-        # RECALIBRATED: "good"/"optimal" samples = 50-73°, mean=57°
-        # Higher angle = more open posture = better (within reason)
-        {"max": 46, "label": "closed", "text": "Closed, collapsed posture (Poor). Strong inward rotation.", "coaching": "Roll your shoulders back. You look defensive."},
-        {"max": 50, "label": "constricted", "text": "Slightly constricted posture (Weak). Shoulders rolled forward.", "coaching": "Open your chest. Let your arms hang naturally."},
-        {"max": 58, "label": "optimal", "text": "Optimal posture (Excellent). Confident and approachable.", "coaching": "Perfect posture. You look confident and open."},
-        {"max": 65, "label": "good", "text": "Open posture (Good). Slightly expansive.", "coaching": "Good openness. You look approachable."},
-        {"max": 999, "label": "exaggerated", "text": "Exaggerated openness (Weak). May look unnatural or stiff.", "coaching": "Relax your shoulders slightly. You look overly rigid."}
+        # REFACTORED: Now based on arms position (gesture_magnitude), not shoulder angle
+        # Scoring done in scoring.py based on arms_close + wrists_forward
+        # These buckets are based on gesture_magnitude values (stored in value column)
+        {"max": 0.7, "label": "closed", "text": "Closed, defensive posture (Poor). Arms held close and protective.", "coaching": "Open up your arms. You look guarded and defensive."},
+        {"max": 1.0, "label": "neutral", "text": "Neutral posture (Ok). Arms at rest but not gesturing.", "coaching": "Try using more hand gestures to engage your audience."},
+        {"max": 999, "label": "open", "text": "Open, expressive posture (Excellent). Good use of gestures.", "coaching": "Great body language! You look confident and approachable."}
     ],
     "body_global_score": [
         (0.70, 1.00, "Excellent body language. High presence, energy, and control."),
