@@ -106,8 +106,9 @@ st.markdown("""
 
     .metric-row {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
+        gap: 12px;
         margin-bottom: 6px;
     }
 
@@ -343,6 +344,28 @@ def analysis_page():
                 </div>
                 """, unsafe_allow_html=True)
 
+                # INTERPRETATION PANEL
+                interpretation = (
+                    metric.get("interpretation")
+                        or metric.get("communication_interpretation")
+                )
+
+                if interpretation:
+                    st.markdown(f"""
+                    <div style="
+                        background-color:#F5F2FF;
+                        border-left: 4px solid #A18CFF;
+                        padding: 12px 14px;
+                        border-radius: 6px;
+                        margin: 10px 0 14px 0;
+                        font-size: 15px;
+                        color: #2A2B7A;
+                        line-height: 1.45;
+                    ">
+                    <b>Analysis:</b> {interpretation}
+                    </div>
+                    """, unsafe_allow_html=True)
+
 
                 coaching = metric.get("coaching")
                 if coaching:
@@ -358,15 +381,22 @@ def analysis_page():
                     </div>
                     """, unsafe_allow_html=True)
 
+                with st.expander("Info"):
+                    what = metric.get("what", "N/A")
+                    how = metric.get("how", "N/A")
+                    why = metric.get("why", "N/A")
 
-                with st.expander("More Details"):
-                    st.write(metric)
+                    st.markdown(f"""
+                    <div style="margin-bottom:10px;">
+                        <p><b>What do we measure? </b> {what}</p>
+                        <p><b>How do we measure? </b> {how}</p>
+                        <p><b>Why do we measure this? </b> {why}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 st.markdown("---")
 
             st.markdown("</div>", unsafe_allow_html=True)
-
-
 
 # ----------------------------------------------------------
 # ROUTING
