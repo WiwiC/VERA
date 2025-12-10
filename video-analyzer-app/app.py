@@ -7,6 +7,17 @@ import sys
 import base64
 
 # ----------------------------------------------------------
+# COLOR SCORES
+# ----------------------------------------------------------
+def score_color(score):
+    if score > 70:
+        return "#7DCE82"   # green
+    elif score >= 40:
+        return "#E8E810"   # orange
+    else:
+        return "#F25F5C"   # red
+
+# ----------------------------------------------------------
 # PAGE CONFIG
 # ----------------------------------------------------------
 st.set_page_config(
@@ -340,7 +351,7 @@ def analysis_page():
                 st.markdown(f"""
                 <div class="metric-row">
                     <div class="metric-title-text">{title}</div>
-                    <div class="metric-score-pill">{score}</div>
+                    <div class="metric-score-pill" style="background:{score_color(score)}; color:white;">{score}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
