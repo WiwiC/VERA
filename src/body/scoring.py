@@ -15,7 +15,10 @@ from src.body.config import (
     BASELINE_BODY_SWAY_OPTIMAL,
     BASELINE_BODY_SWAY_VAR,
     BASELINE_ARMS_CLOSE_THRESHOLD,
-    BASELINE_WRIST_FORWARD_THRESHOLD,
+    BASELINE_WRIST_FORWARD_DEPTH,
+    POSTURE_SCORE_OPEN,
+    POSTURE_SCORE_NEUTRAL,
+    POSTURE_SCORE_CLOSED,
     INTERPRETATION_RANGES,
     CHANGE_THRESHOLDS
 )
@@ -113,17 +116,17 @@ def compute_scores(raw_df):
     gesture_stability_1s = raw_df.groupby("second")["gesture_activity"].var().fillna(0)
     body_sway_1s      = raw_df.groupby("second")["body_sway"].mean().fillna(0)
     posture_open_1s   = raw_df.groupby("second")["posture_openness"].mean().fillna(0)
-    # wrist_depth_norm is aggregated in scoring section (internal use only)
+    wrist_depth_1s    = raw_df.groupby("second")["wrist_depth_norm"].mean().fillna(0)
 
     # Build 1-second raw timeline DataFrame (before windowing)
-    # NOTE: wrist_depth_norm is NOT included - it's internal for posture scoring only
     raw_1s_df = pd.DataFrame({
         "second": gesture_mag_1s.index,
         "gesture_magnitude": gesture_mag_1s.values,
         "gesture_activity": gesture_act_1s.values,
         "gesture_stability": gesture_stability_1s.values,
         "body_sway": body_sway_1s.values,
-        "posture_openness": posture_open_1s.values
+        "posture_openness": posture_open_1s.values,
+        "wrist_depth_norm": wrist_depth_1s.values
     })
 
     # 2. Sliding Windows (5s)
@@ -166,34 +169,27 @@ def compute_scores(raw_df):
     #   - "open" = arms expanded (gesturing)
 
     # Component A: Arm closeness (from gesture magnitude)
-    arms_close = mag_val < BASELINE_ARMS_CLOSE_THRESHOLD  # < 1.0 SW
+    arms_close = mag_val < BASELINE_ARMS_CLOSE_THRESHOLD  # < 1.2 SW
 
-    # Component B: Wrist depth (raw normalized depth, not binary)
-    wrist_depth_1s = raw_df.groupby("second")["wrist_depth_norm"].mean().fillna(0)
+    # Component B: Wrist depth (midplane-normalized, NEGATIVE = forward in MediaPipe)
+    # wrist_depth_1s already aggregated above for raw_1s_df
     df_wrist_depth_5s = sliding_windows(wrist_depth_1s)
     wrist_depth_val = df_wrist_depth_5s["value"]
-    wrists_forward = wrist_depth_val < BASELINE_WRIST_FORWARD_THRESHOLD  # < -1.5 SW
+    wrists_forward = wrist_depth_val < BASELINE_WRIST_FORWARD_DEPTH  # < -0.5 = defensive
 
-    # Posture classification per window
-    defensive_mask = arms_close & wrists_forward  # "closed"
-    neutral_mask = arms_close & (~wrists_forward)  # "neutral"
-    open_mask = ~arms_close  # "open"
+    # Posture classification per window (SAFER: ignore wrist depth when arms open)
+    posture_comm_score = pd.Series(index=mag_val.index, dtype=float)
+    for i in range(len(mag_val)):
+        if arms_close.iloc[i]:
+            if wrists_forward.iloc[i]:
+                posture_comm_score.iloc[i] = POSTURE_SCORE_CLOSED   # 0.2
+            else:
+                posture_comm_score.iloc[i] = POSTURE_SCORE_NEUTRAL  # 0.6
+        else:
+            posture_comm_score.iloc[i] = POSTURE_SCORE_OPEN         # 1.0
 
-    # Calculate ratios (for global interpretation)
-    defensive_ratio = defensive_mask.sum() / len(defensive_mask) if len(defensive_mask) > 0 else 0
-    neutral_ratio = neutral_mask.sum() / len(neutral_mask) if len(neutral_mask) > 0 else 0
-    open_ratio = open_mask.sum() / len(open_mask) if len(open_mask) > 0 else 0
-
-    # Arms-based posture score:
-    # - closed = 0.0 to 0.3
-    # - neutral = 0.5
-    # - open = 0.7 to 1.0
-    posture_comm_score = pd.Series(index=defensive_mask.index, dtype=float)
-    posture_comm_score[open_mask] = 1.0
-    posture_comm_score[neutral_mask] = 0.5
-    posture_comm_score[defensive_mask] = 0.2
     df_open_5s["comm_score"] = posture_comm_score
-    df_open_5s["value"] = mag_val  # Override: show gesture_mag as the "posture" value for timeline
+    df_open_5s["value"] = mag_val  # Show gesture_mag as the "posture" value for timeline
 
     # --- GLOBAL SCORE ---
     global_comm_score = (
@@ -288,16 +284,8 @@ def compute_scores(raw_df):
     interp_jit_comm, coach_jit_comm = get_interpretation("gesture_stability", jit_mean_val)
     interp_sway_comm, coach_sway_comm = get_interpretation("body_sway", sway_mean_val)
 
-    # Arms-based posture interpretation (replaces angle-based buckets)
-    if defensive_ratio > 0.5:
-        interp_open_comm = "Closed, defensive posture (Poor). Arms close to body with hands in front."
-        coach_open_comm = "Open up your arms. You look guarded and defensive."
-    elif neutral_ratio > 0.5:
-        interp_open_comm = "Neutral posture (Ok). Arms at rest but not gesturing."
-        coach_open_comm = "Try using more hand gestures to engage your audience."
-    else:
-        interp_open_comm = "Open, expressive posture (Excellent). Good use of gestures."
-        coach_open_comm = "Great body language! You look confident and approachable."
+    # Posture interpretation now uses score-based buckets via get_interpretation
+    interp_open_comm, coach_open_comm = get_interpretation("posture_openness", open_mean_comm)
 
     scores = {
         "global_comm_score": float(global_comm_score),

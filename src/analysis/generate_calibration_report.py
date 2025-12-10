@@ -124,20 +124,42 @@ def load_results(video_id: str) -> dict:
         return json.load(f)
 
 
-def extract_model_label(interpretation_text: str, bucket_labels: list) -> str:
+def get_label_from_score(score: float, metric_id: str, metrics_spec: dict) -> str:
     """
-    Extract the bucket label from the interpretation text.
-    The interpretation text contains patterns like "(Excellent)" or "(Weak)" or label keywords.
+    Given a score (0-1), determine which interpretation bucket it falls into
+    by looking up the ranges in metrics_spec.json.
+
+    Args:
+        score: The model's communication score (0-1)
+        metric_id: The metric ID from metrics_spec.json
+        metrics_spec: The loaded metrics_spec dictionary
+
+    Returns:
+        The bucket label, or None if not found
     """
-    if not interpretation_text:
+    if score is None:
         return None
 
-    interpretation_lower = interpretation_text.lower()
+    # Find the metric in metrics_spec
+    for metric in metrics_spec.get("metrics", []):
+        if metric.get("metric_id") == metric_id:
+            buckets = metric.get("interpretation_buckets", [])
 
-    # Check if any bucket label appears in the interpretation
-    for label in bucket_labels:
-        if label.lower() in interpretation_lower:
-            return label.lower()
+            # Find which bucket the score falls into
+            for bucket in buckets:
+                min_raw = bucket.get("min_raw")
+                max_raw = bucket.get("max_raw", 999)
+
+                # Handle None min_raw (first bucket)
+                if min_raw is None:
+                    min_raw = -999
+
+                if min_raw <= score < max_raw:
+                    return bucket.get("label", "").lower()
+
+            # Edge case: score exactly equals last bucket's max
+            if buckets and score >= buckets[-1].get("min_raw", 0):
+                return buckets[-1].get("label", "").lower()
 
     return None
 
@@ -188,8 +210,8 @@ def generate_report():
             # Get bucket labels for this metric
             buckets = bucket_order.get(spec_metric_id, [])
 
-            # Extract model label from interpretation
-            model_label = extract_model_label(interpretation, buckets)
+            # Extract model label from score using metrics_spec ranges
+            model_label = get_label_from_score(model_score, spec_metric_id, metrics_spec)
 
             # Calculate bucket distance
             distance = get_bucket_distance(human_label, model_label, buckets)

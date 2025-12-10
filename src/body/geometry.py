@@ -82,33 +82,60 @@ def compute_posture_openness(lm):
     return np.degrees(angle)
 
 
-def compute_wrist_depth_norm(lm, shoulder_width):
+def compute_midplane_depth_normalized(lm):
     """
-    Compute normalized wrist depth relative to torso (z-axis).
+    Compute normalized wrist depth relative to torso midplane.
 
-    Args:
-        lm: MediaPipe pose landmarks
-        shoulder_width: Shoulder width for normalization
+    Uses cross-product to find the true forward direction of the torso,
+    making the measurement camera-invariant and posture-invariant.
 
     Returns:
         float: Normalized depth (in shoulder width units)
-               Negative = wrists in front of torso
-               Positive = wrists behind torso
+               Positive = wrists in front of torso (defensive)
+               Negative = wrists behind torso (confident)
                Typical values:
-                 -0.5 = relaxed arms
-                 -1.0 = gesturing forward
-                 -1.5 to -2.0 = defensive posture (hands clasped/crossed)
+                 > +0.5 = defensive posture (hands forward, clasped/crossed)
+                 -0.3 to +0.5 = neutral (hands at sides)
+                 < -0.3 = hands behind back (confident)
     """
-    L_wrist_z = lm[15].z
-    R_wrist_z = lm[16].z
-    torso_z = (lm[11].z + lm[12].z + lm[23].z + lm[24].z) / 4
+    # Landmarks
+    L_sh = np.array([lm[11].x, lm[11].y, lm[11].z])
+    R_sh = np.array([lm[12].x, lm[12].y, lm[12].z])
+    L_hip = np.array([lm[23].x, lm[23].y, lm[23].z])
+    R_hip = np.array([lm[24].x, lm[24].y, lm[24].z])
+    L_wrist = np.array([lm[15].x, lm[15].y, lm[15].z])
+    R_wrist = np.array([lm[16].x, lm[16].y, lm[16].z])
 
-    if shoulder_width <= 0:
-        return 0.0
+    # Shoulder/hip vectors
+    shoulder_line = R_sh - L_sh
+    hip_line = R_hip - L_hip
 
-    # Normalize depth difference by shoulder width
-    depth_L = (L_wrist_z - torso_z) / shoulder_width
-    depth_R = (R_wrist_z - torso_z) / shoulder_width
+    # Shoulder width for normalization
+    shoulder_width = np.linalg.norm(shoulder_line)
+    if shoulder_width < 1e-9:
+        return np.nan
 
-    # Return mean depth (more negative = more forward)
+    # Forward vector (normal to body plane via cross product)
+    forward = np.cross(shoulder_line, hip_line)
+
+    # Z-SIGN ENFORCEMENT: forward must point toward camera (positive Z in MediaPipe)
+    if forward[2] < 0:
+        forward = -forward
+
+    forward_norm = np.linalg.norm(forward)
+
+    # Fallback for edge cases (parallel shoulder/hip lines)
+    if forward_norm < 1e-6:
+        # Use simple z-based depth as fallback
+        torso_z = (L_sh[2] + R_sh[2] + L_hip[2] + R_hip[2]) / 4
+        depth_L = (L_wrist[2] - torso_z) / shoulder_width
+        depth_R = (R_wrist[2] - torso_z) / shoulder_width
+    else:
+        # Midplane projection
+        forward_unit = forward / forward_norm
+        mid = (L_sh + R_sh + L_hip + R_hip) / 4
+        depth_L = np.dot(L_wrist - mid, forward_unit) / shoulder_width
+        depth_R = np.dot(R_wrist - mid, forward_unit) / shoulder_width
+
+    # Return single mean value
     return (depth_L + depth_R) / 2

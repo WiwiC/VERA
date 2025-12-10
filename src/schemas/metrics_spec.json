@@ -569,7 +569,7 @@
       ],
       "score_semantics": {
         "0.2": "Closed, defensive posture (arms close + wrists forward).",
-        "0.5": "Neutral posture (arms at rest).",
+        "0.6": "Neutral posture (arms at rest, hands at sides or behind).",
         "1.0": "Open, expressive posture (gesturing)."
       },
       "scoring_function_type": "discrete_3state",
@@ -577,20 +577,20 @@
       "interpretation_buckets": [
         {
           "min_raw": null,
-          "max_raw": 0.7,
+          "max_raw": 0.3,
           "label": "closed",
-          "user_text": "Closed, defensive posture (Poor). Arms held close and protective.",
+          "user_text": "Closed, defensive posture (Poor). Arms close to body with hands forward.",
           "coaching": "Open up your arms. You look guarded and defensive."
         },
         {
-          "min_raw": 0.7,
-          "max_raw": 1.5,
+          "min_raw": 0.3,
+          "max_raw": 0.7,
           "label": "neutral",
-          "user_text": "Neutral posture (Ok). Arms at rest but not gesturing.",
+          "user_text": "Neutral posture (Ok). Arms at rest, hands at sides or behind.",
           "coaching": "Try using more hand gestures to engage your audience."
         },
         {
-          "min_raw": 1.5,
+          "min_raw": 0.7,
           "max_raw": 999,
           "label": "open",
           "user_text": "Open, expressive posture (Excellent). Good use of gestures.",

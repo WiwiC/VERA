@@ -14,7 +14,7 @@ from src.body.geometry import (
     compute_gesture_magnitude,
     compute_posture_openness,
     compute_shoulder_width,
-    compute_wrist_depth_norm
+    compute_midplane_depth_normalized
 )
 
 def process_video(video_path):
@@ -115,8 +115,8 @@ def process_video(video_path):
             # ----- METRIC 4 : Posture Openness -----
             posture_openness = compute_posture_openness(lm)
 
-            # ----- METRIC 5 : Wrist Depth (for posture composite) -----
-            wrist_depth_norm = compute_wrist_depth_norm(lm, shoulder_width)
+            # ----- METRIC 5 : Wrist Depth (midplane-normalized for posture scoring) -----
+            wrist_depth_norm = compute_midplane_depth_normalized(lm)
 
         features.append({
             "timestamp": timestamp,
