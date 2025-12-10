@@ -165,6 +165,10 @@ st.markdown("""
 # SIDEBAR
 # ----------------------------------------------------------
 with st.sidebar:
+    logo_path = current_dir / "logoVERA.png"
+    if logo_path.exists():
+        st.image(str(logo_path), width=80)
+
     st.title("VERA Analyzer")
 
     if st.button("🏡 New Analysis", use_container_width=True):
@@ -244,7 +248,16 @@ def process_video(video_path):
 def landing_page():
     st.markdown("<br><br>", unsafe_allow_html=True)
 
-    st.markdown("<h1 style='text-align:center;'>🎥 VERA Analyzer</h1>", unsafe_allow_html=True)
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+    # Logo
+    col1, col2, col3 = st.columns([2, 1, 2])
+    with col2:
+        logo_path = current_dir / "logoVERA.png"
+        if logo_path.exists():
+            st.image(str(logo_path), use_container_width=True)
+
+    st.markdown("<h1 style='text-align:center;'>VERA Analyzer</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center;font-size:18px;color:#303082;'>Analyze your communication performance in pitches, interviews, or presentations.</p>", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -293,19 +306,19 @@ def analysis_page():
     # -------------------------
     # VIDEO + GLOBAL SCORES ROW
     # -------------------------
-    st.markdown("<div class='vera-section-title'>Analysis Overview</div>", unsafe_allow_html=True)
+    st.markdown("<div class='vera-section-title'>VERA COACHING</div>", unsafe_allow_html=True)
 
     col_video, col_scores = st.columns([2, 1.3])
 
     with col_video:
         st.markdown("<div class='vera-card'>", unsafe_allow_html=True)
-        st.subheader("🎥 Video Preview")
+        st.subheader("Your Video")
         st.video(st.session_state.uploaded_video)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_scores:
         st.markdown("<div class='vera-card'>", unsafe_allow_html=True)
-        st.subheader("⭐ Global Scores")
+        st.subheader("Global Scores")
 
         def get_score(m):
             return int(enriched.get(m, {}).get("global", {}).get("score", 0))
