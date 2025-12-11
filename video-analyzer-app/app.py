@@ -141,6 +141,7 @@ st.markdown("""
     /* Global Score Cards */
     .score-grid {
         display: flex;
+        flex-direction: column;
         gap: 14px;
     }
     .score-item {
@@ -315,6 +316,7 @@ def landing_page():
 # ANALYZER PAGE
 # ----------------------------------------------------------
 def analysis_page():
+
     results = st.session_state.results_files
     if not results:
         st.error("No results found.")
