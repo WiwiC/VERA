@@ -155,12 +155,13 @@ def get_volume_metrics(y, sr):
 def get_pause_metrics(y, sr):
     """
     Extract Pause Ratio using WebRTCVAD.
+    Only counts pauses longer than PAUSE_MIN_DURATION (from config).
     """
     try:
-        vad = webrtcvad.Vad(1) # Mode 1: Less Aggressive (Better for soft speech)
+        from src.audio.config import PAUSE_MIN_DURATION
+        vad = webrtcvad.Vad(1) # Mode 1: Less Aggressive
 
-        # Resample to 16kHz for VAD if needed (handled in main process)
-        # Frame size must be 10, 20, or 30ms. Let's use 30ms.
+        # Frame size 30ms
         frame_ms = 30
         frame_len = int(sr * frame_ms / 1000)
         num_frames = len(y) // frame_len
@@ -168,22 +169,37 @@ def get_pause_metrics(y, sr):
         # Convert to 16-bit PCM
         pcm = (y * 32767).astype(np.int16).tobytes()
 
-        speech_frames = 0
+        is_speech = []
         for i in range(num_frames):
             start = i * frame_len * 2
             end = start + frame_len * 2
             frame = pcm[start:end]
-
             if len(frame) < frame_len * 2: break
 
-            if vad.is_speech(frame, sr):
-                speech_frames += 1
+            try:
+                is_speech.append(vad.is_speech(frame, sr))
+            except:
+                is_speech.append(False)
 
+        # Detect continuous silence segments
         total_duration = len(y) / sr
-        speech_duration = speech_frames * frame_ms / 1000.0
-        pause_duration = total_duration - speech_duration
+        pause_time = 0.0
+        current_pause = 0.0
+        frame_sec = frame_ms / 1000.0
 
-        return max(pause_duration, 0.0) / max(total_duration, 1e-6)
+        for speech in is_speech:
+            if not speech:
+                current_pause += frame_sec
+            else:
+                if current_pause >= PAUSE_MIN_DURATION:
+                    pause_time += current_pause
+                current_pause = 0.0
+
+        # Check last segment
+        if current_pause >= PAUSE_MIN_DURATION:
+            pause_time += current_pause
+
+        return max(pause_time, 0.0) / max(total_duration, 1e-6)
     except Exception as e:
         print(f"Error in pause metrics: {e}")
         return 0.0

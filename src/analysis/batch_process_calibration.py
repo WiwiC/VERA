@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 import time
 
-MANIFEST_PATH = Path("data/raw/calibration_manifest.csv")
+MANIFEST_PATH = Path("data/raw/updated_calibration_manifest_V2.csv")
 RAW_DIR = Path("data/raw")
 PROCESSED_DIR = Path("data/processed")
 
