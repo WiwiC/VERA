@@ -56,11 +56,12 @@ BASELINE_GAZE_SCALE    = 0.08   # Logistic scale - widened from 0.03 for softer 
 # Previous variance=0.0064 was too tight for this narrow range
 BASELINE_SMILE_OPTIMAL = 0.77   # (was 0.82)
 BASELINE_SMILE_VAR     = 0.001  # (0.032)² - widened significantly
+SMILE_PROBABILITY_THRESHOLD = 0.75 # Raised from 0.5 to kill ghost smiles
 
 # Head Down Ratio (head pitch angle in degrees)
 # Positive pitch = head tilted down
-# Based on FACS research: +10-15° = obvious head-down behavior
-BASELINE_HEAD_DOWN_THRESHOLD = 14.0  # degrees (calibrate later)
+# Based on FACS research: +10-15° = obvious head-down# Head Pose Thresholds
+HEAD_DOWN_ANGLE_THRESHOLD = 20.0  # Degrees (increased from 17.0 to 20.0 to reduce sensitivity)
 
 
 # =========================================================
@@ -126,8 +127,8 @@ INTERPRETATION_RANGES = {
         # Narrow range - buckets adjusted accordingly
         {"max": 0.74, "label": "flat", "text": "Flat or absent smile (Poor). Serious, poker face.", "coaching": "Smile with your eyes. You look a bit severe."},
         {"max": 0.76, "label": "neutral", "text": "Low smile activation (Weak). Professional but reserved.", "coaching": "Try to smile at the start and end of your sentences."},
-        {"max": 0.80, "label": "optimal", "text": "Balanced, natural smile (Excellent). Warm and approachable.", "coaching": "Nice warmth. Your expression is welcoming."},
-        {"max": 999, "label": "excessive", "text": "Very high smile (Good). Highly radiant, possibly over-expressive.", "coaching": "Great energy! Just ensure your smile matches the content."}
+        {"max": 0.80, "label": "optimal", "text": "Balanced, natural smile (Excellent). Warm and approachable.", "coaching": "Perfect smile intensity. You look friendly and engaged."},
+        {"max": 999, "label": "expressive", "text": "Very high smile (Good). Highly radiant, possibly over-expressive.", "coaching": "Great energy! Just ensure your smile feels natural for the context."}
     ],
     "head_down_ratio": [
         # Lower is better (less time looking down)

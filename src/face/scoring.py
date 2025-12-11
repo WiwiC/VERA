@@ -12,7 +12,7 @@ from src.face.config import (
     BASELINE_GAZE_SCALE,
     BASELINE_SMILE_OPTIMAL,
     BASELINE_SMILE_VAR,
-    BASELINE_HEAD_DOWN_THRESHOLD,
+    HEAD_DOWN_ANGLE_THRESHOLD,
     INTERPRETATION_RANGES,
     CHANGE_THRESHOLDS
 )
@@ -116,7 +116,7 @@ def compute_scores(raw_df):
 
     # Head Down Ratio: % of frames per second where head is tilted down
     head_down_1s = raw_df.groupby("second")["head_tilt"].apply(
-        lambda x: (x > BASELINE_HEAD_DOWN_THRESHOLD).mean()
+        lambda x: (x > HEAD_DOWN_ANGLE_THRESHOLD).mean()
     ).fillna(0)
 
     # Build 1-second raw timeline DataFrame (before windowing)

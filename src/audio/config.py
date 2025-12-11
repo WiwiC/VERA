@@ -22,6 +22,7 @@ BASELINE_WPM_VAR   = 400  # (20)² - balanced sensitivity
 # WIDER Gaussian to accommodate Video 63 (0.01) and Video 67 (0.04)
 BASELINE_PAUSE_OPTIMAL = 0.04   # Center of "optimal" labeled samples
 BASELINE_PAUSE_VAR     = 0.002  # (0.045)² - wider to accommodate 0.01-0.08 range
+PAUSE_MIN_DURATION     = 0.75   # Raised from 0.5s to 0.75s to ignore breaths
 
 # 3. Pitch Dynamic (Expressiveness)
 # Calibration data: mean=2.87 ST, range=2.0-5.1 ST
@@ -46,7 +47,7 @@ BASELINE_CREST_VAR   = 4.0  # (2.0)² - tighter falloff
 
 
 # =========================================================
-# INTERPRETATION RANGES (Recalibrated 2025-01)
+# INTERPRETATION_RANGES (Recalibrated 2025-01)
 # Aligned with empirical data distributions
 # =========================================================
 
@@ -70,19 +71,18 @@ INTERPRETATION_RANGES = {
         {"max": 999, "label": "fragmented", "text": "Excessive silence; sounds hesitant or unprepared.", "coaching": "Try to keep your train of thought moving. Avoid long gaps."}
     ],
     "pitch_dynamic": [
-        # RECALIBRATED: Data range 2.0-5.1 ST, mean 2.87
-        {"max": 1.5, "label": "robotic", "text": "Completely monotone. Hard to listen to.", "coaching": "You need to vary your pitch. Try emphasizing one word in every sentence."},
-        {"max": 2.0, "label": "flat", "text": "Reserved and controlled, but lacks emotion.", "coaching": "Try to 'color' your words more. Don't be afraid to go higher or lower."},
-        {"max": 4.5, "label": "optimal", "text": "Good expressiveness. Engaging vocal melody.", "coaching": "Good intonation! Your voice carries emotion well."},
-        {"max": 6.0, "label": "theatrical", "text": "Very expressive; high emotional engagement.", "coaching": "Very lively! Great for storytelling, but ensure it fits the context."},
+        # RECALIBRATED (Numbing Pass): Monotone < 3.0, Expressive > 5.0
+        {"max": 3.0, "label": "monotone", "text": "Completely monotone. Hard to listen to.", "coaching": "You need to vary your pitch. Try emphasizing one word in every sentence."},
+        {"max": 5.0, "label": "neutral", "text": "Reserved and controlled, but lacks emotion.", "coaching": "Try to 'color' your words more. Don't be afraid to go higher or lower."},
+        {"max": 7.5, "label": "expressive", "text": "Good expressiveness. Engaging vocal melody.", "coaching": "Good intonation! Your voice carries emotion well."},
         {"max": 999, "label": "exaggerated", "text": "Rollercoaster pitch; can be distracting.", "coaching": "Tone it down slightly. Too much variation can sound insincere."}
     ],
     "volume_dynamic": [
-        # RECALIBRATED: Data range 0.63-0.80, mean 0.706
-        {"max": 0.55, "label": "monotone", "text": "Flat volume. No emotional emphasis.", "coaching": "Punch your key words! Make important ideas louder than the rest."},
-        {"max": 0.65, "label": "reserved", "text": "Controlled volume. Polite but could be more dynamic.", "coaching": "Don't be afraid to whisper or project. Use volume to tell the story."},
-        {"max": 0.75, "label": "optimal", "text": "Dynamic delivery. Good emotional texture.", "coaching": "Great dynamic range. You use volume effectively to convey emotion."},
-        {"max": 0.85, "label": "expressive", "text": "Highly dynamic. Strong emotional variation.", "coaching": "Very expressive! Just ensure consistency in calmer moments."},
+        # RECALIBRATED (Numbing Pass): Raised floor for all buckets
+        {"max": 0.35, "label": "flat", "text": "Flat volume. No emotional emphasis.", "coaching": "Punch your key words! Make important ideas louder than the rest."},
+        {"max": 0.55, "label": "low", "text": "Controlled volume. Polite but could be more dynamic.", "coaching": "Don't be afraid to whisper or project. Use volume to tell the story."},
+        {"max": 0.80, "label": "optimal", "text": "Dynamic delivery. Good emotional texture.", "coaching": "Great dynamic range. You use volume effectively to convey emotion."},
+        {"max": 1.20, "label": "expressive", "text": "Highly dynamic. Strong emotional variation.", "coaching": "Very expressive! Just ensure consistency in calmer moments."},
         {"max": 999, "label": "unstable", "text": "Extreme volume swings. Can be jarring.", "coaching": "Be careful of sudden shouts or drops. Keep the baseline steady."}
     ],
     "vocal_punch": [

@@ -167,14 +167,14 @@
           "max_raw": 0.80,
           "label": "optimal",
           "user_text": "Balanced, natural smile (Excellent). Warm and approachable.",
-          "coaching": "Nice warmth. Your expression is welcoming."
+          "coaching": "Perfect smile intensity. You look friendly and engaged."
         },
         {
           "min_raw": 0.80,
           "max_raw": 999,
-          "label": "excessive",
+          "label": "expressive",
           "user_text": "Very high smile (Good). Highly radiant, possibly over-expressive.",
-          "coaching": "Great energy! Just ensure your smile matches the content."
+          "coaching": "Great energy! Just ensure your smile feels natural for the context."
         }
       ],
       "global_aggregation": null,
@@ -808,56 +808,49 @@
       "metric_id": "pitch_dynamic",
       "metric_type": "raw_derived_metric",
       "display_name": "Pitch Dynamic",
-      "what_is_measured": "How much your voice pitch varies during your presentation. This captures vocal expressiveness and melodic quality.",
-      "how_it_is_measured": "We analyze your voice frequency and measure how much it rises and falls, expressed in semitones (musical half-steps).",
-      "why_it_matters": "Pitch variation makes your voice engaging and helps convey emotion. Too little sounds monotone and boring; too much can sound insincere.",
-      "raw_value_unit": "semitones (ST)",
+      "what_is_measured": "How much your pitch varies (intonation). This captures whether you speak in a monotone voice or use expressive melody.",
+      "how_it_is_measured": "We measure the standard deviation of your pitch in semitones.",
+      "why_it_matters": "Pitch variation conveys emotion and keeps the audience interested. A monotone voice is boring; too much variation can sound theatrical or insincere.",
+      "raw_value_unit": "semitones (std dev)",
       "raw_value_directionality": "sweet_spot",
       "raw_value_ideal_range": [
-        2.0,
-        4.5
+        3.0,
+        5.0
       ],
       "score_range": [
         0,
         1
       ],
       "score_semantics": {
-        "0": "Pitch variation is far from ideal (either monotone or rollercoaster).",
-        "1": "Highly expressive pitch with captivating vocal melody."
+        "0": "Pitch variation is far from ideal (either robotic or exaggerated).",
+        "1": "Natural, expressive intonation."
       },
-      "scoring_function_type": "plateau",
+      "scoring_function_type": "gaussian",
       "uses_consistency_score": false,
       "interpretation_buckets": [
         {
           "min_raw": null,
-          "max_raw": 1.5,
-          "label": "robotic",
+          "max_raw": 3.0,
+          "label": "monotone",
           "user_text": "Completely monotone. Hard to listen to.",
           "coaching": "You need to vary your pitch. Try emphasizing one word in every sentence."
         },
         {
-          "min_raw": 1.5,
-          "max_raw": 2.0,
-          "label": "flat",
+          "min_raw": 3.0,
+          "max_raw": 5.0,
+          "label": "neutral",
           "user_text": "Reserved and controlled, but lacks emotion.",
           "coaching": "Try to 'color' your words more. Don't be afraid to go higher or lower."
         },
         {
-          "min_raw": 2.0,
-          "max_raw": 4.5,
-          "label": "optimal",
+          "min_raw": 5.0,
+          "max_raw": 7.5,
+          "label": "expressive",
           "user_text": "Good expressiveness. Engaging vocal melody.",
           "coaching": "Good intonation! Your voice carries emotion well."
         },
         {
-          "min_raw": 4.5,
-          "max_raw": 6.0,
-          "label": "theatrical",
-          "user_text": "Very expressive; high emotional engagement.",
-          "coaching": "Very lively! Great for storytelling, but ensure it fits the context."
-        },
-        {
-          "min_raw": 6.0,
+          "min_raw": 7.5,
           "max_raw": 999,
           "label": "exaggerated",
           "user_text": "Rollercoaster pitch; can be distracting.",
@@ -865,7 +858,7 @@
         }
       ],
       "global_aggregation": null,
-      "frontend_short_label": "Pitch Dynamic",
+      "frontend_short_label": "Intonation",
       "notes": null
     },
     {
@@ -873,56 +866,56 @@
       "metric_id": "volume_dynamic",
       "metric_type": "raw_derived_metric",
       "display_name": "Volume Dynamic",
-      "what_is_measured": "How much your volume varies during your presentation. This captures emotional texture and emphasis in your delivery.",
-      "how_it_is_measured": "We measure the variation in your voice loudness over time, expressed as a coefficient of variation.",
-      "why_it_matters": "Volume variation adds emotional texture and helps emphasize key points. Too little sounds robotic; too much can be jarring.",
+      "what_is_measured": "How much your volume changes (dynamic range). This captures whether you use volume for emphasis or speak at a flat level.",
+      "how_it_is_measured": "We measure the coefficient of variation of your volume (RMS amplitude).",
+      "why_it_matters": "Volume dynamics add emotional texture. A flat volume is boring; extreme swings can be jarring.",
       "raw_value_unit": "CV (coefficient of variation)",
       "raw_value_directionality": "sweet_spot",
       "raw_value_ideal_range": [
-        0.65,
-        0.75
+        0.55,
+        0.80
       ],
       "score_range": [
         0,
         1
       ],
       "score_semantics": {
-        "0": "Volume is far from ideal (either robotic flat or extreme swings).",
-        "1": "Dynamic delivery with great emotional texture."
+        "0": "Volume dynamics are far from ideal (either flat or unstable).",
+        "1": "Dynamic, engaging volume usage."
       },
-      "scoring_function_type": "plateau",
+      "scoring_function_type": "gaussian",
       "uses_consistency_score": false,
       "interpretation_buckets": [
         {
           "min_raw": null,
-          "max_raw": 0.55,
-          "label": "monotone",
+          "max_raw": 0.35,
+          "label": "flat",
           "user_text": "Flat volume. No emotional emphasis.",
           "coaching": "Punch your key words! Make important ideas louder than the rest."
         },
         {
-          "min_raw": 0.55,
-          "max_raw": 0.65,
-          "label": "reserved",
+          "min_raw": 0.35,
+          "max_raw": 0.55,
+          "label": "low",
           "user_text": "Controlled volume. Polite but could be more dynamic.",
           "coaching": "Don't be afraid to whisper or project. Use volume to tell the story."
         },
         {
-          "min_raw": 0.65,
-          "max_raw": 0.75,
+          "min_raw": 0.55,
+          "max_raw": 0.80,
           "label": "optimal",
-          "user_text": "Dynamic delivery. Great emotional texture.",
+          "user_text": "Dynamic delivery. Good emotional texture.",
           "coaching": "Great dynamic range. You use volume effectively to convey emotion."
         },
         {
-          "min_raw": 0.75,
-          "max_raw": 0.85,
+          "min_raw": 0.80,
+          "max_raw": 1.20,
           "label": "expressive",
           "user_text": "Highly dynamic. Strong emotional variation.",
           "coaching": "Very expressive! Just ensure consistency in calmer moments."
         },
         {
-          "min_raw": 0.85,
+          "min_raw": 1.20,
           "max_raw": 999,
           "label": "unstable",
           "user_text": "Extreme volume swings. Can be jarring.",
@@ -930,7 +923,7 @@
         }
       ],
       "global_aggregation": null,
-      "frontend_short_label": "Volume Dynamic",
+      "frontend_short_label": "Volume Dynamics",
       "notes": null
     },
     {
