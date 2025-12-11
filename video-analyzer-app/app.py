@@ -219,28 +219,47 @@ with st.sidebar:
 # ----------------------------------------------------------
 def process_video(video_path):
     progress = st.progress(0)
-    status = st.status("Analyzing...", expanded=True)
+    status_box = st.container()
+
+    # Create placeholders for each processing step
+    audio_msg = status_box.empty()
+    face_msg = status_box.empty()
+    body_msg = status_box.empty()
 
     iterator = run_pipelines_iterator(video_path)
     completed = 0
-    total = 3
+    total = 3  # audio, face, body
+
+    steps_ui = {
+        "audio": audio_msg,
+        "face": face_msg,
+        "body": body_msg,
+    }
+
+    # Initialize UI
+    audio_msg.info("🎤 Audio: processing…")
+    face_msg.info("🙂 Face: waiting…")
+    body_msg.info("🕺 Body: waiting…")
+
+    outdir = None
 
     for event_type, *args in iterator:
         if event_type == "progress":
             module, _ = args
+
+            # Update progress bar
             completed += 1
             progress.progress(completed / total)
-            st.write(f"✔ {module.capitalize()} completed.")
+
+            # Update visual step indicator
+            steps_ui[module].success(f"✔ {module.capitalize()}: done!")
+
         elif event_type == "final":
             outdir, results = args
 
     progress.progress(1.0)
-    status.update(label="Complete!", state="complete")
-
 
     return load_results_from_dir(outdir)
-
-
 
 # ----------------------------------------------------------
 # LANDING PAGE
