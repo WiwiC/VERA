@@ -6,6 +6,7 @@ Aggregates metrics, applies sliding windows, computes scores, and generates text
 REFACTORED (2025-01):
 - Uses compute_tiered_score to ensure scores align with labels.
 - Restored windowing and timeline generation logic.
+- Implemented correct Posture Openness logic (Wrist Position + Gesture Magnitude).
 """
 
 import numpy as np
@@ -18,7 +19,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 
 from src.body.config import (
     INTERPRETATION_RANGES,
-    CHANGE_THRESHOLDS
+    CHANGE_THRESHOLDS,
+    BASELINE_ARMS_CLOSE_THRESHOLD,
+    BASELINE_WRIST_FORWARD_DEPTH,
+    POSTURE_SCORE_OPEN,
+    POSTURE_SCORE_NEUTRAL,
+    POSTURE_SCORE_CLOSED
 )
 from src.utils.temporal import project_windows_to_seconds
 from src.utils.scoring_utils import compute_tiered_score
@@ -88,7 +94,7 @@ def compute_scores(raw_df):
     Compute aggregated scores from raw frame data.
 
     Args:
-        raw_df (pd.DataFrame): DataFrame with 'gesture_magnitude', 'gesture_activity', 'body_sway', 'posture_openness', 'second'.
+        raw_df (pd.DataFrame): DataFrame with 'gesture_magnitude', 'gesture_activity', 'body_sway', 'posture_openness', 'wrist_depth_norm', 'second'.
 
     Returns:
         tuple: (scores_dict, window_df, timeline_1s, raw_1s_df)
@@ -97,12 +103,32 @@ def compute_scores(raw_df):
     mag_1s = raw_df.groupby("second")["gesture_magnitude"].mean().fillna(0)
     act_1s = raw_df.groupby("second")["gesture_activity"].mean().fillna(0)
     sway_1s = raw_df.groupby("second")["body_sway"].mean().fillna(0)
-    posture_1s = raw_df.groupby("second")["posture_openness"].mean().fillna(0.6)
 
-    # Gesture Stability: Variance of activity within the second?
-    # Or variance of activity across frames?
-    # raw_df has frame-level data.
-    # So we calculate variance of 'gesture_activity' for each second group.
+    # Posture Openness Logic (Wrist Position + Gesture Magnitude)
+    # We need both magnitude and wrist depth to calculate the score
+    wrist_1s = raw_df.groupby("second")["wrist_depth_norm"].mean().fillna(0)
+
+    # Helper to calculate posture score per second
+    def calc_posture_score(row):
+        mag = row["gesture_magnitude"]
+        wrist = row["wrist_depth_norm"]
+
+        # Logic:
+        # 1. If gesturing widely (mag > threshold), it's OPEN
+        if mag > BASELINE_ARMS_CLOSE_THRESHOLD:
+            return POSTURE_SCORE_OPEN
+        # 2. If arms close, check wrist depth
+        # Negative depth = forward (defensive barrier) -> CLOSED
+        elif wrist < BASELINE_WRIST_FORWARD_DEPTH:
+            return POSTURE_SCORE_CLOSED
+        # 3. Otherwise (arms close but wrists neutral/behind) -> NEUTRAL
+        else:
+            return POSTURE_SCORE_NEUTRAL
+
+    temp_posture_df = pd.DataFrame({"gesture_magnitude": mag_1s, "wrist_depth_norm": wrist_1s})
+    posture_1s = temp_posture_df.apply(calc_posture_score, axis=1)
+
+    # Gesture Stability: Variance of activity within the second
     stab_1s = raw_df.groupby("second")["gesture_activity"].var().fillna(0)
 
     # Build 1-second raw timeline DataFrame
@@ -112,7 +138,7 @@ def compute_scores(raw_df):
         "gesture_activity": act_1s.values,
         "gesture_stability": stab_1s.values,
         "body_sway": sway_1s.values,
-        "posture_openness": posture_1s.values
+        "posture_openness": posture_1s.values # This is now the 0.2/0.6/1.0 score
     })
 
     # 2. Sliding Windows (5s)
@@ -151,9 +177,8 @@ def compute_scores(raw_df):
     )
 
     # Posture Openness
-    # Posture score is already 0.2/0.6/1.0.
-    # But we still want to map it to the tiers in case of averaging (e.g. 0.8).
-    # The config has buckets for 0.3, 0.7, 999.
+    # Value is already 0.2/0.6/1.0 (or averaged over 5s, e.g. 0.8)
+    # Config buckets are 0.3, 0.7, 999
     df_posture_5s["comm_score"] = df_posture_5s["value"].apply(
         lambda x: compute_tiered_score(x, INTERPRETATION_RANGES["posture_openness"])
     )

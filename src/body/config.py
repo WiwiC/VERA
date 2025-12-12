@@ -128,7 +128,7 @@ INTERPRETATION_RANGES = {
     "gesture_magnitude": [
         # RECALIBRATED: "optimal" samples = 2.49-2.89 SW
         {"max": 1.2, "label": "very_low", "tier": (0.0, 0.4), "text": "Gestures too small (Weak). Hands glued to sides/lap.", "coaching": "Unlock your hands. Try to make at least one large gesture per sentence."},
-        {"max": 1.8, "label": "low", "tier": (0.4, 0.6), "text": "Small, timid gestures.", "coaching": "Open up your posture. Imagine holding a beach ball, not a tennis ball."},
+        {"max": 2.0, "label": "low", "tier": (0.4, 0.6), "text": "Small, timid gestures.", "coaching": "Open up your posture. Imagine holding a beach ball, not a tennis ball."},
         {"max": 3.0, "label": "optimal", "tier": (0.8, 1.0), "text": "High gesture dynamics (Excellent). Confident, expansive gestures.", "coaching": "Excellent use of space. Your gestures command attention."},
         {"max": 3.5, "label": "high", "tier": (0.4, 0.6), "text": "Very large, theatrical gestures.", "coaching": "Great energy, but ensure your gestures don't block your face."},
         {"max": 999, "label": "very_high", "tier": (0.0, 0.4), "text": "Wild, flailing movements. Distracting.", "coaching": "Keep your gestures within the 'box' (shoulders to hips). You are flailing."}
@@ -136,7 +136,7 @@ INTERPRETATION_RANGES = {
     "gesture_activity": [
         # RECALIBRATED: "optimal" samples = 2.57-4.42 SW/sec
         {"max": 1.0, "label": "very_low", "tier": (0.0, 0.4), "text": "Statue-like. No movement.", "coaching": "Move your hands to emphasize key verbs. You look frozen."},
-        {"max": 2.0, "label": "low", "tier": (0.4, 0.6), "text": "Too static (Weak). Slow, lethargic movement.", "coaching": "Add some snap to your gestures. Match the rhythm of your speech."},
+        {"max": 2.5, "label": "low", "tier": (0.4, 0.6), "text": "Too static (Weak). Slow, lethargic movement.", "coaching": "Add some snap to your gestures. Match the rhythm of your speech."},
         {"max": 5.0, "label": "optimal", "tier": (0.8, 1.0), "text": "Optimal gesture pace (Excellent). Dynamic, fluid movement.", "coaching": "Perfect gesture pacing. Your hands move naturally with your words."},
         {"max": 7.5, "label": "high", "tier": (0.4, 0.6), "text": "Fast, energetic movement.", "coaching": "High energy! Just be careful not to look frantic."},
         {"max": 999, "label": "very_high", "tier": (0.0, 0.4), "text": "Chaotic, frantic waving.", "coaching": "Slow down. Your hands are moving faster than your audience can follow."}
