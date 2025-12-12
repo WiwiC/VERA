@@ -449,18 +449,15 @@ def analysis_page():
             }[module]
 
             if debug_key in results:
-                st.markdown("###### Debug File (Download Required)")
+                st.markdown("###### Debug Analysis (Preview)")
 
                 file_bytes = results[debug_key]
                 file_name = debug_key
 
-                st.download_button(
-                    label=f"⬇️ Download {file_name}",
-                    data=file_bytes,
-                    file_name=file_name,
-                    mime="audio/mpeg" if file_name.endswith(".mp3") else "video/mp4",
-                    use_container_width=True
-                )
+                if file_name.endswith(".mp3"):
+                     st.audio(file_bytes, format="audio/mp3")
+                else:
+                     st.video(file_bytes, format="video/mp4")
             else:
                 st.info("No debug file available for this module.")
 
