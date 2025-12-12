@@ -19,6 +19,7 @@ from src.body.pipeline import run_body_pipeline
 from src.face.pipeline import run_face_pipeline
 from src.analysis.data_processing import update_master_dataset
 from src.presentation.enrich import enrich_results
+from src.analysis.predict_persona import predict_persona
 
 
 def run_wrapper(pipeline_func, video_path, output_dir):
@@ -96,6 +97,19 @@ def run_pipelines_iterator(video_path):
 
     # Create enriched version (nested structure with context)
     enriched_results = enrich_results(global_results)
+
+    # --- CLUSTERING PREDICTION ---
+    print("\n--- Predicting Communication Persona ---")
+    try:
+        persona = predict_persona(global_results)
+        if persona:
+            enriched_results["clustering"] = persona
+            print(f"✅ Persona Assigned: {persona['name']}")
+        else:
+            print("⚠️ Clustering prediction returned None.")
+    except Exception as e:
+        print(f"⚠️ Clustering prediction failed: {e}")
+
     enriched_results_path = output_dir / "results_global_enriched.json"
     with open(enriched_results_path, "w") as f:
         json.dump(enriched_results, f, indent=4)
