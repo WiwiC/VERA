@@ -4,6 +4,18 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 
 ---
 
+## SCORING METHODOLOGY (New: Tiered Parabolic Scoring)
+
+VERA uses a **Tiered Parabolic Scoring** system to ensure that numerical scores (0-100%) always align with the assigned label.
+
+1.  **Buckets & Tiers:** Each metric is divided into "buckets" (e.g., `low`, `optimal`, `high`). Each bucket is assigned a fixed **Score Tier** (e.g., `optimal` is always 80-100%).
+2.  **Parabolic Interpolation:** Within the "Optimal" bucket, we use a parabolic curve. This means you get a higher score (closer to 100%) if you are in the *center* of the optimal range, and a slightly lower score (closer to 80%) if you are at the edges.
+3.  **Linear Interpolation:** For non-optimal buckets, scores are distributed linearly.
+
+This ensures that if you receive an "Optimal" label, your score is guaranteed to be high (80%+).
+
+---
+
 ## FACE MODULE
 
 ### 1. Head Stability
@@ -15,13 +27,13 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 | **Ideal range** | 1.00 - 2.00 |
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `rigid` | < 0.60 | Stiff neck. Frozen. |
-| `stable` | 0.60 - 1.00 | Very controlled. Serious but attentive. |
-| `optimal` | 1.00 - 2.00 | Natural head engagement. Good nodding and tilting. |
-| `high` | 2.00 - 3.00 | Active head movement. Engaged but energetic. |
-| `distracting` | > 3.00 | Excessive head movement. Bobblehead effect. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `rigid` | < 0.60 | 0% - 40% | Stiff neck. Frozen. |
+| `stable` | 0.60 - 1.00 | 60% - 80% | Very controlled. Serious but attentive. |
+| `optimal` | 1.00 - 2.00 | 80% - 100% | Natural head engagement. Good nodding and tilting. |
+| `high` | 2.00 - 3.00 | 40% - 60% | Active head movement. Engaged but energetic. |
+| `distracting` | > 3.00 | 0% - 40% | Excessive head movement. Bobblehead effect. |
 
 ---
 
@@ -34,12 +46,12 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 | **Ideal range** | 0 - 0.08 (lower is better) |
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `optimal` | < 0.08 | Highly controlled gaze. Locked-in, confident gaze. |
-| `good` | 0.08 - 0.15 | Natural gaze behavior. Natural eye contact. |
-| `weak` | 0.15 - 0.22 | Slightly unstable gaze. Occasional scanning. |
-| `poor` | > 0.22 | Unsteady or nervous gaze. Frequent darting. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `optimal` | < 0.08 | 80% - 100% | Highly controlled gaze. Locked-in, confident gaze. |
+| `good` | 0.08 - 0.15 | 60% - 80% | Natural gaze behavior. Natural eye contact. |
+| `weak` | 0.15 - 0.22 | 40% - 60% | Slightly unstable gaze. Occasional scanning. |
+| `poor` | > 0.22 | 0% - 40% | Unsteady or nervous gaze. Frequent darting. |
 
 ---
 
@@ -56,12 +68,12 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 > *   **Reason:** The model was detecting "ghost smiles" in neutral faces (prob ~0.3). Now requires a distinct smile to register.
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `flat` | < 0.74 | Flat or absent smile. Serious, poker face. |
-| `neutral` | 0.74 - 0.76 | Low smile activation. Professional but reserved. |
-| `optimal` | 0.76 - 0.80 | Balanced, natural smile. Warm and approachable. |
-| `expressive` | > 0.80 | Very high smile (Good). Highly radiant. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `flat` | < 0.74 | 0% - 40% | Flat or absent smile. Serious, poker face. |
+| `neutral` | 0.74 - 0.76 | 40% - 60% | Low smile activation. Professional but reserved. |
+| `optimal` | 0.76 - 0.80 | 80% - 100% | Balanced, natural smile. Warm and approachable. |
+| `expressive` | > 0.80 | 60% - 80% | Very high smile (Good). Highly radiant. |
 
 ---
 
@@ -78,12 +90,12 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 > *   **Reason:** The model was flagging natural nodding (10-15°) as "looking down". This relaxes the sensitivity.
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `forward` | < 0.10 | Excellent posture. Head facing audience. |
-| `occasional_down` | 0.10 - 0.25 | Good posture with occasional glances down. |
-| `frequent_down` | 0.25 - 0.40 | Head often tilted down. |
-| `mostly_down` | > 0.40 | Head mostly facing down. Avoids audience. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `forward` | < 0.10 | 80% - 100% | Excellent posture. Head facing audience. |
+| `occasional_down` | 0.10 - 0.25 | 60% - 80% | Good posture with occasional glances down. |
+| `frequent_down` | 0.25 - 0.40 | 40% - 60% | Head often tilted down. |
+| `mostly_down` | > 0.40 | 0% - 40% | Head mostly facing down. Avoids audience. |
 
 ---
 
@@ -98,13 +110,13 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 | **Ideal range** | 1.8 - 3.0 |
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `very_low` | < 1.2 | Gestures too small. Hands glued to sides/lap. |
-| `low` | 1.2 - 1.8 | Small, timid gestures. |
-| `optimal` | 1.8 - 3.0 | High gesture dynamics. Confident, expansive gestures. |
-| `high` | 3.0 - 3.5 | Very large, theatrical gestures. |
-| `very_high` | > 3.5 | Wild, flailing movements. Distracting. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `very_low` | < 1.2 | 0% - 40% | Gestures too small. Hands glued to sides/lap. |
+| `low` | 1.2 - 1.8 | 40% - 60% | Small, timid gestures. |
+| `optimal` | 1.8 - 3.0 | 80% - 100% | High gesture dynamics. Confident, expansive gestures. |
+| `high` | 3.0 - 3.5 | 40% - 60% | Very large, theatrical gestures. |
+| `very_high` | > 3.5 | 0% - 40% | Wild, flailing movements. Distracting. |
 
 ---
 
@@ -117,13 +129,13 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 | **Ideal range** | 2.0 - 5.0 |
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `very_low` | < 1.0 | Statue-like. No movement. |
-| `low` | 1.0 - 2.0 | Too static. Slow, lethargic movement. |
-| `optimal` | 2.0 - 5.0 | Optimal gesture pace. Dynamic, fluid movement. |
-| `high` | 5.0 - 7.5 | Fast, energetic movement. |
-| `very_high` | > 7.5 | Chaotic, frantic waving. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `very_low` | < 1.0 | 0% - 40% | Statue-like. No movement. |
+| `low` | 1.0 - 2.0 | 40% - 60% | Too static. Slow, lethargic movement. |
+| `optimal` | 2.0 - 5.0 | 80% - 100% | Optimal gesture pace. Dynamic, fluid movement. |
+| `high` | 5.0 - 7.5 | 40% - 60% | Fast, energetic movement. |
+| `very_high` | > 7.5 | 0% - 40% | Chaotic, frantic waving. |
 
 ---
 
@@ -136,12 +148,12 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 | **Ideal range** | 0 - 5.0 (lower is better) |
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `optimal` | < 5.0 | Extremely stable gestures. Smooth, intentional movement. |
-| `good` | 5.0 - 12.0 | Natural stability. Healthy fluidity. |
-| `high` | 12.0 - 20.0 | Mild instability. Occasional shaking. |
-| `very_high` | > 20.0 | Strong jitter / instability. Fidgety hands. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `optimal` | < 5.0 | 80% - 100% | Extremely stable gestures. Smooth, intentional movement. |
+| `good` | 5.0 - 12.0 | 60% - 80% | Natural stability. Healthy fluidity. |
+| `high` | 12.0 - 20.0 | 40% - 60% | Mild instability. Occasional shaking. |
+| `very_high` | > 20.0 | 0% - 40% | Strong jitter / instability. Fidgety hands. |
 
 ---
 
@@ -154,13 +166,13 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 | **Ideal range** | 0.55 - 1.00 |
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `rigid` | < 0.30 | Robotically still. Unnatural. |
-| `stable` | 0.30 - 0.55 | Grounded, controlled posture. Very grounded. |
-| `optimal` | 0.55 - 1.00 | Natural controlled movement. Natural, relaxed posture. |
-| `unstable` | 1.00 - 1.30 | Restless torso movement. Noticeable swaying. |
-| `distracting` | > 1.30 | Strong body sway. Sea-sickness inducing sway. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `rigid` | < 0.30 | 0% - 40% | Robotically still. Unnatural. |
+| `stable` | 0.30 - 0.55 | 60% - 80% | Grounded, controlled posture. Very grounded. |
+| `optimal` | 0.55 - 1.00 | 80% - 100% | Natural controlled movement. Natural, relaxed posture. |
+| `unstable` | 1.00 - 1.30 | 40% - 60% | Restless torso movement. Noticeable swaying. |
+| `distracting` | > 1.30 | 0% - 40% | Strong body sway. Sea-sickness inducing sway. |
 
 ---
 
@@ -173,13 +185,13 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 | **Ideal range** | 50° - 58° |
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `closed` | < 46° | Closed, collapsed posture. Strong inward rotation. |
-| `constricted` | 46° - 50° | Slightly constricted posture. Shoulders rolled forward. |
-| `optimal` | 50° - 58° | Optimal posture. Confident and approachable. |
-| `good` | 58° - 65° | Open posture. Slightly expansive. |
-| `exaggerated` | > 65° | Exaggerated openness. May look unnatural or stiff. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `closed` | < 46° | 0% - 40% | Closed, collapsed posture. Strong inward rotation. |
+| `constricted` | 46° - 50° | 40% - 60% | Slightly constricted posture. Shoulders rolled forward. |
+| `optimal` | 50° - 58° | 80% - 100% | Optimal posture. Confident and approachable. |
+| `good` | 58° - 65° | 60% - 80% | Open posture. Slightly expansive. |
+| `exaggerated` | > 65° | 0% - 40% | Exaggerated openness. May look unnatural or stiff. |
 
 ---
 
@@ -194,14 +206,14 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 | **Ideal range** | 120 - 170 WPM |
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `very_slow` | < 100 | Very slow pace. Can feel heavy or overly deliberate. |
-| `slow` | 100 - 120 | Slower than typical. Very clear but may lack energy. |
-| `optimal` | 120 - 170 | Optimal pace. Easy to follow and engaging. |
-| `fast` | 170 - 190 | Energetic and lively. Good for excitement. |
-| `rushed` | 190 - 210 | Very fast. Listeners might miss details. |
-| `overwhelming` | > 210 | Too rapid. Cognitive overload for listeners. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `very_slow` | < 100 | 0% - 40% | Very slow pace. Can feel heavy or overly deliberate. |
+| `slow` | 100 - 120 | 40% - 60% | Slower than typical. Very clear but may lack energy. |
+| `optimal` | 120 - 170 | 80% - 100% | Optimal pace. Easy to follow and engaging. |
+| `fast` | 170 - 190 | 60% - 80% | Energetic and lively. Good for excitement. |
+| `rushed` | 190 - 210 | 40% - 60% | Very fast. Listeners might miss details. |
+| `overwhelming` | > 210 | 0% - 40% | Too rapid. Cognitive overload for listeners. |
 
 ---
 
@@ -218,14 +230,14 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 > *   **Reason:** The system was counting breaths as pauses. This forces it to only count intentional silence.
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `no_pauses` | < 0.02 | Machine-gun delivery. No breathing room. |
-| `low_pauses` | 0.02 - 0.04 | Fast-flowing speech. Good energy but dense. |
-| `optimal` | 0.04 - 0.08 | Perfect rhythm. Natural flow with good pacing. |
-| `frequent_pauses` | 0.08 - 0.12 | Deliberate style. Clear but may lose momentum. |
-| `disjointed` | 0.12 - 0.18 | Too many pauses. Breaks the flow. |
-| `fragmented` | > 0.18 | Excessive silence. Sounds hesitant or unprepared. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `no_pauses` | < 0.02 | 0% - 40% | Machine-gun delivery. No breathing room. |
+| `low_pauses` | 0.02 - 0.04 | 60% - 80% | Fast-flowing speech. Good energy but dense. |
+| `optimal` | 0.04 - 0.08 | 80% - 100% | Perfect rhythm. Natural flow with good pacing. |
+| `frequent_pauses` | 0.08 - 0.12 | 60% - 80% | Deliberate style. Clear but may lose momentum. |
+| `disjointed` | 0.12 - 0.18 | 40% - 60% | Too many pauses. Breaks the flow. |
+| `fragmented` | > 0.18 | 0% - 40% | Excessive silence. Sounds hesitant or unprepared. |
 
 ---
 
@@ -242,12 +254,12 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 > *   **Reason:** The model was hallucinating expressiveness in robotic voices. We now require significantly more variation to be considered "Neutral" or "Expressive".
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `monotone` | < 3.0 | Completely monotone. Hard to listen to. |
-| `neutral` | 3.0 - 5.0 | Reserved and controlled, but lacks emotion. |
-| `expressive` | 5.0 - 7.5 | Good expressiveness. Engaging vocal melody. |
-| `exaggerated` | > 7.5 | Rollercoaster pitch. Can be distracting. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `monotone` | < 3.0 | 0% - 40% | Completely monotone. Hard to listen to. |
+| `neutral` | 3.0 - 5.0 | 60% - 80% | Reserved and controlled, but lacks emotion. |
+| `expressive` | 5.0 - 7.5 | 80% - 100% | Good expressiveness. Engaging vocal melody. |
+| `exaggerated` | > 7.5 | 40% - 60% | Rollercoaster pitch. Can be distracting. |
 
 ---
 
@@ -266,13 +278,13 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 > *   **Reason:** The model treated micro-variations as "Expressive". We now require real dynamic range.
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `flat` | < 0.35 | Flat volume. No emotional emphasis. |
-| `low` | 0.35 - 0.55 | Controlled volume. Polite but could be more dynamic. |
-| `optimal` | 0.55 - 0.80 | Dynamic delivery. Good emotional texture. |
-| `expressive` | 0.80 - 1.20 | Highly dynamic. Strong emotional variation. |
-| `unstable` | > 1.20 | Extreme volume swings. Can be jarring. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `flat` | < 0.35 | 0% - 40% | Flat volume. No emotional emphasis. |
+| `low` | 0.35 - 0.55 | 40% - 60% | Controlled volume. Polite but could be more dynamic. |
+| `optimal` | 0.55 - 0.80 | 80% - 100% | Dynamic delivery. Good emotional texture. |
+| `expressive` | 0.80 - 1.20 | 60% - 80% | Highly dynamic. Strong emotional variation. |
+| `unstable` | > 1.20 | 0% - 40% | Extreme volume swings. Can be jarring. |
 
 ---
 
@@ -285,13 +297,13 @@ This document describes all 14 metrics analyzed by VERA, their measurement metho
 | **Ideal range** | 17.0 - 21.0 dB |
 
 **Labels (in order):**
-| Label | Raw Range | Description |
-|-------|-----------|-------------|
-| `muffled` | < 14.0 | Muffled/Flat. Lacks energy and attack. |
-| `soft` | 14.0 - 17.0 | Gentle delivery. Good for intimacy, bad for power. |
-| `optimal` | 17.0 - 21.0 | Strong vocal energy. Clear, punchy articulation. |
-| `strong` | 21.0 - 24.0 | Very punchy. High energy and presence. |
-| `aggressive` | > 24.0 | Aggressive. Too punchy or shouting. |
+| Label | Raw Range | Score Tier | Description |
+|-------|-----------|------------|-------------|
+| `muffled` | < 14.0 | 0% - 40% | Muffled/Flat. Lacks energy and attack. |
+| `soft` | 14.0 - 17.0 | 40% - 60% | Gentle delivery. Good for intimacy, bad for power. |
+| `optimal` | 17.0 - 21.0 | 80% - 100% | Strong vocal energy. Clear, punchy articulation. |
+| `strong` | 21.0 - 24.0 | 60% - 80% | Very punchy. High energy and presence. |
+| `aggressive` | > 24.0 | 0% - 40% | Aggressive. Too punchy or shouting. |
 
 ---
 

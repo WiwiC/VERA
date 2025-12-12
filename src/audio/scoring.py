@@ -1,45 +1,28 @@
 """
 Scoring logic for the VERA Audio Module.
-Converts raw metrics into 0-1 scores using Gaussian and Plateau functions.
+Converts raw metrics into 0-1 scores using Tiered Parabolic Scoring.
 
-RECALIBRATED: Based on calibration audit (2025-01).
-- pause_ratio: Changed from Plateau to Gaussian (penalize both extremes)
-- volume_dynamic: Changed from Plateau to Gaussian (for discrimination)
+REFACTORED (2025-01):
+- Uses compute_tiered_score to ensure scores align with labels.
+- Replaces mixed Gaussian/Plateau logic with unified tiered logic.
 """
 
 import numpy as np
+import sys
+import os
+
+# Add project root to path if needed
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
 from src.audio.config import (
-    BASELINE_WPM_RANGE, BASELINE_WPM_VAR,
-    BASELINE_PAUSE_OPTIMAL, BASELINE_PAUSE_VAR,
-    BASELINE_PITCH_STD_RANGE, BASELINE_PITCH_STD_VAR,
-    BASELINE_VOLUME_CV_OPTIMAL, BASELINE_VOLUME_CV_VAR,
-    BASELINE_CREST_RANGE, BASELINE_CREST_VAR,
+    BASELINE_WPM_RANGE,
+    BASELINE_PAUSE_OPTIMAL,
+    BASELINE_PITCH_STD_RANGE,
+    BASELINE_VOLUME_CV_OPTIMAL,
+    BASELINE_CREST_RANGE,
     INTERPRETATION_RANGES
 )
-
-def plateau_score(value, range_min, range_max, variance):
-    """
-    Calculate Plateau (Trapezoidal) score.
-    - If value is within [range_min, range_max], score is 1.0.
-    - If value < range_min, Gaussian decay from range_min.
-    - If value > range_max, Gaussian decay from range_max.
-    """
-    if range_min <= value <= range_max:
-        return 1.0
-    elif value < range_min:
-        return np.exp(-((value - range_min)**2) / variance)
-    else: # value > range_max
-        return np.exp(-((value - range_max)**2) / variance)
-
-
-def gaussian_score(value, optimal, variance):
-    """
-    Calculate Gaussian score centered on optimal value.
-    - Score is 1.0 at optimal
-    - Decays symmetrically as value deviates from optimal
-    - Used for metrics where both extremes are bad (e.g., pause_ratio)
-    """
-    return np.exp(-((value - optimal)**2) / variance)
+from src.utils.scoring_utils import compute_tiered_score
 
 def get_interpretation(metric_type, raw_value):
     """
@@ -67,12 +50,7 @@ def get_global_interpretation(score):
 
 def compute_scores(raw_metrics):
     """
-    Compute 0-1 scores for all performance metrics.
-
-    RECALIBRATED (2025-01):
-    - pause_ratio: Gaussian (penalizes both machine-gun and disjointed speech)
-    - volume_dynamic: Gaussian (for discrimination within narrow data range)
-    - Others: Plateau scoring unchanged
+    Compute 0-1 scores for all performance metrics using Tiered Parabolic Scoring.
     """
     # 1. Extract Raw Values
     wpm = raw_metrics.get("wpm", 0)
@@ -81,21 +59,12 @@ def compute_scores(raw_metrics):
     vol_cv = raw_metrics.get("volume_cv", 0)
     crest = raw_metrics.get("crest_factor_db", 0)
 
-    # 2. Calculate Scores (mixed Plateau and Gaussian)
-    # Speech rate: Plateau (optimal range 120-170 WPM)
-    score_wpm = plateau_score(wpm, BASELINE_WPM_RANGE[0], BASELINE_WPM_RANGE[1], BASELINE_WPM_VAR)
-
-    # Pause ratio: Gaussian (optimal ~0.05, penalizes both extremes)
-    score_pause = gaussian_score(pause, BASELINE_PAUSE_OPTIMAL, BASELINE_PAUSE_VAR)
-
-    # Pitch dynamic: Plateau (optimal range 2.0-4.5 ST)
-    score_pitch = plateau_score(pitch_st, BASELINE_PITCH_STD_RANGE[0], BASELINE_PITCH_STD_RANGE[1], BASELINE_PITCH_STD_VAR)
-
-    # Volume dynamic: Gaussian (optimal ~0.70 CV, for discrimination)
-    score_vol = gaussian_score(vol_cv, BASELINE_VOLUME_CV_OPTIMAL, BASELINE_VOLUME_CV_VAR)
-
-    # Vocal punch: Plateau (optimal range 17-21 dB)
-    score_crest = plateau_score(crest, BASELINE_CREST_RANGE[0], BASELINE_CREST_RANGE[1], BASELINE_CREST_VAR)
+    # 2. Calculate Scores (Tiered Parabolic)
+    score_wpm = compute_tiered_score(wpm, INTERPRETATION_RANGES["speech_rate"])
+    score_pause = compute_tiered_score(pause, INTERPRETATION_RANGES["pause_ratio"])
+    score_pitch = compute_tiered_score(pitch_st, INTERPRETATION_RANGES["pitch_dynamic"])
+    score_vol = compute_tiered_score(vol_cv, INTERPRETATION_RANGES["volume_dynamic"])
+    score_crest = compute_tiered_score(crest, INTERPRETATION_RANGES["vocal_punch"])
 
     # 3. Calculate Global Score (Average)
     global_score = (score_wpm + score_pause + score_pitch + score_vol + score_crest) / 5.0

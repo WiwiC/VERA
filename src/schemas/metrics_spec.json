@@ -29,6 +29,10 @@
           "min_raw": null,
           "max_raw": 0.60,
           "label": "rigid",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Stiff neck. Frozen.",
           "coaching": "Nod slightly to show agreement or emphasis. You look stiff."
         },
@@ -36,6 +40,10 @@
           "min_raw": 0.60,
           "max_raw": 1.00,
           "label": "stable",
+          "tier": [
+            0.6,
+            0.8
+          ],
           "user_text": "Very controlled. Serious but attentive.",
           "coaching": "Good control. A bit more movement could make you look warmer."
         },
@@ -43,6 +51,10 @@
           "min_raw": 1.00,
           "max_raw": 2.00,
           "label": "optimal",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Natural head engagement (Excellent). Good nodding and tilting.",
           "coaching": "Perfect head engagement. Your nods make you look like an active listener."
         },
@@ -50,6 +62,10 @@
           "min_raw": 2.00,
           "max_raw": 3.00,
           "label": "high",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Active head movement. Engaged but energetic.",
           "coaching": "High energy. Ensure your head movements are intentional, not random."
         },
@@ -57,6 +73,10 @@
           "min_raw": 3.00,
           "max_raw": 999,
           "label": "distracting",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Excessive head movement (Poor). Bobblehead effect.",
           "coaching": "Keep your head steady. Excessive nodding undermines your authority."
         }
@@ -94,6 +114,10 @@
           "min_raw": null,
           "max_raw": 0.08,
           "label": "optimal",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Highly controlled gaze (Excellent). Locked-in, confident gaze.",
           "coaching": "Excellent focus. You connect strongly with the viewer."
         },
@@ -101,6 +125,10 @@
           "min_raw": 0.08,
           "max_raw": 0.15,
           "label": "good",
+          "tier": [
+            0.6,
+            0.8
+          ],
           "user_text": "Natural gaze behavior (Good). Natural eye contact.",
           "coaching": "Good eye contact. You feel present."
         },
@@ -108,6 +136,10 @@
           "min_raw": 0.15,
           "max_raw": 0.22,
           "label": "weak",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Slightly unstable gaze (Weak). Occasional scanning.",
           "coaching": "Hold your gaze for longer. Stop scanning the room."
         },
@@ -115,6 +147,10 @@
           "min_raw": 0.22,
           "max_raw": 999,
           "label": "poor",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Unsteady or nervous gaze (Poor). Frequent darting.",
           "coaching": "Look at the camera lens, not your screen. You seem disengaged."
         }
@@ -152,6 +188,10 @@
           "min_raw": null,
           "max_raw": 0.74,
           "label": "flat",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Flat or absent smile (Poor). Serious, poker face.",
           "coaching": "Smile with your eyes. You look a bit severe."
         },
@@ -159,6 +199,10 @@
           "min_raw": 0.74,
           "max_raw": 0.76,
           "label": "neutral",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Low smile activation (Weak). Professional but reserved.",
           "coaching": "Try to smile at the start and end of your sentences."
         },
@@ -166,6 +210,10 @@
           "min_raw": 0.76,
           "max_raw": 0.80,
           "label": "optimal",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Balanced, natural smile (Excellent). Warm and approachable.",
           "coaching": "Perfect smile intensity. You look friendly and engaged."
         },
@@ -173,6 +221,10 @@
           "min_raw": 0.80,
           "max_raw": 999,
           "label": "expressive",
+          "tier": [
+            0.6,
+            0.8
+          ],
           "user_text": "Very high smile (Good). Highly radiant, possibly over-expressive.",
           "coaching": "Great energy! Just ensure your smile feels natural for the context."
         }
@@ -210,6 +262,10 @@
           "min_raw": null,
           "max_raw": 0.10,
           "label": "forward",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Excellent posture. Head facing audience.",
           "coaching": "Great presence! You maintain strong forward posture."
         },
@@ -217,6 +273,10 @@
           "min_raw": 0.10,
           "max_raw": 0.25,
           "label": "occasional_down",
+          "tier": [
+            0.6,
+            0.8
+          ],
           "user_text": "Good posture with occasional glances down.",
           "coaching": "Good balance. Try to look up more between points."
         },
@@ -224,6 +284,10 @@
           "min_raw": 0.25,
           "max_raw": 0.40,
           "label": "frequent_down",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Head often tilted down.",
           "coaching": "Practice your content so you can look up more."
         },
@@ -231,6 +295,10 @@
           "min_raw": 0.40,
           "max_raw": 999,
           "label": "mostly_down",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Head mostly facing down. Avoids audience.",
           "coaching": "Look at your audience. You're reading too much."
         }
@@ -325,6 +393,10 @@
           "min_raw": null,
           "max_raw": 1.2,
           "label": "very_low",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Gestures too small (Weak). Hands glued to sides/lap.",
           "coaching": "Unlock your hands. Try to make at least one large gesture per sentence."
         },
@@ -332,6 +404,10 @@
           "min_raw": 1.2,
           "max_raw": 1.8,
           "label": "low",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Small, timid gestures.",
           "coaching": "Open up your posture. Imagine holding a beach ball, not a tennis ball."
         },
@@ -339,6 +415,10 @@
           "min_raw": 1.8,
           "max_raw": 3.0,
           "label": "optimal",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "High gesture dynamics (Excellent). Confident, expansive gestures.",
           "coaching": "Excellent use of space. Your gestures command attention."
         },
@@ -346,6 +426,10 @@
           "min_raw": 3.0,
           "max_raw": 3.5,
           "label": "high",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Very large, theatrical gestures.",
           "coaching": "Great energy, but ensure your gestures don't block your face."
         },
@@ -353,6 +437,10 @@
           "min_raw": 3.5,
           "max_raw": 999,
           "label": "very_high",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Wild, flailing movements. Distracting.",
           "coaching": "Keep your gestures within the 'box' (shoulders to hips). You are flailing."
         }
@@ -390,6 +478,10 @@
           "min_raw": null,
           "max_raw": 1.0,
           "label": "very_low",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Statue-like. No movement.",
           "coaching": "Move your hands to emphasize key verbs. You look frozen."
         },
@@ -397,6 +489,10 @@
           "min_raw": 1.0,
           "max_raw": 2.0,
           "label": "low",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Too static (Weak). Slow, lethargic movement.",
           "coaching": "Add some snap to your gestures. Match the rhythm of your speech."
         },
@@ -404,6 +500,10 @@
           "min_raw": 2.0,
           "max_raw": 5.0,
           "label": "optimal",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Optimal gesture pace (Excellent). Dynamic, fluid movement.",
           "coaching": "Perfect gesture pacing. Your hands move naturally with your words."
         },
@@ -411,6 +511,10 @@
           "min_raw": 5.0,
           "max_raw": 7.5,
           "label": "high",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Fast, energetic movement.",
           "coaching": "High energy! Just be careful not to look frantic."
         },
@@ -418,6 +522,10 @@
           "min_raw": 7.5,
           "max_raw": 999,
           "label": "very_high",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Chaotic, frantic waving.",
           "coaching": "Slow down. Your hands are moving faster than your audience can follow."
         }
@@ -455,6 +563,10 @@
           "min_raw": null,
           "max_raw": 5.0,
           "label": "optimal",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Extremely stable gestures (Excellent). Smooth, intentional movement.",
           "coaching": "Excellent stability. You look very composed."
         },
@@ -462,6 +574,10 @@
           "min_raw": 5.0,
           "max_raw": 12.0,
           "label": "good",
+          "tier": [
+            0.6,
+            0.8
+          ],
           "user_text": "Natural stability (Good). Healthy fluidity.",
           "coaching": "Good control. Your hands look steady."
         },
@@ -469,6 +585,10 @@
           "min_raw": 12.0,
           "max_raw": 20.0,
           "label": "high",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Mild instability (Weak). Occasional shaking.",
           "coaching": "Smooth out your movements. Try to be more deliberate."
         },
@@ -476,6 +596,10 @@
           "min_raw": 20.0,
           "max_raw": 999,
           "label": "very_high",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Strong jitter / instability (Poor). Fidgety hands.",
           "coaching": "Plant your hands when not gesturing. Avoid nervous ticks."
         }
@@ -513,6 +637,10 @@
           "min_raw": null,
           "max_raw": 0.30,
           "label": "rigid",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Robotically still. Unnatural.",
           "coaching": "Relax your shoulders. It's okay to shift your weight slightly."
         },
@@ -520,6 +648,10 @@
           "min_raw": 0.30,
           "max_raw": 0.55,
           "label": "stable",
+          "tier": [
+            0.6,
+            0.8
+          ],
           "user_text": "Grounded, controlled posture (Excellent). Very grounded.",
           "coaching": "Great stability. You look very grounded."
         },
@@ -527,6 +659,10 @@
           "min_raw": 0.55,
           "max_raw": 1.00,
           "label": "optimal",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Natural controlled movement (Good). Natural, relaxed posture.",
           "coaching": "Natural posture. You look comfortable and engaged."
         },
@@ -534,6 +670,10 @@
           "min_raw": 1.00,
           "max_raw": 1.30,
           "label": "unstable",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Restless torso movement (Weak). Noticeable swaying.",
           "coaching": "Plant your feet. You are starting to rock back and forth."
         },
@@ -541,6 +681,10 @@
           "min_raw": 1.30,
           "max_raw": 999,
           "label": "distracting",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Strong body sway (Poor). Sea-sickness inducing sway.",
           "coaching": "Stop moving your torso. Imagine a string pulling you up from the crown of your head."
         }
@@ -579,6 +723,10 @@
           "min_raw": null,
           "max_raw": 0.3,
           "label": "closed",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Closed, defensive posture (Poor). Arms close to body with hands forward.",
           "coaching": "Open up your arms. You look guarded and defensive."
         },
@@ -586,6 +734,10 @@
           "min_raw": 0.3,
           "max_raw": 0.7,
           "label": "neutral",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Neutral posture (Ok). Arms at rest, hands at sides or behind.",
           "coaching": "Try using more hand gestures to engage your audience."
         },
@@ -593,6 +745,10 @@
           "min_raw": 0.7,
           "max_raw": 999,
           "label": "open",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Open, expressive posture (Excellent). Good use of gestures.",
           "coaching": "Great body language! You look confident and approachable."
         }
@@ -688,6 +844,10 @@
           "min_raw": null,
           "max_raw": 100,
           "label": "very_slow",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Very slow pace; can feel heavy or overly deliberate.",
           "coaching": "Increase your tempo on less critical details to add energy."
         },
@@ -695,6 +855,10 @@
           "min_raw": 100,
           "max_raw": 120,
           "label": "slow",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Slower than typical; very clear but may lack energy.",
           "coaching": "Speed up slightly to keep the flow engaging, while keeping clarity."
         },
@@ -702,6 +866,10 @@
           "min_raw": 120,
           "max_raw": 170,
           "label": "optimal",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Optimal pace. Easy to follow and engaging.",
           "coaching": "Excellent pace! You are easy to follow and engaging."
         },
@@ -709,6 +877,10 @@
           "min_raw": 170,
           "max_raw": 190,
           "label": "fast",
+          "tier": [
+            0.6,
+            0.8
+          ],
           "user_text": "Energetic and lively. Good for excitement.",
           "coaching": "Great energy. Just ensure you pause enough to let points land."
         },
@@ -716,6 +888,10 @@
           "min_raw": 190,
           "max_raw": 210,
           "label": "rushed",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Very fast; listeners might miss details.",
           "coaching": "Slow down slightly. You risk losing the audience's comprehension."
         },
@@ -723,6 +899,10 @@
           "min_raw": 210,
           "max_raw": 999,
           "label": "overwhelming",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Too rapid; cognitive overload for listeners.",
           "coaching": "Deliberately slow down. Force yourself to take a breath between sentences."
         }
@@ -760,6 +940,10 @@
           "min_raw": null,
           "max_raw": 0.02,
           "label": "no_pauses",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Machine-gun delivery. No breathing room.",
           "coaching": "Force yourself to pause for 1 second after every key point."
         },
@@ -767,6 +951,10 @@
           "min_raw": 0.02,
           "max_raw": 0.04,
           "label": "low_pauses",
+          "tier": [
+            0.6,
+            0.8
+          ],
           "user_text": "Fast-flowing speech. Good energy but dense.",
           "coaching": "Add micro-pauses to let key points land."
         },
@@ -774,6 +962,10 @@
           "min_raw": 0.04,
           "max_raw": 0.08,
           "label": "optimal",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Perfect rhythm. Natural flow with good pacing.",
           "coaching": "Great pacing! You sound confident and natural."
         },
@@ -781,6 +973,10 @@
           "min_raw": 0.08,
           "max_raw": 0.12,
           "label": "frequent_pauses",
+          "tier": [
+            0.6,
+            0.8
+          ],
           "user_text": "Deliberate style. Clear but may lose momentum.",
           "coaching": "Good clarity, but keep the energy up between pauses."
         },
@@ -788,6 +984,10 @@
           "min_raw": 0.12,
           "max_raw": 0.18,
           "label": "disjointed",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Too many pauses. Breaks the flow.",
           "coaching": "Connect your ideas more smoothly. Reduce pause length."
         },
@@ -795,6 +995,10 @@
           "min_raw": 0.18,
           "max_raw": 999,
           "label": "fragmented",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Excessive silence; sounds hesitant or unprepared.",
           "coaching": "Try to keep your train of thought moving. Avoid long gaps."
         }
@@ -832,6 +1036,10 @@
           "min_raw": null,
           "max_raw": 3.0,
           "label": "monotone",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Completely monotone. Hard to listen to.",
           "coaching": "You need to vary your pitch. Try emphasizing one word in every sentence."
         },
@@ -839,6 +1047,10 @@
           "min_raw": 3.0,
           "max_raw": 5.0,
           "label": "neutral",
+          "tier": [
+            0.6,
+            0.8
+          ],
           "user_text": "Reserved and controlled, but lacks emotion.",
           "coaching": "Try to 'color' your words more. Don't be afraid to go higher or lower."
         },
@@ -846,6 +1058,10 @@
           "min_raw": 5.0,
           "max_raw": 7.5,
           "label": "expressive",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Good expressiveness. Engaging vocal melody.",
           "coaching": "Good intonation! Your voice carries emotion well."
         },
@@ -853,6 +1069,10 @@
           "min_raw": 7.5,
           "max_raw": 999,
           "label": "exaggerated",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Rollercoaster pitch; can be distracting.",
           "coaching": "Tone it down slightly. Too much variation can sound insincere."
         }
@@ -890,6 +1110,10 @@
           "min_raw": null,
           "max_raw": 0.35,
           "label": "flat",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Flat volume. No emotional emphasis.",
           "coaching": "Punch your key words! Make important ideas louder than the rest."
         },
@@ -897,6 +1121,10 @@
           "min_raw": 0.35,
           "max_raw": 0.55,
           "label": "low",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Controlled volume. Polite but could be more dynamic.",
           "coaching": "Don't be afraid to whisper or project. Use volume to tell the story."
         },
@@ -904,6 +1132,10 @@
           "min_raw": 0.55,
           "max_raw": 0.80,
           "label": "optimal",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Dynamic delivery. Good emotional texture.",
           "coaching": "Great dynamic range. You use volume effectively to convey emotion."
         },
@@ -911,6 +1143,10 @@
           "min_raw": 0.80,
           "max_raw": 1.20,
           "label": "expressive",
+          "tier": [
+            0.6,
+            0.8
+          ],
           "user_text": "Highly dynamic. Strong emotional variation.",
           "coaching": "Very expressive! Just ensure consistency in calmer moments."
         },
@@ -918,6 +1154,10 @@
           "min_raw": 1.20,
           "max_raw": 999,
           "label": "unstable",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Extreme volume swings. Can be jarring.",
           "coaching": "Be careful of sudden shouts or drops. Keep the baseline steady."
         }
@@ -955,6 +1195,10 @@
           "min_raw": null,
           "max_raw": 14.0,
           "label": "muffled",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Muffled/Flat (Weak). Lacks energy and attack.",
           "coaching": "Articulate more clearly. Hit your consonants harder."
         },
@@ -962,6 +1206,10 @@
           "min_raw": 14.0,
           "max_raw": 17.0,
           "label": "soft",
+          "tier": [
+            0.4,
+            0.6
+          ],
           "user_text": "Gentle delivery. Good for intimacy, bad for power.",
           "coaching": "Project your voice more. Imagine reaching the back of the room."
         },
@@ -969,6 +1217,10 @@
           "min_raw": 17.0,
           "max_raw": 21.0,
           "label": "optimal",
+          "tier": [
+            0.8,
+            1.0
+          ],
           "user_text": "Strong vocal energy. Clear, punchy articulation.",
           "coaching": "Strong vocal presence. Your voice cuts through clearly."
         },
@@ -976,6 +1228,10 @@
           "min_raw": 21.0,
           "max_raw": 24.0,
           "label": "strong",
+          "tier": [
+            0.6,
+            0.8
+          ],
           "user_text": "Very punchy. High energy and presence.",
           "coaching": "Great presence! Just be mindful of the context."
         },
@@ -983,6 +1239,10 @@
           "min_raw": 24.0,
           "max_raw": 999,
           "label": "aggressive",
+          "tier": [
+            0.0,
+            0.4
+          ],
           "user_text": "Aggressive (Distracting). Too punchy or shouting.",
           "coaching": "Soften your attack slightly. You don't need to shout to be heard."
         }
