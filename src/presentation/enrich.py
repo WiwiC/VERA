@@ -105,6 +105,14 @@ def _build_global_section(module_id: str, flat_data: dict, spec: dict) -> dict:
             "what": global_spec.get("what_is_measured", ""),
             "why": global_spec.get("why_it_matters", ""),
         }
+    elif module_id == "body":
+        raw_score = flat_data.get("body_global_score", 0)
+        return {
+            "score": _to_percent(raw_score),
+            "interpretation": flat_data.get("body_global_interpretation", ""),
+            "what": global_spec.get("what_is_measured", ""),
+            "why": global_spec.get("why_it_matters", ""),
+        }
     else:
         raw_score = flat_data.get("global_comm_score", 0)
         return {
