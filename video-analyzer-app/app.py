@@ -389,7 +389,6 @@ def analysis_page():
                 </div>
                 """, unsafe_allow_html=True)
 
-                # INTERPRETATION PANEL
                 interpretation = (
                     metric.get("interpretation")
                         or metric.get("communication_interpretation")
@@ -410,7 +409,6 @@ def analysis_page():
                     <b>Analysis:</b> {interpretation}
                     </div>
                     """, unsafe_allow_html=True)
-
 
                 coaching = metric.get("coaching")
                 if coaching:
@@ -440,6 +438,31 @@ def analysis_page():
                     """, unsafe_allow_html=True)
 
                 st.markdown("---")
+
+            # -------------------------
+            # DEBUG FILE DOWNLOAD LINK
+            # -------------------------
+            debug_key = {
+                "audio": "debug_audio.mp3",
+                "body": "debug_pose.mp4",
+                "face": "debug_face.mp4",
+            }[module]
+
+            if debug_key in results:
+                st.markdown("###### Debug File (Download Required)")
+
+                file_bytes = results[debug_key]
+                file_name = debug_key
+
+                st.download_button(
+                    label=f"⬇️ Download {file_name}",
+                    data=file_bytes,
+                    file_name=file_name,
+                    mime="audio/mpeg" if file_name.endswith(".mp3") else "video/mp4",
+                    use_container_width=True
+                )
+            else:
+                st.info("No debug file available for this module.")
 
             st.markdown("</div>", unsafe_allow_html=True)
 
