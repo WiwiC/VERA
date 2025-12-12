@@ -127,42 +127,42 @@ CHANGE_THRESHOLDS = {
 INTERPRETATION_RANGES = {
     "gesture_magnitude": [
         # RECALIBRATED: "optimal" samples = 2.49-2.89 SW
-        {"max": 1.2, "label": "very_low", "text": "Gestures too small (Weak). Hands glued to sides/lap.", "coaching": "Unlock your hands. Try to make at least one large gesture per sentence."},
-        {"max": 1.8, "label": "low", "text": "Small, timid gestures.", "coaching": "Open up your posture. Imagine holding a beach ball, not a tennis ball."},
-        {"max": 3.0, "label": "optimal", "text": "High gesture dynamics (Excellent). Confident, expansive gestures.", "coaching": "Excellent use of space. Your gestures command attention."},
-        {"max": 3.5, "label": "high", "text": "Very large, theatrical gestures.", "coaching": "Great energy, but ensure your gestures don't block your face."},
-        {"max": 999, "label": "very_high", "text": "Wild, flailing movements. Distracting.", "coaching": "Keep your gestures within the 'box' (shoulders to hips). You are flailing."}
+        {"max": 1.2, "label": "very_low", "tier": (0.0, 0.4), "text": "Gestures too small (Weak). Hands glued to sides/lap.", "coaching": "Unlock your hands. Try to make at least one large gesture per sentence."},
+        {"max": 1.8, "label": "low", "tier": (0.4, 0.6), "text": "Small, timid gestures.", "coaching": "Open up your posture. Imagine holding a beach ball, not a tennis ball."},
+        {"max": 3.0, "label": "optimal", "tier": (0.8, 1.0), "text": "High gesture dynamics (Excellent). Confident, expansive gestures.", "coaching": "Excellent use of space. Your gestures command attention."},
+        {"max": 3.5, "label": "high", "tier": (0.4, 0.6), "text": "Very large, theatrical gestures.", "coaching": "Great energy, but ensure your gestures don't block your face."},
+        {"max": 999, "label": "very_high", "tier": (0.0, 0.4), "text": "Wild, flailing movements. Distracting.", "coaching": "Keep your gestures within the 'box' (shoulders to hips). You are flailing."}
     ],
     "gesture_activity": [
         # RECALIBRATED: "optimal" samples = 2.57-4.42 SW/sec
-        {"max": 1.0, "label": "very_low", "text": "Statue-like. No movement.", "coaching": "Move your hands to emphasize key verbs. You look frozen."},
-        {"max": 2.0, "label": "low", "text": "Too static (Weak). Slow, lethargic movement.", "coaching": "Add some snap to your gestures. Match the rhythm of your speech."},
-        {"max": 5.0, "label": "optimal", "text": "Optimal gesture pace (Excellent). Dynamic, fluid movement.", "coaching": "Perfect gesture pacing. Your hands move naturally with your words."},
-        {"max": 7.5, "label": "high", "text": "Fast, energetic movement.", "coaching": "High energy! Just be careful not to look frantic."},
-        {"max": 999, "label": "very_high", "text": "Chaotic, frantic waving.", "coaching": "Slow down. Your hands are moving faster than your audience can follow."}
+        {"max": 1.0, "label": "very_low", "tier": (0.0, 0.4), "text": "Statue-like. No movement.", "coaching": "Move your hands to emphasize key verbs. You look frozen."},
+        {"max": 2.0, "label": "low", "tier": (0.4, 0.6), "text": "Too static (Weak). Slow, lethargic movement.", "coaching": "Add some snap to your gestures. Match the rhythm of your speech."},
+        {"max": 5.0, "label": "optimal", "tier": (0.8, 1.0), "text": "Optimal gesture pace (Excellent). Dynamic, fluid movement.", "coaching": "Perfect gesture pacing. Your hands move naturally with your words."},
+        {"max": 7.5, "label": "high", "tier": (0.4, 0.6), "text": "Fast, energetic movement.", "coaching": "High energy! Just be careful not to look frantic."},
+        {"max": 999, "label": "very_high", "tier": (0.0, 0.4), "text": "Chaotic, frantic waving.", "coaching": "Slow down. Your hands are moving faster than your audience can follow."}
     ],
     "gesture_stability": [
         # RECALIBRATED: Data mean=11.6, "good" samples=0.78-14.71
         # INVERTED: Lower values = better (more stable)
-        {"max": 5.0, "label": "optimal", "text": "Extremely stable gestures (Excellent). Smooth, intentional movement.", "coaching": "Excellent stability. You look very composed."},
-        {"max": 12.0, "label": "good", "text": "Natural stability (Good). Healthy fluidity.", "coaching": "Good control. Your hands look steady."},
-        {"max": 20.0, "label": "high", "text": "Mild instability (Weak). Occasional shaking.", "coaching": "Smooth out your movements. Try to be more deliberate."},
-        {"max": 999, "label": "very_high", "text": "Strong jitter / instability (Poor). Fidgety hands.", "coaching": "Plant your hands when not gesturing. Avoid nervous ticks."}
+        {"max": 5.0, "label": "optimal", "tier": (0.8, 1.0), "text": "Extremely stable gestures (Excellent). Smooth, intentional movement.", "coaching": "Excellent stability. You look very composed."},
+        {"max": 12.0, "label": "good", "tier": (0.6, 0.8), "text": "Natural stability (Good). Healthy fluidity.", "coaching": "Good control. Your hands look steady."},
+        {"max": 20.0, "label": "high", "tier": (0.4, 0.6), "text": "Mild instability (Weak). Occasional shaking.", "coaching": "Smooth out your movements. Try to be more deliberate."},
+        {"max": 999, "label": "very_high", "tier": (0.0, 0.4), "text": "Strong jitter / instability (Poor). Fidgety hands.", "coaching": "Plant your hands when not gesturing. Avoid nervous ticks."}
     ],
     "body_sway": [
         # RECALIBRATED: "stable"/"optimal" samples = 0.58-1.01 SW/sec
-        {"max": 0.30, "label": "rigid", "text": "Robotically still. Unnatural.", "coaching": "Relax your shoulders. It's okay to shift your weight slightly."},
-        {"max": 0.55, "label": "stable", "text": "Grounded, controlled posture (Excellent). Very grounded.", "coaching": "Great stability. You look very grounded."},
-        {"max": 1.00, "label": "optimal", "text": "Natural controlled movement (Good). Natural, relaxed posture.", "coaching": "Natural posture. You look comfortable and engaged."},
-        {"max": 1.30, "label": "unstable", "text": "Restless torso movement (Weak). Noticeable swaying.", "coaching": "Plant your feet. You are starting to rock back and forth."},
-        {"max": 999, "label": "distracting", "text": "Strong body sway (Poor). Sea-sickness inducing sway.", "coaching": "Stop moving your torso. Imagine a string pulling you up from the crown of your head."}
+        {"max": 0.30, "label": "rigid", "tier": (0.0, 0.4), "text": "Robotically still. Unnatural.", "coaching": "Relax your shoulders. It's okay to shift your weight slightly."},
+        {"max": 0.55, "label": "stable", "tier": (0.6, 0.8), "text": "Grounded, controlled posture (Excellent). Very grounded.", "coaching": "Great stability. You look very grounded."},
+        {"max": 1.00, "label": "optimal", "tier": (0.8, 1.0), "text": "Natural controlled movement (Good). Natural, relaxed posture.", "coaching": "Natural posture. You look comfortable and engaged."},
+        {"max": 1.30, "label": "unstable", "tier": (0.4, 0.6), "text": "Restless torso movement (Weak). Noticeable swaying.", "coaching": "Plant your feet. You are starting to rock back and forth."},
+        {"max": 999, "label": "distracting", "tier": (0.0, 0.4), "text": "Strong body sway (Poor). Sea-sickness inducing sway.", "coaching": "Stop moving your torso. Imagine a string pulling you up from the crown of your head."}
     ],
     "posture_openness": [
         # REFACTORED: Score-based buckets (3-state: 0.2/0.6/1.0)
         # Scoring done in scoring.py based on arms_close + wrist_depth
-        {"max": 0.3, "label": "closed", "text": "Closed, defensive posture (Poor). Arms close to body with hands forward.", "coaching": "Open up your arms. You look guarded and defensive."},
-        {"max": 0.7, "label": "neutral", "text": "Neutral posture (Ok). Arms at rest, hands at sides or behind.", "coaching": "Try using more hand gestures to engage your audience."},
-        {"max": 999, "label": "open", "text": "Open, expressive posture (Excellent). Good use of gestures.", "coaching": "Great body language! You look confident and approachable."}
+        {"max": 0.3, "label": "closed", "tier": (0.0, 0.4), "text": "Closed, defensive posture (Poor). Arms close to body with hands forward.", "coaching": "Open up your arms. You look guarded and defensive."},
+        {"max": 0.7, "label": "neutral", "tier": (0.4, 0.6), "text": "Neutral posture (Ok). Arms at rest, hands at sides or behind.", "coaching": "Try using more hand gestures to engage your audience."},
+        {"max": 999, "label": "open", "tier": (0.8, 1.0), "text": "Open, expressive posture (Excellent). Good use of gestures.", "coaching": "Great body language! You look confident and approachable."}
     ],
     "body_global_score": [
         (0.70, 1.00, "Excellent body language. High presence, energy, and control."),

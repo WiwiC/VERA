@@ -1,0 +1,29 @@
+{
+    "0": {
+        "name": "High gesture_activity, High posture_openness",
+        "traits": [
+            "High gesture_activity",
+            "High posture_openness",
+            "High sway"
+        ],
+        "description": "Characterized by High gesture_activity, High posture_openness, High sway."
+    },
+    "1": {
+        "name": "Low pitchd, Low gesture_activity",
+        "traits": [
+            "Low pitchd",
+            "Low gesture_activity",
+            "Low posture_openness"
+        ],
+        "description": "Characterized by Low pitchd, Low gesture_activity, Low posture_openness."
+    },
+    "2": {
+        "name": "High pitchd, Low wpm",
+        "traits": [
+            "High pitchd",
+            "Low wpm",
+            "Low head_speed"
+        ],
+        "description": "Characterized by High pitchd, Low wpm, Low head_speed."
+    }
+}

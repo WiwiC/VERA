@@ -1,40 +1,31 @@
 """
-Scoring and interpretation logic for the VERA Body Module.
+Scoring logic for the VERA Body Module.
+Converts raw metrics into 0-1 scores using Tiered Parabolic Scoring.
 Aggregates metrics, applies sliding windows, computes scores, and generates text interpretations.
+
+REFACTORED (2025-01):
+- Uses compute_tiered_score to ensure scores align with labels.
+- Restored windowing and timeline generation logic.
 """
 
 import numpy as np
 import pandas as pd
+import sys
+import os
+
+# Add project root to path if needed
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
 from src.body.config import (
-    BASELINE_GESTURE_MAG_OPTIMAL,
-    BASELINE_GESTURE_MAG_VAR,
-    BASELINE_GESTURE_ACTIVITY_OPTIMAL,
-    BASELINE_GESTURE_ACTIVITY_VAR,
-    BASELINE_GESTURE_JITTER_OPTIMAL,
-    BASELINE_GESTURE_JITTER_RANGE,
-    BASELINE_BODY_SWAY_OPTIMAL,
-    BASELINE_BODY_SWAY_VAR,
-    BASELINE_ARMS_CLOSE_THRESHOLD,
-    BASELINE_WRIST_FORWARD_DEPTH,
-    POSTURE_SCORE_OPEN,
-    POSTURE_SCORE_NEUTRAL,
-    POSTURE_SCORE_CLOSED,
     INTERPRETATION_RANGES,
     CHANGE_THRESHOLDS
 )
 from src.utils.temporal import project_windows_to_seconds
-
+from src.utils.scoring_utils import compute_tiered_score
 
 def compute_change_labels(values, metric_id):
     """
     Compute window-to-window deltas and labels for temporal stability analysis.
-
-    Args:
-        values: Series or array of raw metric values per window
-        metric_id: Metric name to look up thresholds
-
-    Returns:
-        tuple: (deltas array, labels list)
     """
     values = np.asarray(values, dtype=float)
     if len(values) < 2:
@@ -80,260 +71,192 @@ def get_interpretation(metric_type, raw_value):
     Get text interpretation, coaching, and label based on raw value and buckets.
     """
     buckets = INTERPRETATION_RANGES.get(metric_type, [])
-
-    # Iterate through buckets to find the matching range
     for bucket in buckets:
         if raw_value <= bucket["max"]:
             return bucket["text"], bucket["coaching"], bucket["label"]
-
-    # Fallback (should not happen with max=999)
     return "Value out of range", "Check your settings.", "unknown"
 
 def get_global_interpretation(score):
-    """
-    Get interpretation for the global score (Range-based).
-    """
     ranges = INTERPRETATION_RANGES.get("body_global_score", [])
     for low, high, text in ranges:
         if low <= score <= high:
             return text
     return "Score out of range"
 
-
 def compute_scores(raw_df):
     """
     Compute aggregated scores from raw frame data.
 
     Args:
-        raw_df (pd.DataFrame): DataFrame with raw body metrics.
+        raw_df (pd.DataFrame): DataFrame with 'gesture_magnitude', 'gesture_activity', 'body_sway', 'posture_openness', 'second'.
 
     Returns:
-        tuple: (scores_dict, window_df, timeline_1s)
+        tuple: (scores_dict, window_df, timeline_1s, raw_1s_df)
     """
     # 1. Aggregate per second
-    gesture_mag_1s    = raw_df.groupby("second")["gesture_magnitude"].mean().fillna(0)
-    gesture_act_1s    = raw_df.groupby("second")["gesture_activity"].mean().fillna(0)
-    gesture_stability_1s = raw_df.groupby("second")["gesture_activity"].var().fillna(0)
-    body_sway_1s      = raw_df.groupby("second")["body_sway"].mean().fillna(0)
-    posture_open_1s   = raw_df.groupby("second")["posture_openness"].mean().fillna(0)
-    wrist_depth_1s    = raw_df.groupby("second")["wrist_depth_norm"].mean().fillna(0)
+    mag_1s = raw_df.groupby("second")["gesture_magnitude"].mean().fillna(0)
+    act_1s = raw_df.groupby("second")["gesture_activity"].mean().fillna(0)
+    sway_1s = raw_df.groupby("second")["body_sway"].mean().fillna(0)
+    posture_1s = raw_df.groupby("second")["posture_openness"].mean().fillna(0.6)
 
-    # Build 1-second raw timeline DataFrame (before windowing)
+    # Gesture Stability: Variance of activity within the second?
+    # Or variance of activity across frames?
+    # raw_df has frame-level data.
+    # So we calculate variance of 'gesture_activity' for each second group.
+    stab_1s = raw_df.groupby("second")["gesture_activity"].var().fillna(0)
+
+    # Build 1-second raw timeline DataFrame
     raw_1s_df = pd.DataFrame({
-        "second": gesture_mag_1s.index,
-        "gesture_magnitude": gesture_mag_1s.values,
-        "gesture_activity": gesture_act_1s.values,
-        "gesture_stability": gesture_stability_1s.values,
-        "body_sway": body_sway_1s.values,
-        "posture_openness": posture_open_1s.values,
-        "wrist_depth_norm": wrist_depth_1s.values
+        "second": mag_1s.index,
+        "gesture_magnitude": mag_1s.values,
+        "gesture_activity": act_1s.values,
+        "gesture_stability": stab_1s.values,
+        "body_sway": sway_1s.values,
+        "posture_openness": posture_1s.values
     })
 
     # 2. Sliding Windows (5s)
-    df_mag_5s    = sliding_windows(gesture_mag_1s)
-    df_act_5s    = sliding_windows(gesture_act_1s)
-    df_jitter_5s = sliding_windows(gesture_stability_1s)
-    df_sway_5s   = sliding_windows(body_sway_1s)
-    df_open_5s   = sliding_windows(posture_open_1s)
+    df_mag_5s = sliding_windows(mag_1s)
+    df_act_5s = sliding_windows(act_1s)
+    df_stab_5s = sliding_windows(stab_1s)
+    df_sway_5s = sliding_windows(sway_1s)
+    df_posture_5s = sliding_windows(posture_1s)
 
+    # Handle short videos
     if df_mag_5s.empty:
-        return {"error": "Video too short"}, pd.DataFrame(), pd.DataFrame(), raw_1s_df
+        return {
+            "error": "Video too short for analysis (needs > 5 seconds)"
+        }, pd.DataFrame(), pd.DataFrame(), raw_1s_df
 
-    # 3. Scoring Logic
+    # 3. Scoring Logic (Tiered Parabolic)
 
-    # --- GESTURE MAGNITUDE ---
-    mag_val = df_mag_5s["value"]
-    mag_comm_score = np.exp(-((mag_val - BASELINE_GESTURE_MAG_OPTIMAL)**2) / BASELINE_GESTURE_MAG_VAR)
-    df_mag_5s["comm_score"] = mag_comm_score
+    # Gesture Magnitude
+    df_mag_5s["comm_score"] = df_mag_5s["value"].apply(
+        lambda x: compute_tiered_score(x, INTERPRETATION_RANGES["gesture_magnitude"])
+    )
 
-    # --- GESTURE ACTIVITY ---
-    act_val = df_act_5s["value"]
-    act_comm_score = np.exp(-((act_val - BASELINE_GESTURE_ACTIVITY_OPTIMAL)**2) / BASELINE_GESTURE_ACTIVITY_VAR)
-    df_act_5s["comm_score"] = act_comm_score
+    # Gesture Activity
+    df_act_5s["comm_score"] = df_act_5s["value"].apply(
+        lambda x: compute_tiered_score(x, INTERPRETATION_RANGES["gesture_activity"])
+    )
 
-    # --- GESTURE JITTER ---
-    jit_val = df_jitter_5s["value"]
-    jit_comm_score = 1 / (1 + np.exp((jit_val - BASELINE_GESTURE_JITTER_OPTIMAL) / BASELINE_GESTURE_JITTER_RANGE))
-    df_jitter_5s["comm_score"] = jit_comm_score
+    # Gesture Stability
+    df_stab_5s["comm_score"] = df_stab_5s["value"].apply(
+        lambda x: compute_tiered_score(x, INTERPRETATION_RANGES["gesture_stability"])
+    )
 
-    # --- BODY SWAY ---
-    sway_val = df_sway_5s["value"]
-    sway_comm_score = np.exp(-((sway_val - BASELINE_BODY_SWAY_OPTIMAL)**2) / BASELINE_BODY_SWAY_VAR)
-    df_sway_5s["comm_score"] = sway_comm_score
+    # Body Sway
+    df_sway_5s["comm_score"] = df_sway_5s["value"].apply(
+        lambda x: compute_tiered_score(x, INTERPRETATION_RANGES["body_sway"])
+    )
 
-    # --- POSTURE OPENNESS (arms-based, 2-component) ---
-    # No longer uses shoulder angle — proven to not discriminate well
-    # Classification:
-    #   - "closed" = arms_close AND wrists_forward (defensive barrier)
-    #   - "neutral" = arms_close only (hands at rest)
-    #   - "open" = arms expanded (gesturing)
+    # Posture Openness
+    # Posture score is already 0.2/0.6/1.0.
+    # But we still want to map it to the tiers in case of averaging (e.g. 0.8).
+    # The config has buckets for 0.3, 0.7, 999.
+    df_posture_5s["comm_score"] = df_posture_5s["value"].apply(
+        lambda x: compute_tiered_score(x, INTERPRETATION_RANGES["posture_openness"])
+    )
 
-    # Component A: Arm closeness (from gesture magnitude)
-    arms_close = mag_val < BASELINE_ARMS_CLOSE_THRESHOLD  # < 1.2 SW
-
-    # Component B: Wrist depth (midplane-normalized, NEGATIVE = forward in MediaPipe)
-    # wrist_depth_1s already aggregated above for raw_1s_df
-    df_wrist_depth_5s = sliding_windows(wrist_depth_1s)
-    wrist_depth_val = df_wrist_depth_5s["value"]
-    wrists_forward = wrist_depth_val < BASELINE_WRIST_FORWARD_DEPTH  # < -0.5 = defensive
-
-    # Posture classification per window (SAFER: ignore wrist depth when arms open)
-    posture_comm_score = pd.Series(index=mag_val.index, dtype=float)
-    for i in range(len(mag_val)):
-        if arms_close.iloc[i]:
-            if wrists_forward.iloc[i]:
-                posture_comm_score.iloc[i] = POSTURE_SCORE_CLOSED   # 0.2
-            else:
-                posture_comm_score.iloc[i] = POSTURE_SCORE_NEUTRAL  # 0.6
-        else:
-            posture_comm_score.iloc[i] = POSTURE_SCORE_OPEN         # 1.0
-
-    df_open_5s["comm_score"] = posture_comm_score
-    df_open_5s["value"] = mag_val  # Show gesture_mag as the "posture" value for timeline
-
-    # --- GLOBAL SCORE ---
-    global_comm_score = (
+    # 4. Global Score
+    global_score = (
         df_mag_5s["comm_score"].mean() +
         df_act_5s["comm_score"].mean() +
-        df_jitter_5s["comm_score"].mean() +
+        df_stab_5s["comm_score"].mean() +
         df_sway_5s["comm_score"].mean() +
-        df_open_5s["comm_score"].mean()
-    ) / 5
+        df_posture_5s["comm_score"].mean()
+    ) / 5.0
 
-    # --- WINDOW-TO-WINDOW DELTAS (for timeline stability analysis) ---
-    mag_deltas, mag_labels = compute_change_labels(mag_val.values, "gesture_magnitude")
-    act_deltas, act_labels = compute_change_labels(act_val.values, "gesture_activity")
-    jit_deltas, jit_labels = compute_change_labels(jit_val.values, "gesture_stability")
-    sway_deltas, sway_labels = compute_change_labels(sway_val.values, "body_sway")
-    # Posture uses gesture_magnitude now (arms-based)
-    open_deltas, open_labels = compute_change_labels(mag_val.values, "posture_openness")
-
-    # Add deltas/labels to window dataframes
-    for df, deltas, labels, prefix in [
-        (df_mag_5s, mag_deltas, mag_labels, ""),
-        (df_act_5s, act_deltas, act_labels, ""),
-        (df_jitter_5s, jit_deltas, jit_labels, ""),
-        (df_sway_5s, sway_deltas, sway_labels, ""),
-        (df_open_5s, open_deltas, open_labels, ""),
+    # 5. Window Deltas
+    for df, metric in [
+        (df_mag_5s, "gesture_magnitude"),
+        (df_act_5s, "gesture_activity"),
+        (df_stab_5s, "gesture_stability"),
+        (df_sway_5s, "body_sway"),
+        (df_posture_5s, "posture_openness")
     ]:
+        deltas, labels = compute_change_labels(df["value"].values, metric)
         df["delta"] = np.nan
         df["change_label"] = ""
         if len(deltas) > 0:
             df.iloc[:-1, df.columns.get_loc("delta")] = deltas
             df.iloc[:-1, df.columns.get_loc("change_label")] = labels
 
-    # 4. Prepare Outputs
-    # Rename columns for clarity in window_df
-    df_mag_5s = df_mag_5s.rename(columns={
-        "value": "gesture_magnitude_val",
-        "comm_score": "gesture_magnitude_comm_score",
-        "delta": "gesture_magnitude_delta",
-        "change_label": "gesture_magnitude_change_label"
-    })
-    df_act_5s = df_act_5s.rename(columns={
-        "value": "gesture_activity_val",
-        "comm_score": "gesture_activity_comm_score",
-        "delta": "gesture_activity_delta",
-        "change_label": "gesture_activity_change_label"
-    })
-    df_jitter_5s = df_jitter_5s.rename(columns={
-        "value": "gesture_stability_val",
-        "comm_score": "gesture_stability_comm_score",
-        "delta": "gesture_stability_delta",
-        "change_label": "gesture_stability_change_label"
-    })
-    df_sway_5s = df_sway_5s.rename(columns={
-        "value": "body_sway_val",
-        "comm_score": "body_sway_comm_score",
-        "delta": "body_sway_delta",
-        "change_label": "body_sway_change_label"
-    })
-    df_open_5s = df_open_5s.rename(columns={
-        "value": "posture_openness_val",
-        "comm_score": "posture_openness_comm_score",
-        "delta": "posture_openness_delta",
-        "change_label": "posture_openness_change_label"
-    })
+    # 6. Prepare Outputs
 
+    # Rename columns
+    df_mag_5s = df_mag_5s.rename(columns={"value": "gesture_magnitude_val", "comm_score": "gesture_magnitude_score", "delta": "gesture_magnitude_delta", "change_label": "gesture_magnitude_change_label"})
+    df_act_5s = df_act_5s.rename(columns={"value": "gesture_activity_val", "comm_score": "gesture_activity_score", "delta": "gesture_activity_delta", "change_label": "gesture_activity_change_label"})
+    df_stab_5s = df_stab_5s.rename(columns={"value": "gesture_stability_val", "comm_score": "gesture_stability_score", "delta": "gesture_stability_delta", "change_label": "gesture_stability_change_label"})
+    df_sway_5s = df_sway_5s.rename(columns={"value": "body_sway_val", "comm_score": "body_sway_score", "delta": "body_sway_delta", "change_label": "body_sway_change_label"})
+    df_posture_5s = df_posture_5s.rename(columns={"value": "posture_openness_val", "comm_score": "posture_openness_score", "delta": "posture_openness_delta", "change_label": "posture_openness_change_label"})
+
+    # Merge
     window_df = df_mag_5s.merge(df_act_5s, on=["start_sec", "end_sec"])\
-                         .merge(df_jitter_5s, on=["start_sec", "end_sec"])\
+                         .merge(df_stab_5s, on=["start_sec", "end_sec"])\
                          .merge(df_sway_5s, on=["start_sec", "end_sec"])\
-                         .merge(df_open_5s, on=["start_sec", "end_sec"])
+                         .merge(df_posture_5s, on=["start_sec", "end_sec"])
 
-    # Add Global Score to window_df (constant column)
-    window_df["global_comm_score"] = global_comm_score
+    window_df["body_global_score"] = global_score
 
-    # 5. Get Interpretations & Coaching & Labels
+    # 7. Global Interpretations
+    mag_mean = df_mag_5s["gesture_magnitude_val"].mean()
+    act_mean = df_act_5s["gesture_activity_val"].mean()
+    stab_mean = df_stab_5s["gesture_stability_val"].mean()
+    sway_mean = df_sway_5s["body_sway_val"].mean()
+    posture_mean = df_posture_5s["posture_openness_val"].mean()
 
-    # Communication Scores (Absolute)
-    mag_mean_comm = df_mag_5s["gesture_magnitude_comm_score"].mean()
-    act_mean_comm = df_act_5s["gesture_activity_comm_score"].mean()
-    jit_mean_comm = df_jitter_5s["gesture_stability_comm_score"].mean()
-    sway_mean_comm = df_sway_5s["body_sway_comm_score"].mean()
-    open_mean_comm = df_open_5s["posture_openness_comm_score"].mean()
+    # Scores (mean of window scores)
+    mag_score = df_mag_5s["gesture_magnitude_score"].mean()
+    act_score = df_act_5s["gesture_activity_score"].mean()
+    stab_score = df_stab_5s["gesture_stability_score"].mean()
+    sway_score = df_sway_5s["body_sway_score"].mean()
+    posture_score = df_posture_5s["posture_openness_score"].mean()
 
-    # Mean raw values for interpretation
-    mag_mean_val = df_mag_5s["gesture_magnitude_val"].mean()
-    act_mean_val = df_act_5s["gesture_activity_val"].mean()
-    jit_mean_val = df_jitter_5s["gesture_stability_val"].mean()
-    sway_mean_val = df_sway_5s["body_sway_val"].mean()
-    open_mean_val = df_open_5s["posture_openness_val"].mean()
-
-    interp_mag_comm, coach_mag_comm, label_mag_comm = get_interpretation("gesture_magnitude", mag_mean_val)
-    interp_act_comm, coach_act_comm, label_act_comm = get_interpretation("gesture_activity", act_mean_val)
-    interp_jit_comm, coach_jit_comm, label_jit_comm = get_interpretation("gesture_stability", jit_mean_val)
-    interp_sway_comm, coach_sway_comm, label_sway_comm = get_interpretation("body_sway", sway_mean_val)
-
-    # Posture interpretation now uses score-based buckets via get_interpretation
-    interp_open_comm, coach_open_comm, label_open_comm = get_interpretation("posture_openness", open_mean_comm)
+    interp_mag, coach_mag, label_mag = get_interpretation("gesture_magnitude", mag_mean)
+    interp_act, coach_act, label_act = get_interpretation("gesture_activity", act_mean)
+    interp_stab, coach_stab, label_stab = get_interpretation("gesture_stability", stab_mean)
+    interp_sway, coach_sway, label_sway = get_interpretation("body_sway", sway_mean)
+    interp_posture, coach_posture, label_posture = get_interpretation("posture_openness", posture_mean)
 
     scores = {
-        "global_comm_score": float(global_comm_score),
-        "body_global_interpretation": get_global_interpretation(global_comm_score),
+        "body_global_score": float(global_score),
+        "body_global_interpretation": get_global_interpretation(global_score),
 
-        # Gesture Magnitude
-        "gesture_magnitude_communication_score": float(mag_mean_comm),
-        "gesture_magnitude_val": float(mag_mean_val),
-        "gesture_magnitude_communication_interpretation": interp_mag_comm,
-        "gesture_magnitude_communication_coaching": coach_mag_comm,
-        "gesture_magnitude_label": label_mag_comm,
+        "gesture_magnitude_score": float(mag_score),
+        "gesture_magnitude_val": float(mag_mean),
+        "gesture_magnitude_interpretation": interp_mag,
+        "gesture_magnitude_coaching": coach_mag,
+        "gesture_magnitude_label": label_mag,
 
-        # Gesture Activity
-        "gesture_activity_communication_score": float(act_mean_comm),
-        "gesture_activity_val": float(act_mean_val),
-        "gesture_activity_communication_interpretation": interp_act_comm,
-        "gesture_activity_communication_coaching": coach_act_comm,
-        "gesture_activity_label": label_act_comm,
+        "gesture_activity_score": float(act_score),
+        "gesture_activity_val": float(act_mean),
+        "gesture_activity_interpretation": interp_act,
+        "gesture_activity_coaching": coach_act,
+        "gesture_activity_label": label_act,
 
-        # Gesture Jitter
-        "gesture_stability_communication_score": float(jit_mean_comm),
-        "gesture_stability_val": float(jit_mean_val),
-        "gesture_stability_communication_interpretation": interp_jit_comm,
-        "gesture_stability_communication_coaching": coach_jit_comm,
-        "gesture_stability_label": label_jit_comm,
+        "gesture_stability_score": float(stab_score),
+        "gesture_stability_val": float(stab_mean),
+        "gesture_stability_interpretation": interp_stab,
+        "gesture_stability_coaching": coach_stab,
+        "gesture_stability_label": label_stab,
 
-        # Body Sway
-        "body_sway_communication_score": float(sway_mean_comm),
-        "body_sway_val": float(sway_mean_val),
-        "body_sway_communication_interpretation": interp_sway_comm,
-        "body_sway_communication_coaching": coach_sway_comm,
-        "body_sway_label": label_sway_comm,
+        "body_sway_score": float(sway_score),
+        "body_sway_val": float(sway_mean),
+        "body_sway_interpretation": interp_sway,
+        "body_sway_coaching": coach_sway,
+        "body_sway_label": label_sway,
 
-        # Posture Openness
-        "posture_openness_communication_score": float(open_mean_comm),
-        "posture_openness_val": float(open_mean_val),
-        "posture_openness_communication_interpretation": interp_open_comm,
-        "posture_openness_communication_coaching": coach_open_comm,
-        "posture_openness_label": label_open_comm,
+        "posture_openness_score": float(posture_score),
+        "posture_openness_val": float(posture_mean),
+        "posture_openness_interpretation": interp_posture,
+        "posture_openness_coaching": coach_posture,
+        "posture_openness_label": label_posture
     }
 
-    # 6. Generate Timeline (1Hz)
-    # Project Raw Values (_val), Communication Scores (_comm_score), and deltas (numeric only)
-    # Note: change_label columns are strings and cannot be projected via mean
-    cols_to_project = [c for c in window_df.columns
-                       if "_val" in c or "_comm_score" in c or "_delta" in c]
+    # Project Timeline
+    cols_to_project = [c for c in window_df.columns if "_val" in c or "_score" in c or "_delta" in c]
     projection_input = window_df[["start_sec", "end_sec"] + cols_to_project]
-
     timeline_1s = project_windows_to_seconds(projection_input)
 
     return scores, window_df, timeline_1s, raw_1s_df

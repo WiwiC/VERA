@@ -1,22 +1,27 @@
 """
 Scoring and interpretation logic for the VERA Face Module.
 Aggregates metrics, applies sliding windows, computes scores, and generates text interpretations.
+
+REFACTORED (2025-01):
+- Uses compute_tiered_score for all metrics (Tiered Parabolic Scoring).
+- Applied per-window to ensure granular accuracy.
 """
 
 import numpy as np
 import pandas as pd
+import sys
+import os
+
+# Add project root to path if needed
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
 from src.face.config import (
-    BASELINE_HEAD_STABILITY_OPTIMAL,
-    BASELINE_HEAD_STABILITY_VAR,
-    BASELINE_GAZE_MIDPOINT,
-    BASELINE_GAZE_SCALE,
-    BASELINE_SMILE_OPTIMAL,
-    BASELINE_SMILE_VAR,
     HEAD_DOWN_ANGLE_THRESHOLD,
     INTERPRETATION_RANGES,
     CHANGE_THRESHOLDS
 )
 from src.utils.temporal import project_windows_to_seconds
+from src.utils.scoring_utils import compute_tiered_score
 
 
 def compute_change_labels(values, metric_id):
@@ -140,31 +145,31 @@ def compute_scores(raw_df):
             "error": "Video too short for analysis (needs > 5 seconds)"
         }, pd.DataFrame(), pd.DataFrame(), raw_1s_df
 
-    # 3. Scoring Logic
+    # 3. Scoring Logic (Tiered Parabolic)
 
     # --- HEAD STABILITY ---
     head_val = df_head_5s["value"]
-    # Absolute (Communication Score)
-    head_comm_score = np.exp(-((head_val - BASELINE_HEAD_STABILITY_OPTIMAL)**2) / BASELINE_HEAD_STABILITY_VAR)
-    df_head_5s["comm_score"] = head_comm_score
+    df_head_5s["comm_score"] = head_val.apply(
+        lambda x: compute_tiered_score(x, INTERPRETATION_RANGES["head_stability"])
+    )
 
     # --- GAZE CONSISTENCY ---
     gaze_val = df_gaze_5s["value"]
-    # Absolute (Communication Score) - Inverted logistic (lower jitter = higher score)
-    gaze_comm_score = 1 / (1 + np.exp((gaze_val - BASELINE_GAZE_MIDPOINT) / BASELINE_GAZE_SCALE))
-    df_gaze_5s["comm_score"] = gaze_comm_score
+    df_gaze_5s["comm_score"] = gaze_val.apply(
+        lambda x: compute_tiered_score(x, INTERPRETATION_RANGES["gaze_stability"])
+    )
 
     # --- SMILE ACTIVATION ---
     smile_val = df_smile_5s["value"]
-    # Absolute (Communication Score) - GAUSSIAN for optimal band
-    smile_comm_score = np.exp(-((smile_val - BASELINE_SMILE_OPTIMAL)**2) / BASELINE_SMILE_VAR)
-    df_smile_5s["comm_score"] = smile_comm_score
+    df_smile_5s["comm_score"] = smile_val.apply(
+        lambda x: compute_tiered_score(x, INTERPRETATION_RANGES["smile_activation"])
+    )
 
     # --- HEAD DOWN RATIO ---
     head_down_val = df_head_down_5s["value"]
-    # Inverted logistic: Lower ratio = better score
-    head_down_comm_score = 1 / (1 + np.exp((head_down_val - 0.30) / 0.10))
-    df_head_down_5s["comm_score"] = head_down_comm_score
+    df_head_down_5s["comm_score"] = head_down_val.apply(
+        lambda x: compute_tiered_score(x, INTERPRETATION_RANGES["head_down_ratio"])
+    )
 
     # --- GLOBAL SCORE ---
     global_comm_score = (
