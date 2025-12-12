@@ -220,7 +220,7 @@ def compute_scores(raw_df):
     interp_posture, coach_posture, label_posture = get_interpretation("posture_openness", posture_mean)
 
     scores = {
-        "body_global_score": float(global_score),
+        "global_comm_score": float(global_score),
         "body_global_interpretation": get_global_interpretation(global_score),
 
         "gesture_magnitude_score": float(mag_score),
