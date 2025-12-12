@@ -5,6 +5,9 @@ Generates a debug video with MediaPipe Pose skeleton and custom colored keypoint
 
 import cv2
 import mediapipe as mp
+import os
+import subprocess
+import imageio_ffmpeg
 from tqdm import tqdm
 from src.body.config import (
     POSE_POINTS,
@@ -84,4 +87,27 @@ def create_debug_video(video_path, output_path):
     cap.release()
     out.release()
     holistic.close()
+
+    # Convert to H.264 for browser compatibility
+    print("🔄 Converting to H.264...")
+    temp_output = output_path + ".temp.mp4"
+    if os.path.exists(output_path):
+        os.rename(output_path, temp_output)
+
+        try:
+            ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+            subprocess.run([
+                ffmpeg_exe, "-y", "-i", temp_output,
+                "-vcodec", "libx264", "-pix_fmt", "yuv420p",
+                "-crf", "23",
+                output_path
+            ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            os.remove(temp_output)
+            print("✅ Converted to H.264.")
+        except Exception as e:
+            print(f"⚠️ Failed to convert to H.264: {e}")
+            # Restore original if conversion fails
+            if os.path.exists(temp_output):
+                os.rename(temp_output, output_path)
+
     print("✅ Debug video saved.")
