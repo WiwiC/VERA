@@ -25,12 +25,13 @@ def update_master_dataset(video_name, processed_dir):
     print(f"📊 Processing data for clustering: {video_name}")
 
     # 1. Load Raw Data
-    body_path = processed_dir / "df_Body_raw_data.csv"
+    # Body: Use 1s timeline (contains computed scores like Posture Openness)
+    body_path = processed_dir / "1s_raw_timeline_body.csv"
     face_path = processed_dir / "df_Face_raw_data.csv"
     audio_path = processed_dir / "df_Audio_raw_data.csv"
 
     if not (body_path.exists() and face_path.exists() and audio_path.exists()):
-        print(f"⚠️ Missing raw data files in {processed_dir}. Skipping clustering update.")
+        print(f"⚠️ Missing data files in {processed_dir}. Skipping clustering update.")
         return
 
     try:
@@ -43,8 +44,7 @@ def update_master_dataset(video_name, processed_dir):
 
     # 2. Clean Data
     # Drop first row (often empty/initialization artifacts)
-    if len(df_body) > 1:
-        df_body = df_body.iloc[1:].reset_index(drop=True)
+    # Note: 1s timeline doesn't have initialization artifacts usually, but safe to keep check
     if len(df_face) > 1:
         df_face = df_face.iloc[1:].reset_index(drop=True)
 
