@@ -1,35 +1,28 @@
-# Use Python 3.10 slim image
-#FROM python:3.10-slim
-FROM python:3.10.6-buster
+FROM python:3.10.6-slim
 
-# Set working directory
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
 WORKDIR /app
 
-# Install system dependencies
+# system deps (common ones; add more if your requirements need them)
 # ffmpeg: for audio/video processing
 # libsndfile1: for librosa
 # libgl1: for opencv (even headless sometimes needs it)
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ffmpeg \ 
     libsndfile1 \
     libgl1 \
-    && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install
-COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt .
+RUN pip install --upgrade pip setuptools wheel \
+ && pip install -r requirements.txt
 
-# Copy source code
-COPY src src
-COPY video-analyzer-app/ ./video-analyzer-app/
-COPY .env .env
+COPY . .
 
-# ????? we dont have setup.py, should we??
-# COPY setup.py setup.py
+EXPOSE 8501
 
-# Expose port 8080 (Cloud Run default)
-EXPOSE 8080
-
-# Run the application
-# Run the application
-CMD uvicorn src.api.fast:app --host 0.0.0.0 --port 8080
+CMD ["streamlit", "run", "video-analyzer-app/app.py", "--server.address=0.0.0.0", "--server.port=8501"]
