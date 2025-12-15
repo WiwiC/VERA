@@ -456,8 +456,8 @@ with st.container():
             st.markdown("""
             <div style="background: white; border-radius: 0.5rem; height: 315px; display: flex; align-items: center; justify-content: center; color: #9ca3af; border: 1px dashed #e5e7eb;">
                 <div style="text-align: center;">
-                    <div style="font-size: 3rem; margin-bottom: 0.5rem; opacity: 0.5;">Upload Video</div>
-                    <p>No video uploaded</p>
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem; opacity: 0.5;">No Video</div>
+                    <p>Upload a video to get started</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -474,36 +474,40 @@ if st.session_state.show_results:
     # Helper function for metric column
     def render_metrics_column(title, icon, color, data):
         color_map = {
-            "blue": {"bg": "#eff6ff", "border": "#bfdbfe", "text": "#1e40af", "score_bg": "#2563eb"},
-            "purple": {"bg": "#f3e8ff", "border": "#d8b4fe", "text": "#6b21a8", "score_bg": "#7c3aed"},
-            "green": {"bg": "#d1fae5", "border": "#a7f3d0", "text": "#065f46", "score_bg": "#059669"}
+            "blue": {"bg": "#eff6ff", "border": "#bfdbfe", "text": "#1e40af", "score_bg": "#2563eb", "badge_bg": "#dbeafe", "badge_text": "#1e40af"},
+            "purple": {"bg": "#f3e8ff", "border": "#d8b4fe", "text": "#6b21a8", "score_bg": "#7c3aed", "badge_bg": "#f3e8ff", "badge_text": "#6b21a8"},
+            "green": {"bg": "#d1fae5", "border": "#a7f3d0", "text": "#065f46", "score_bg": "#059669", "badge_bg": "#dcfce7", "badge_text": "#166534"}
         }
         colors = color_map[color]
 
-        st.markdown(f"""
-        <div style="background: {colors['bg']}; border: 1px solid {colors['border']}; border-radius: 0.75rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-            <div style="text-align: center; margin-bottom: 1.5rem;">
-                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{icon}</div>
-                <h3 style="color: {colors['text']}; font-size: 1.25rem; margin-bottom: 1rem;">{title}</h3>
-                <div style="background: {colors['score_bg']}; color: white; border-radius: 9999px; padding: 1rem 1.5rem; display: inline-block;">
-                    <div style="font-size: 1.875rem; font-weight: 700;">{data['globalScore']}</div>
-                    <div style="font-size: 0.875rem; opacity: 0.9;">Global Score</div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("<div style='margin-top: 1rem;'>", unsafe_allow_html=True)
-
+        # Generate HTML for indicators
+        metrics_html = ""
         for metric in data["metrics"]:
             score = metric["score"]
-            score_class = "score-green" if score >= 70 else "score-yellow" if score >= 40 else "score-red"
+            badge_class = "score-green" if score >= 70 else "score-yellow" if score >= 40 else "score-red"
 
-            with st.expander(f"**{metric['name']}** - {score}/100", expanded=False):
-                st.markdown(f"**Interpretation:** {metric['interpretation']}")
-                st.markdown(f"**Coaching:** {metric['coaching']}")
+            # Badge Color Logic for the pill inside the row
+            pill_color = "#d1fae5" if score >= 70 else "#fef3c7" if score >= 40 else "#fee2e2"
+            pill_text = "#065f46" if score >= 70 else "#92400e" if score >= 40 else "#991b1b"
 
-        st.markdown("</div>", unsafe_allow_html=True)
+            metrics_html += f"""<details style="background: white; border-radius: 0.5rem; margin-bottom: 0.75rem; border: 1px solid rgba(0,0,0,0.05); overflow: hidden;"><summary style="padding: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; list-style: none; background: white; border-radius: 0.5rem; transaction: 0.2s;"><span style="font-weight: 500; color: #1f2937;">{metric['name']}</span><span style="background: {pill_color}; color: {pill_text}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600;">{score}/100</span></summary><div style="padding: 1rem; border-top: 1px solid #f3f4f6; background: #fdfdfd; font-size: 0.9rem; color: #4b5563;"><div style="margin-bottom: 0.5rem;"><strong>Interpretation:</strong> {metric['interpretation']}</div><div><strong>Coaching:</strong> {metric['coaching']}</div></div></details>"""
+
+        # Main Card HTML
+        st.markdown(f"""
+<div style="background: {colors['bg']}; border: 1px solid {colors['border']}; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 100%; min-height: 600px; display: flex; flex-direction: column;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{icon}</div>
+        <h3 style="color: {colors['text']}; font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem;">{title}</h3>
+        <div style="background: {colors['score_bg']}; color: white; width: 120px; height: 120px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <div style="font-size: 2.25rem; font-weight: 700; line-height: 1;">{data['globalScore']}</div>
+            <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 4px;">Global Score</div>
+        </div>
+    </div>
+    <div style="flex-grow: 1;">
+        {metrics_html}
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
     # 3-Column Layout
     col_audio, col_face, col_body = st.columns(3)
@@ -516,3 +520,5 @@ if st.session_state.show_results:
 
     with col_body:
         render_metrics_column("Body Language", "🤸", "green", MOCK_DATA["body"])
+
+    st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
