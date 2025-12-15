@@ -1,0 +1,42 @@
+# Ce tutoriel montre comment l'on peut deployer le projet sur un VPS (AWS dans mon cas) avec Ubuntu dessus
+# Une fois connecté sur la machine, on peut lancer ces commandes (ligne par ligne):
+
+# Installer et mettre à jour les libraries sur la machine
+sudo apt update
+sudo apt -y upgrade
+sudo apt install unzip
+
+# J'ai prealablement importer le fichier .zip du projet sur la machine (en utilisant l'outil scp)
+unzip VERA-main.zip 
+cd VERA-main
+
+# Installer Docker
+sudo apt install -y docker.io
+sudo systemctl enable --now docker
+
+
+sudo usermod -aG docker $USER
+newgrp docker
+docker --version
+
+# Creer le container
+docker build -t vera . 
+
+# Faire tourner le container
+docker run -d --restart unless-stopped -p 8501:8501 --name vera vera
+
+# A partir d'ici, le docker sera deployé et si il n'y a pas eu de soucis, on se capable d'atteindre l'application depuis internet en utilisant l'addresse public du server. Ne pas oublier de mettre le port egalement
+# Example : 123.45.678.910:8501
+# Il ne faudra pas oublier d'ouvrir ce port au niveau du firewall du server.
+
+# Pour verifier si le container tourne bien
+docker ps 
+
+# Les logs (si jamais on a des print)
+docker logs -f vera
+
+# Pour arreter le docker
+docker stop vera
+
+# Pour effacer le container
+docker rm vera
