@@ -298,6 +298,16 @@ st.markdown("""
         background: #e5e7eb;
         border-radius: 9999px;
         overflow: hidden;
+    }
+
+    /* Chevron Animation */
+    details > summary .chevron-icon {
+        transition: transform 0.2s ease-in-out;
+        display: inline-block;
+    }
+    details[open] > summary .chevron-icon {
+        transform: rotate(180deg);
+    }
         margin-top: 2rem;
     }
 
@@ -318,8 +328,9 @@ st.markdown("""
     <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=1600&q=80" alt="VERA Banner">
     <div class="banner-overlay">
         <div style="text-align: center;">
-            <h1 style="font-size: 3rem; margin-bottom: 1rem;">VERA</h1>
-            <p style="font-size: 1.25rem; opacity: 0.9;">Advanced Multi-Modal AI Communication Analysis</p>
+            <h1 style="font-size: 3rem; margin-bottom: 0.1rem;">VERA</h1>
+            <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Vocal, Expression & Reaction Analyzer</h2>
+            <p style="font-size: 1.25rem; opacity: 0.9;">Your non-verbal communication analysis tool</p>
         </div>
     </div>
 </div>
@@ -337,10 +348,18 @@ with st.container():
     with col1:
         st.markdown("## What is VERA ?")
         st.markdown("""
-        <div style="color: #4b5563; line-height: 1.6; margin-bottom: 2rem;">
-            <b>VERA</b> is an advanced multi-modal pipeline designed to analyze communication performance by leveraging computer vision and audio signal processing.
-            <br><br>
-            It evaluates user's <b>Face</b> (micro-expressions, gaze...) <b>Body language</b> (posture, gestures...), and <b>Audio</b> (tonality, pacing..), and provides data-driven feedback to help users improve their communication skills.
+        <div style="color: #4b5563; line-height: 1.6; margin-bottom: 0.5rem;">
+            <b>VERA</b> is an advanced multi-modal AI pipeline designed to analyze communication performance by leveraging computer vision and audio signal processing.
+            <br>
+            It evaluates user's:
+            <br>
+            <b>- Face</b> (micro-expressions, gaze, head down ratio...),
+            <br>
+            <b>- Body language</b> (posture, gestures, stability...),
+            <br>
+            <b>- Audio</b> (speech rate, pause ratio, pitch dynamics...),
+            <br>
+            and provides data-driven feedback to help users improve their communication skills.
         </div>
         """, unsafe_allow_html=True)
 
@@ -367,89 +386,9 @@ with st.container():
 
 
 
-            if not st.session_state.processing:
-                # Normal State: Start Button
-                if st.button("▶️ Start Analysis", key="start_btn", use_container_width=True):
-                    st.session_state.processing = True
-                    st.session_state.show_results = False
-                    st.rerun()
-            else:
-                # Processing State: Disabled Button + Inline Progress
-                st.markdown("""
-                    <button style="
-                        width: 100%;
-                        padding: 0.75rem 2rem;
-                        background-color: #f3f4f6;
-                        color: #9ca3af;
-                        border: 1px solid #e5e7eb;
-                        border-radius: 0.5rem;
-                        cursor: not-allowed;
-                        font-weight: 600;
-                        margin-bottom: 20px;
-                    ">
-                        ⏳ Analysis in Progress...
-                    </button>
-                    """, unsafe_allow_html=True)
-
-                # Status placeholders
-                progress_bar = st.progress(0, text="Starting analysis...")
-                st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
-
-                audio_status = st.empty()
-                face_status = st.empty()
-                body_status = st.empty()
-
-                # Helper for inline status
-                def show_inline_status(name, state):
-                    icons = {"waiting": "⏳", "processing": "🔄", "done": "✅"}
-                    colors = {"waiting": "#94a3b8", "processing": "#3b82f6", "done": "#10b981"}
-                    bg_colors = {"waiting": "#f8fafc", "processing": "#eff6ff", "done": "#f0fdf4"}
-                    border_colors = {"waiting": "#e2e8f0", "processing": "#bfdbfe", "done": "#bbf7d0"}
-
-                    return f"""
-                    <div style="
-                        display: flex; align-items: center; justify-content: space-between;
-                        padding: 10px 14px; margin-bottom: 8px;
-                        background-color: {bg_colors[state]};
-                        border: 1px solid {border_colors[state]};
-                        border-radius: 8px;
-                        transition: all 0.3s ease;
-                    ">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size: 1.1em;">{icons[state]}</span>
-                            <span style="font-weight: 500; color: #334155;">{name}</span>
-                        </div>
-                        <span style="color: {colors[state]}; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px;">
-                            {state}
-                        </span>
-                    </div>
-                    """
-
-                time.sleep(0.8)
-
-                # Audio
-                audio_status.markdown(show_inline_status("Audio Pipeline", "processing"), unsafe_allow_html=True)
-                progress_bar.progress(33, text="Analyzing Audio...")
-                time.sleep(1.5)
-                audio_status.markdown(show_inline_status("Audio Pipeline", "done"), unsafe_allow_html=True)
-
-                # Face
-                face_status.markdown(show_inline_status("Face Pipeline", "processing"), unsafe_allow_html=True)
-                progress_bar.progress(66, text="Analyzing Facial Expressions...")
-                time.sleep(1.5)
-                face_status.markdown(show_inline_status("Face Pipeline", "done"), unsafe_allow_html=True)
-
-                # Body
-                body_status.markdown(show_inline_status("Body Pipeline", "processing"), unsafe_allow_html=True)
-                progress_bar.progress(90, text="Analyzing Body Language...")
-                time.sleep(1.5)
-                body_status.markdown(show_inline_status("Body Pipeline", "done"), unsafe_allow_html=True)
-
-                progress_bar.progress(100, text="Analysis Complete!")
-                time.sleep(0.5)
-
-                st.session_state.processing = False
-                st.session_state.show_results = True
+            if st.button("▶️ Start Analysis", key="start_btn", disabled=st.session_state.processing, use_container_width=True):
+                st.session_state.processing = True
+                st.session_state.show_results = False
                 st.rerun()
 
         else:
@@ -461,6 +400,99 @@ with st.container():
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
+# ==============================================================================
+# 4. PROCESSING SECTION (Full Width)
+# ==============================================================================
+if st.session_state.processing:
+    # Processing State: Disabled Button + Inline Progress
+    st.markdown("""
+        <button style="
+            width: 100%;
+            padding: 0.75rem 2rem;
+            background-color: #f3f4f6;
+            color: #9ca3af;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            cursor: not-allowed;
+            font-weight: 600;
+            margin-bottom: 20px;
+        ">
+            ⏳ Analysis in Progress...
+        </button>
+        """, unsafe_allow_html=True)
+
+    # Status placeholders (Full Width Container)
+    with st.container():
+        progress_bar = st.progress(0, text="Starting analysis...")
+        st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
+
+        audio_status = st.empty()
+        face_status = st.empty()
+        body_status = st.empty()
+
+        # Helper for inline status
+        def show_inline_status(name, state):
+            icons = {"waiting": "⏳", "processing": "🔄", "done": "✅"}
+            colors = {"waiting": "#94a3b8", "processing": "#3b82f6", "done": "#10b981"}
+            bg_colors = {"waiting": "#f8fafc", "processing": "#eff6ff", "done": "#f0fdf4"}
+            border_colors = {"waiting": "#e2e8f0", "processing": "#bfdbfe", "done": "#bbf7d0"}
+
+            # Auto-scroll script injection
+            scroll_script = """
+            <script>
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            </script>
+            """
+
+            return f"""
+            {scroll_script}
+            <div style="
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 10px 14px; margin-bottom: 8px;
+                background-color: {bg_colors[state]};
+                border: 1px solid {border_colors[state]};
+                border-radius: 8px;
+                transition: all 0.3s ease;
+            ">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size: 1.1em;">{icons[state]}</span>
+                    <span style="font-weight: 500; color: #334155;">{name}</span>
+                </div>
+                <span style="color: {colors[state]}; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px;">
+                    {state}
+                </span>
+            </div>
+            """
+
+        time.sleep(0.8)
+
+        # Audio
+        audio_status.markdown(show_inline_status("Audio Pipeline", "processing"), unsafe_allow_html=True)
+        progress_bar.progress(33, text="Analyzing Audio...")
+        time.sleep(1.5)
+        audio_status.markdown(show_inline_status("Audio Pipeline", "done"), unsafe_allow_html=True)
+
+        # Face
+        face_status.markdown(show_inline_status("Face Pipeline", "processing"), unsafe_allow_html=True)
+        progress_bar.progress(66, text="Analyzing Facial Expressions...")
+        time.sleep(1.5)
+        face_status.markdown(show_inline_status("Face Pipeline", "done"), unsafe_allow_html=True)
+
+        # Body
+        body_status.markdown(show_inline_status("Body Pipeline", "processing"), unsafe_allow_html=True)
+        progress_bar.progress(90, text="Analyzing Body Language...")
+        time.sleep(1.5)
+        body_status.markdown(show_inline_status("Body Pipeline", "done"), unsafe_allow_html=True)
+
+        progress_bar.progress(100, text="Analysis Complete!")
+        time.sleep(0.5)
+
+        st.session_state.processing = False
+        st.session_state.show_results = True
+        st.rerun()
+
+
 
 
 
@@ -490,7 +522,7 @@ if st.session_state.show_results:
             pill_color = "#d1fae5" if score >= 70 else "#fef3c7" if score >= 40 else "#fee2e2"
             pill_text = "#065f46" if score >= 70 else "#92400e" if score >= 40 else "#991b1b"
 
-            metrics_html += f"""<details style="background: white; border-radius: 0.5rem; margin-bottom: 0.75rem; border: 1px solid rgba(0,0,0,0.05); overflow: hidden;"><summary style="padding: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; list-style: none; background: white; border-radius: 0.5rem; transaction: 0.2s;"><span style="font-weight: 500; color: #1f2937;">{metric['name']}</span><span style="background: {pill_color}; color: {pill_text}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600;">{score}/100</span></summary><div style="padding: 1rem; border-top: 1px solid #f3f4f6; background: #fdfdfd; font-size: 0.9rem; color: #4b5563;"><div style="margin-bottom: 0.5rem;"><strong>Interpretation:</strong> {metric['interpretation']}</div><div><strong>Coaching:</strong> {metric['coaching']}</div></div></details>"""
+            metrics_html += f"""<details style="background: white; border-radius: 0.5rem; margin-bottom: 0.75rem; border: 1px solid rgba(0,0,0,0.05); overflow: hidden;"><summary style="padding: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; list-style: none; background: white; border-radius: 0.5rem; transaction: 0.2s;"><div style="display:flex; align-items:center; width:100%; justify-content:space-between;"><span style="font-weight: 500; color: #1f2937;">{metric['name']}</span><div style="display:flex; align-items:center; gap:8px;"><span style="background: {pill_color}; color: {pill_text}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600;">{score}/100</span><span class="chevron-icon" style="color: #9ca3af; font-size: 0.8rem;">▼</span></div></div></summary><div style="padding: 1rem; border-top: 1px solid #f3f4f6; background: #fdfdfd; font-size: 0.9rem; color: #4b5563;"><div style="margin-bottom: 0.5rem;"><strong>Interpretation:</strong> {metric['interpretation']}</div><div><strong>Coaching:</strong> {metric['coaching']}</div></div></details>"""
 
         # Main Card HTML
         st.markdown(f"""
