@@ -28,3 +28,14 @@ video-analyzer-app/data/processed/*
 # Models
 models/*
 !models/.gitkeep
+
+# Reports
+reports/*
+!reports/.gitkeep
+
+# Clustering Results
+data/clustering_results/
+
+# Docs
+docs/*
+!docs/.gitkeep

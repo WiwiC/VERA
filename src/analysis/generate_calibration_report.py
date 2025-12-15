@@ -20,10 +20,12 @@ from pathlib import Path
 # Configuration
 # =========================================================
 
-MANIFEST_PATH = Path("data/raw/calibration_manifest.csv")
+MANIFEST_PATH = Path("data/raw/updated_calibration_manifest_V3.csv")
 PROCESSED_DIR = Path("data/processed")
+REPORTS_DIR = Path("reports")
+REPORTS_DIR.mkdir(exist_ok=True)
+OUTPUT_PATH = REPORTS_DIR / "calibration_report.csv"
 METRICS_SPEC_PATH = Path("src/schemas/metrics_spec.json")
-OUTPUT_PATH = Path("data/calibration_report.csv")
 
 # Mapping from manifest column names to metrics_spec metric_id and JSON path
 METRIC_MAPPING = {
