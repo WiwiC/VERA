@@ -160,14 +160,27 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
+    /* Remove top padding from main container */
+    .block-container {
+        padding-top: 0rem;
+        padding-bottom: 20px;
+        padding-left: 5rem;
+        padding-right: 5rem;
+        max-width: 100%;
+    }
+
+    /* Custom Components */
     /* Custom Components */
     .banner {
+        width: 100vw;
         position: relative;
+        left: 50%;
+        margin-left: -50vw;
         height: 256px;
-        width: 100%;
         overflow: hidden;
         border-radius: 0;
         margin-bottom: 3rem;
+        margin-top: 0;
     }
 
     .banner img {
@@ -317,134 +330,131 @@ st.markdown("""
 # 3. VIDEO UPLOADER SECTION (Grid: 1/3 Upload, 2/3 Preview)
 # ==============================================================================
 with st.container():
-    st.markdown('<div style="background: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 2rem; margin-bottom: 2rem;">', unsafe_allow_html=True)
 
-    col1, col2 = st.columns([1, 2])
+    col1, col2 = st.columns([1, 1])
 
-    # Left: Upload Box (1/3)
+    # Left: What is VERA section
     with col1:
-        st.markdown("## Upload Your Video")
+        st.markdown("## What is VERA ?")
+        st.markdown("""
+        <div style="color: #4b5563; line-height: 1.6; margin-bottom: 2rem;">
+            <b>VERA</b> is an advanced multi-modal pipeline designed to analyze communication performance by leveraging computer vision and audio signal processing.
+            <br><br>
+            It evaluates user's <b>Face</b> (micro-expressions, gaze...) <b>Body language</b> (posture, gestures...), and <b>Audio</b> (tonality, pacing..), and provides data-driven feedback to help users improve their communication skills.
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("### Upload your video")
         uploaded_file = st.file_uploader(
             "Drag & Drop your video here or click to browse",
             type=["mp4", "mov", "avi"],
             label_visibility="collapsed"
         )
+        st.markdown("<p style='font-size: 0.8rem; color: #6b7280; margin-top: 0.5rem;'>* Make sure your body is visible from the hips to the head</p>", unsafe_allow_html=True)
 
         if uploaded_file:
             st.session_state.video_uploaded = True
             st.session_state.uploaded_file = uploaded_file
             st.success(f"✓ {uploaded_file.name}")
-        else:
-            st.markdown("""
-            <div class="upload-box">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
-                <p style="color: #6b7280; margin-bottom: 0.5rem;">Drag & Drop your video here</p>
-                <p style="color: #9ca3af; font-size: 0.875rem;">or click to browse</p>
-            </div>
-            """, unsafe_allow_html=True)
 
     # Right: Video Preview (2/3)
     with col2:
         st.markdown("## Preview")
 
         if st.session_state.video_uploaded and st.session_state.uploaded_file:
-            # Create centered column for video (80% width)
-            _, col_video_centered, _ = st.columns([1, 8, 1])
+            # Display video
+            st.video(st.session_state.uploaded_file)
 
-            with col_video_centered:
-                # Display video
-                st.video(st.session_state.uploaded_file)
 
-                st.markdown("<br>", unsafe_allow_html=True)
 
-                if not st.session_state.processing:
-                    # Normal State: Start Button
-                    if st.button("▶️ Start Analysis", key="start_btn", use_container_width=True):
-                        st.session_state.processing = True
-                        st.session_state.show_results = False
-                        st.rerun()
-                else:
-                    # Processing State: Disabled Button + Inline Progress
-                    st.markdown("""
-                        <button style="
-                            width: 100%;
-                            padding: 0.75rem 2rem;
-                            background-color: #f3f4f6;
-                            color: #9ca3af;
-                            border: 1px solid #e5e7eb;
-                            border-radius: 0.5rem;
-                            cursor: not-allowed;
-                            font-weight: 600;
-                            margin-bottom: 20px;
-                        ">
-                            ⏳ Analysis in Progress...
-                        </button>
-                        """, unsafe_allow_html=True)
-
-                    # Status placeholders
-                    progress_bar = st.progress(0, text="Starting analysis...")
-                    st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
-
-                    audio_status = st.empty()
-                    face_status = st.empty()
-                    body_status = st.empty()
-
-                    # Helper for inline status
-                    def show_inline_status(name, state):
-                        icons = {"waiting": "⏳", "processing": "🔄", "done": "✅"}
-                        colors = {"waiting": "#94a3b8", "processing": "#3b82f6", "done": "#10b981"}
-                        bg_colors = {"waiting": "#f8fafc", "processing": "#eff6ff", "done": "#f0fdf4"}
-                        border_colors = {"waiting": "#e2e8f0", "processing": "#bfdbfe", "done": "#bbf7d0"}
-
-                        return f"""
-                        <div style="
-                            display: flex; align-items: center; justify-content: space-between;
-                            padding: 10px 14px; margin-bottom: 8px;
-                            background-color: {bg_colors[state]};
-                            border: 1px solid {border_colors[state]};
-                            border-radius: 8px;
-                            transition: all 0.3s ease;
-                        ">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="font-size: 1.1em;">{icons[state]}</span>
-                                <span style="font-weight: 500; color: #334155;">{name}</span>
-                            </div>
-                            <span style="color: {colors[state]}; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px;">
-                                {state}
-                            </span>
-                        </div>
-                        """
-
-                    time.sleep(0.8)
-
-                    # Audio
-                    audio_status.markdown(show_inline_status("Audio Pipeline", "processing"), unsafe_allow_html=True)
-                    progress_bar.progress(33, text="Analyzing Audio...")
-                    time.sleep(1.5)
-                    audio_status.markdown(show_inline_status("Audio Pipeline", "done"), unsafe_allow_html=True)
-
-                    # Face
-                    face_status.markdown(show_inline_status("Face Pipeline", "processing"), unsafe_allow_html=True)
-                    progress_bar.progress(66, text="Analyzing Facial Expressions...")
-                    time.sleep(1.5)
-                    face_status.markdown(show_inline_status("Face Pipeline", "done"), unsafe_allow_html=True)
-
-                    # Body
-                    body_status.markdown(show_inline_status("Body Pipeline", "processing"), unsafe_allow_html=True)
-                    progress_bar.progress(90, text="Analyzing Body Language...")
-                    time.sleep(1.5)
-                    body_status.markdown(show_inline_status("Body Pipeline", "done"), unsafe_allow_html=True)
-
-                    progress_bar.progress(100, text="Analysis Complete!")
-                    time.sleep(0.5)
-
-                    st.session_state.processing = False
-                    st.session_state.show_results = True
+            if not st.session_state.processing:
+                # Normal State: Start Button
+                if st.button("▶️ Start Analysis", key="start_btn", use_container_width=True):
+                    st.session_state.processing = True
+                    st.session_state.show_results = False
                     st.rerun()
+            else:
+                # Processing State: Disabled Button + Inline Progress
+                st.markdown("""
+                    <button style="
+                        width: 100%;
+                        padding: 0.75rem 2rem;
+                        background-color: #f3f4f6;
+                        color: #9ca3af;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 0.5rem;
+                        cursor: not-allowed;
+                        font-weight: 600;
+                        margin-bottom: 20px;
+                    ">
+                        ⏳ Analysis in Progress...
+                    </button>
+                    """, unsafe_allow_html=True)
+
+                # Status placeholders
+                progress_bar = st.progress(0, text="Starting analysis...")
+                st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
+
+                audio_status = st.empty()
+                face_status = st.empty()
+                body_status = st.empty()
+
+                # Helper for inline status
+                def show_inline_status(name, state):
+                    icons = {"waiting": "⏳", "processing": "🔄", "done": "✅"}
+                    colors = {"waiting": "#94a3b8", "processing": "#3b82f6", "done": "#10b981"}
+                    bg_colors = {"waiting": "#f8fafc", "processing": "#eff6ff", "done": "#f0fdf4"}
+                    border_colors = {"waiting": "#e2e8f0", "processing": "#bfdbfe", "done": "#bbf7d0"}
+
+                    return f"""
+                    <div style="
+                        display: flex; align-items: center; justify-content: space-between;
+                        padding: 10px 14px; margin-bottom: 8px;
+                        background-color: {bg_colors[state]};
+                        border: 1px solid {border_colors[state]};
+                        border-radius: 8px;
+                        transition: all 0.3s ease;
+                    ">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size: 1.1em;">{icons[state]}</span>
+                            <span style="font-weight: 500; color: #334155;">{name}</span>
+                        </div>
+                        <span style="color: {colors[state]}; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px;">
+                            {state}
+                        </span>
+                    </div>
+                    """
+
+                time.sleep(0.8)
+
+                # Audio
+                audio_status.markdown(show_inline_status("Audio Pipeline", "processing"), unsafe_allow_html=True)
+                progress_bar.progress(33, text="Analyzing Audio...")
+                time.sleep(1.5)
+                audio_status.markdown(show_inline_status("Audio Pipeline", "done"), unsafe_allow_html=True)
+
+                # Face
+                face_status.markdown(show_inline_status("Face Pipeline", "processing"), unsafe_allow_html=True)
+                progress_bar.progress(66, text="Analyzing Facial Expressions...")
+                time.sleep(1.5)
+                face_status.markdown(show_inline_status("Face Pipeline", "done"), unsafe_allow_html=True)
+
+                # Body
+                body_status.markdown(show_inline_status("Body Pipeline", "processing"), unsafe_allow_html=True)
+                progress_bar.progress(90, text="Analyzing Body Language...")
+                time.sleep(1.5)
+                body_status.markdown(show_inline_status("Body Pipeline", "done"), unsafe_allow_html=True)
+
+                progress_bar.progress(100, text="Analysis Complete!")
+                time.sleep(0.5)
+
+                st.session_state.processing = False
+                st.session_state.show_results = True
+                st.rerun()
 
         else:
             st.markdown("""
-            <div style="background: #f3f4f6; border-radius: 0.5rem; height: 16rem; display: flex; align-items: center; justify-content: center; color: #9ca3af;">
+            <div style="background: white; border-radius: 0.5rem; height: 315px; display: flex; align-items: center; justify-content: center; color: #9ca3af; border: 1px dashed #e5e7eb;">
                 <div style="text-align: center;">
                     <div style="font-size: 3rem; margin-bottom: 0.5rem; opacity: 0.5;">Upload Video</div>
                     <p>No video uploaded</p>
@@ -452,7 +462,7 @@ with st.container():
             </div>
             """, unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+
 
 
 # ==============================================================================
