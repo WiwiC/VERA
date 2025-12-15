@@ -1,30 +1,30 @@
 {
     "0": {
-        "name": "High smile, High wpm",
+        "name": "High head_speed, High sway",
         "traits": [
-            "High smile",
-            "High wpm",
-            "High posture_openness"
+            "High head_speed",
+            "High sway",
+            "Low pitchd"
         ],
-        "description": "Characterized by High smile, High wpm, High posture_openness."
+        "description": "Characterized by High head_speed, High sway, Low pitchd."
     },
     "1": {
         "name": "Low gesture_activity, Low sway",
         "traits": [
             "Low gesture_activity",
             "Low sway",
-            "Low pitchd"
+            "Low posture_openness"
         ],
-        "description": "Characterized by Low gesture_activity, Low sway, Low pitchd."
+        "description": "Characterized by Low gesture_activity, Low sway, Low posture_openness."
     },
     "2": {
-        "name": "High sway, High gesture_activity",
+        "name": "High gesture_activity, High smile",
         "traits": [
-            "High sway",
             "High gesture_activity",
-            "High head_speed"
+            "High smile",
+            "High sway"
         ],
-        "description": "Characterized by High sway, High gesture_activity, High head_speed."
+        "description": "Characterized by High gesture_activity, High smile, High sway."
     },
     "3": {
         "name": "High pitchd, Low wpm",
