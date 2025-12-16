@@ -205,7 +205,7 @@ st.markdown("""
 # ==============================================================================
 # Helper Function: Render Metric Column
 # ==============================================================================
-def render_metrics_column(title, icon, color, data):
+def render_metrics_column(title, icon, color, data, media_path=None):
     color_map = {
         "blue": {"bg": "#eff6ff", "border": "#bfdbfe", "text": "#1e40af", "score_bg": "#2563eb", "badge_bg": "#dbeafe", "badge_text": "#1e40af"},
         "purple": {"bg": "#f3e8ff", "border": "#d8b4fe", "text": "#6b21a8", "score_bg": "#7c3aed", "badge_bg": "#f3e8ff", "badge_text": "#6b21a8"},
@@ -221,21 +221,51 @@ def render_metrics_column(title, icon, color, data):
 
         metrics_html += f"""<details style="background: white; border-radius: 0.5rem; margin-bottom: 0.75rem; border: 1px solid rgba(0,0,0,0.05); overflow: hidden;"><summary style="padding: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; list-style: none; background: white; border-radius: 0.5rem; transaction: 0.2s;"><div style="display:flex; align-items:center; width:100%; justify-content:space-between;"><span style="font-weight: 500; color: #1f2937;">{metric['name']}</span><div style="display:flex; align-items:center; gap:8px;"><span style="background: {pill_color}; color: {pill_text}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600;">{score}/100</span><span class="chevron-icon" style="color: #9ca3af; font-size: 0.8rem;">▼</span></div></div></summary><div style="padding: 1rem; border-top: 1px solid #f3f4f6; background: #fdfdfd; font-size: 0.9rem; color: #4b5563;"><div style="margin-bottom: 0.5rem;"><strong>Interpretation:</strong> {metric['interpretation']}</div><div><strong>Coaching:</strong> {metric['coaching']}</div></div></details>"""
 
+    # Media Embedding Logic
+    media_html = ""
+    if media_path:
+        path_obj = Path(media_path)
+        if path_obj.exists():
+            try:
+                with open(path_obj, "rb") as f:
+                    media_bytes = f.read()
+                media_b64 = base64.b64encode(media_bytes).decode()
+
+                # Determine MIME type
+                if path_obj.suffix.lower() == ".mp3":
+                    mime_type = "audio/mpeg"
+                    media_tag = f'<audio controls style="width: 100%; margin-top: 10px; border-radius: 8px;"><source src="data:{mime_type};base64,{media_b64}" type="{mime_type}">Your browser does not support the audio element.</audio>'
+                elif path_obj.suffix.lower() == ".mp4":
+                    mime_type = "video/mp4"
+                    media_tag = f'<video controls style="width: 100%; margin-top: 10px; border-radius: 8px;"><source src="data:{mime_type};base64,{media_b64}" type="{mime_type}">Your browser does not support the video element.</video>'
+                else:
+                    media_tag = ""
+
+                if media_tag:
+                    media_html = f"""
+<div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid {colors['border']};">
+<div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; color: {colors['text']};">Debug Media</div>
+{media_tag}
+</div>"""
+            except Exception as e:
+                print(f"Error loading media {media_path}: {e}")
+
     st.markdown(f"""
-    <div style="background: {colors['bg']}; border: 1px solid {colors['border']}; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 100%; min-height: 600px; display: flex; flex-direction: column;">
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{icon}</div>
-            <h3 style="color: {colors['text']}; font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem;">{title}</h3>
-            <div style="background: {colors['score_bg']}; color: white; width: 120px; height: 120px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                <div style="font-size: 2.25rem; font-weight: 700; line-height: 1;">{data['globalScore']}</div>
-                <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 4px;">Global Score</div>
-            </div>
-        </div>
-        <div style="flex-grow: 1;">
-            {metrics_html}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+<div style="background: {colors['bg']}; border: 1px solid {colors['border']}; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 100%; min-height: 600px; display: flex; flex-direction: column;">
+<div style="text-align: center; margin-bottom: 2rem;">
+<div style="font-size: 2.5rem; margin-bottom: 0.5rem;">{icon}</div>
+<h3 style="color: {colors['text']}; font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem;">{title}</h3>
+<div style="background: {colors['score_bg']}; color: white; width: 120px; height: 120px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+<div style="font-size: 2.25rem; font-weight: 700; line-height: 1;">{data['globalScore']}</div>
+<div style="font-size: 0.75rem; opacity: 0.9; margin-top: 4px;">Global Score</div>
+</div>
+</div>
+<div style="flex-grow: 1;">
+{metrics_html}
+</div>
+{media_html}
+</div>
+""", unsafe_allow_html=True)
 
 
 # ==============================================================================
@@ -558,6 +588,16 @@ def render_dashboard():
 
         analysis_data = st.session_state.analysis_results
 
+        # Calculate Debug Media Paths
+        processed_folder = None
+        if st.session_state.video_path:
+            video_stem = Path(st.session_state.video_path).stem
+            processed_folder = PROCESSED_DIR / video_stem
+
+        debug_audio = processed_folder / "debug_audio.mp3" if processed_folder else None
+        debug_face = processed_folder / "debug_face.mp4" if processed_folder else None
+        debug_body = processed_folder / "debug_pose.mp4" if processed_folder else None
+
         # 3-Column Layout
         col_audio, col_face, col_body = st.columns(3)
 
@@ -569,7 +609,7 @@ def render_dashboard():
                     "globalScore": analysis_data["audio"]["global"]["score"],
                     "metrics": list(analysis_data["audio"]["metrics"].values())
                 }
-                render_metrics_column("Audio", "🎤", "blue", audio_data)
+                render_metrics_column("Audio", "🎤", "blue", audio_data, media_path=debug_audio)
 
         with col_face:
             if "face" in analysis_data:
@@ -577,7 +617,7 @@ def render_dashboard():
                     "globalScore": analysis_data["face"]["global"]["score"],
                     "metrics": list(analysis_data["face"]["metrics"].values())
                 }
-                render_metrics_column("Face Expression", "😊", "purple", face_data)
+                render_metrics_column("Face Expression", "😊", "purple", face_data, media_path=debug_face)
 
         with col_body:
             if "body" in analysis_data:
@@ -585,7 +625,7 @@ def render_dashboard():
                     "globalScore": analysis_data["body"]["global"]["score"],
                     "metrics": list(analysis_data["body"]["metrics"].values())
                 }
-                render_metrics_column("Body Language", "🤸", "green", body_data)
+                render_metrics_column("Body Language", "🤸", "green", body_data, media_path=debug_body)
 
         st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
