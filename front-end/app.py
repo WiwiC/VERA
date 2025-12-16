@@ -1,16 +1,25 @@
 import streamlit as st
 import time
+import json
+import base64
+import os
+import sys
 from pathlib import Path
 
+# Add src to path for imports
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from src.main import run_pipelines_iterator
+
 # ==============================================================================
-# 0. PAGE CONFIG & SESSION STATE
+# 0. CONFIG & CONSTANTS
 # ==============================================================================
-st.set_page_config(
-    page_title="VERA - AI Communication Analysis",
-    page_icon="🎯",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+st.set_page_config(page_title="VERA - AI Communication Coach", page_icon="🎙️", layout="wide")
+
+# Directory setup
+UPLOAD_DIR = Path("front-end/uploaded")
+PROCESSED_DIR = Path("front-end/processed")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
 # Initialize session state
 if "video_uploaded" not in st.session_state:
@@ -21,109 +30,10 @@ if "show_results" not in st.session_state:
     st.session_state.show_results = False
 if "uploaded_file" not in st.session_state:
     st.session_state.uploaded_file = None
-
-# Mock data (from mockData.ts)
-MOCK_DATA = {
-    "audio": {
-        "globalScore": 78,
-        "metrics": [
-            {
-                "name": "Speech Rate",
-                "score": 85,
-                "interpretation": "Optimal pacing - clear and engaging",
-                "coaching": "Maintain this natural rhythm in future presentations"
-            },
-            {
-                "name": "Pause Ratio",
-                "score": 72,
-                "interpretation": "Good use of pauses for emphasis",
-                "coaching": "Consider adding slightly longer pauses before key points"
-            },
-            {
-                "name": "Pitch Dynamics",
-                "score": 68,
-                "interpretation": "Moderate vocal variety",
-                "coaching": "Expand your pitch range to add more emotional color"
-            },
-            {
-                "name": "Volume Dynamics",
-                "score": 80,
-                "interpretation": "Strong volume control and projection",
-                "coaching": "Excellent energy - keep leveraging volume for emphasis"
-            },
-            {
-                "name": "Vocal Punch",
-                "score": 82,
-                "interpretation": "High energy and conviction",
-                "coaching": "Your vocal intensity effectively captures attention"
-            }
-        ]
-    },
-    "face": {
-        "globalScore": 71,
-        "metrics": [
-            {
-                "name": "Head Stability",
-                "score": 76,
-                "interpretation": "Steady and confident posture",
-                "coaching": "Good control - avoid excessive nodding"
-            },
-            {
-                "name": "Gaze Stability",
-                "score": 65,
-                "interpretation": "Moderate eye contact",
-                "coaching": "Hold gaze 3-5 seconds per person to build connection"
-            },
-            {
-                "name": "Smile Activation",
-                "score": 70,
-                "interpretation": "Warm and approachable expression",
-                "coaching": "Authentic smiles detected - continue being genuine"
-            },
-            {
-                "name": "Head Down Ratio",
-                "score": 74,
-                "interpretation": "Minimal downward gaze",
-                "coaching": "Keep chin level to project confidence and authority"
-            }
-        ]
-    },
-    "body": {
-        "globalScore": 83,
-        "metrics": [
-            {
-                "name": "Gesture Magnitude",
-                "score": 88,
-                "interpretation": "Dynamic and expressive movements",
-                "coaching": "Strong gestures amplify your message effectively"
-            },
-            {
-                "name": "Gesture Activity",
-                "score": 82,
-                "interpretation": "Well-timed hand movements",
-                "coaching": "Good balance - gestures align with speech rhythm"
-            },
-            {
-                "name": "Gesture Stability",
-                "score": 79,
-                "interpretation": "Controlled and purposeful",
-                "coaching": "Minimize fidgeting during pauses for added gravitas"
-            },
-            {
-                "name": "Body Sway",
-                "score": 85,
-                "interpretation": "Natural weight shifts and movement",
-                "coaching": "Your movement keeps the audience engaged"
-            },
-            {
-                "name": "Posture Openness",
-                "score": 81,
-                "interpretation": "Open and welcoming stance",
-                "coaching": "Excellent - avoid crossing arms to maintain accessibility"
-            }
-        ]
-    }
-}
+if "video_path" not in st.session_state:
+    st.session_state.video_path = None
+if "analysis_results" not in st.session_state:
+    st.session_state.analysis_results = None
 
 
 # ==============================================================================
@@ -372,8 +282,14 @@ with st.container():
         st.markdown("<p style='font-size: 0.8rem; color: #6b7280; margin-top: 0.5rem;'>* Make sure your body is visible from the hips to the head</p>", unsafe_allow_html=True)
 
         if uploaded_file:
+            # Save file locally
+            video_path = UPLOAD_DIR / uploaded_file.name
+            with open(video_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+
             st.session_state.video_uploaded = True
             st.session_state.uploaded_file = uploaded_file
+            st.session_state.video_path = str(video_path)
             st.success(f"✓ {uploaded_file.name}")
 
     # Right: Video Preview (2/3)
@@ -424,19 +340,20 @@ if st.session_state.processing:
 
     # Status placeholders (Full Width Container)
     with st.container():
-        progress_bar = st.progress(0, text="Starting analysis...")
+        progress_bar = st.progress(0, text="Initializing analysis engine...")
         st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
 
+        status_placeholder = st.empty()
         audio_status = st.empty()
         face_status = st.empty()
         body_status = st.empty()
 
         # Helper for inline status
         def show_inline_status(name, state):
-            icons = {"waiting": "⏳", "processing": "🔄", "done": "✅"}
-            colors = {"waiting": "#94a3b8", "processing": "#3b82f6", "done": "#10b981"}
-            bg_colors = {"waiting": "#f8fafc", "processing": "#eff6ff", "done": "#f0fdf4"}
-            border_colors = {"waiting": "#e2e8f0", "processing": "#bfdbfe", "done": "#bbf7d0"}
+            icons = {"waiting": "⏳", "processing": "🔄", "done": "✅", "error": "❌"}
+            colors = {"waiting": "#94a3b8", "processing": "#3b82f6", "done": "#10b981", "error": "#ef4444"}
+            bg_colors = {"waiting": "#f8fafc", "processing": "#eff6ff", "done": "#f0fdf4", "error": "#fef2f2"}
+            border_colors = {"waiting": "#e2e8f0", "processing": "#bfdbfe", "done": "#bbf7d0", "error": "#fecaca"}
 
             # Auto-scroll script injection
             scroll_script = """
@@ -465,29 +382,57 @@ if st.session_state.processing:
             </div>
             """
 
-        time.sleep(0.8)
+        # Initialize Statuses
+        audio_status.markdown(show_inline_status("Audio Pipeline", "waiting"), unsafe_allow_html=True)
+        face_status.markdown(show_inline_status("Face Pipeline", "waiting"), unsafe_allow_html=True)
+        body_status.markdown(show_inline_status("Body Pipeline", "waiting"), unsafe_allow_html=True)
 
-        # Audio
-        audio_status.markdown(show_inline_status("Audio Pipeline", "processing"), unsafe_allow_html=True)
-        progress_bar.progress(33, text="Analyzing Audio...")
-        time.sleep(1.5)
-        audio_status.markdown(show_inline_status("Audio Pipeline", "done"), unsafe_allow_html=True)
+        # Run Backend Pipeline
+        iterator = run_pipelines_iterator(st.session_state.video_path, output_base_dir=str(PROCESSED_DIR))
+        final_results = {}
+        output_dir = None
 
-        # Face
-        face_status.markdown(show_inline_status("Face Pipeline", "processing"), unsafe_allow_html=True)
-        progress_bar.progress(66, text="Analyzing Facial Expressions...")
-        time.sleep(1.5)
-        face_status.markdown(show_inline_status("Face Pipeline", "done"), unsafe_allow_html=True)
+        for event_type, *args in iterator:
+            if event_type == "start":
+                output_dir = args[0]
+                progress_bar.progress(10, text="Starting Video Processing...")
 
-        # Body
-        body_status.markdown(show_inline_status("Body Pipeline", "processing"), unsafe_allow_html=True)
-        progress_bar.progress(90, text="Analyzing Body Language...")
-        time.sleep(1.5)
-        body_status.markdown(show_inline_status("Body Pipeline", "done"), unsafe_allow_html=True)
+            elif event_type == "progress":
+                module, _ = args
+                if module == "audio":
+                    audio_status.markdown(show_inline_status("Audio Pipeline", "done"), unsafe_allow_html=True)
+                    progress_bar.progress(40, text="Audio Analysis Complete")
+                    # Start Face (implied next)
+                    face_status.markdown(show_inline_status("Face Pipeline", "processing"), unsafe_allow_html=True)
 
-        progress_bar.progress(100, text="Analysis Complete!")
-        time.sleep(0.5)
+                elif module == "face":
+                    face_status.markdown(show_inline_status("Face Pipeline", "done"), unsafe_allow_html=True)
+                    progress_bar.progress(70, text="Face Analysis Complete")
+                    # Start Body (implied next)
+                    body_status.markdown(show_inline_status("Body Pipeline", "processing"), unsafe_allow_html=True)
 
+                elif module == "body":
+                    body_status.markdown(show_inline_status("Body Pipeline", "done"), unsafe_allow_html=True)
+                    progress_bar.progress(95, text="Body Analysis Complete")
+
+            elif event_type == "error":
+                module, err = args
+                st.error(f"Error in {module}: {err}")
+
+            elif event_type == "final":
+                output_dir, final_results = args
+                progress_bar.progress(100, text="All Analysis Complete!")
+
+        # Load Enriched Results (JSON)
+        if output_dir:
+            json_path = output_dir / "results_global_enriched.json"
+            if json_path.exists():
+                with open(json_path) as f:
+                    st.session_state.analysis_results = json.load(f)
+            else:
+                st.error("Results file not found!")
+
+        time.sleep(1.0)
         st.session_state.processing = False
         st.session_state.show_results = True
         st.rerun()
@@ -541,16 +486,35 @@ if st.session_state.show_results:
 </div>
 """, unsafe_allow_html=True)
 
+    analysis_data = st.session_state.analysis_results
+
     # 3-Column Layout
     col_audio, col_face, col_body = st.columns(3)
 
     with col_audio:
-        render_metrics_column("Audio", "🎤", "blue", MOCK_DATA["audio"])
+        if "audio" in analysis_data:
+            # Re-mapping to match render_metrics_column expectation:
+            # Expected: data['globalScore'], data['metrics'] list
+            audio_data = {
+                "globalScore": analysis_data["audio"]["global"]["score"],
+                "metrics": list(analysis_data["audio"]["metrics"].values())
+            }
+            render_metrics_column("Audio", "🎤", "blue", audio_data)
 
     with col_face:
-        render_metrics_column("Face Expression", "😊", "purple", MOCK_DATA["face"])
+        if "face" in analysis_data:
+            face_data = {
+                "globalScore": analysis_data["face"]["global"]["score"],
+                "metrics": list(analysis_data["face"]["metrics"].values())
+            }
+            render_metrics_column("Face Expression", "😊", "purple", face_data)
 
     with col_body:
-        render_metrics_column("Body Language", "🤸", "green", MOCK_DATA["body"])
+        if "body" in analysis_data:
+            body_data = {
+                "globalScore": analysis_data["body"]["global"]["score"],
+                "metrics": list(analysis_data["body"]["metrics"].values())
+            }
+            render_metrics_column("Body Language", "🤸", "green", body_data)
 
     st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
