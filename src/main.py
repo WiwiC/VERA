@@ -33,7 +33,7 @@ def run_wrapper(pipeline_func, video_path, output_dir):
         return {}
 
 
-def run_pipelines_iterator(video_path):
+def run_pipelines_iterator(video_path, output_base_dir="data/processed"):
     """
     Generator that yields progress updates during pipeline execution.
     Yields:
@@ -47,7 +47,7 @@ def run_pipelines_iterator(video_path):
         raise FileNotFoundError(f"❌ Video not found: {video_path}")
 
     # Create output directory
-    output_dir = Path("data/processed") / video_path.stem
+    output_dir = Path(output_base_dir) / video_path.stem
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"🚀 Starting VERA Analysis for: {video_path.name}")
@@ -128,12 +128,12 @@ def run_pipelines_iterator(video_path):
     yield ("final", output_dir, results)
 
 
-def run_pipelines(video_path):
+def run_pipelines(video_path, output_base_dir="data/processed"):
     """
     Wrapper for backward compatibility.
     Runs the iterator to completion and returns the final result.
     """
-    iterator = run_pipelines_iterator(video_path)
+    iterator = run_pipelines_iterator(video_path, output_base_dir)
     output_dir = None
     results = {}
 

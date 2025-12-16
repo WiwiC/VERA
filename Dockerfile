@@ -12,7 +12,7 @@ WORKDIR /app
 # libgl1: for opencv (even headless sometimes needs it)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    ffmpeg \ 
+    ffmpeg \
     libsndfile1 \
     libgl1 \
  && rm -rf /var/lib/apt/lists/*
@@ -25,4 +25,4 @@ COPY . .
 
 EXPOSE 8501
 
-CMD ["streamlit", "run", "video-analyzer-app/app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+CMD ["streamlit", "run", "front-end/app.py", "--server.address=0.0.0.0", "--server.port=8501"]

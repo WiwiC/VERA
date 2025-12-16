@@ -40,3 +40,7 @@ data/clustering_results/
 # Docs
 docs/*
 !docs/.gitkeep
+
+# Frontend Data
+front-end/uploaded/
+front-end/processed/

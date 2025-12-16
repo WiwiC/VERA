@@ -174,7 +174,11 @@ def _extract_metric_data(metric_id: str, results: dict, spec: dict) -> dict:
     raw_key = f"{metric_id}_val"
     raw_value = results.get(raw_key)
 
+    # 6. Extract Display Name (NEW: For frontend display)
+    display_name = spec.get(metric_id, {}).get("display_name", metric_id.replace("_", " ").title())
+
     return {
+        "name": display_name,
         "score": score,
         "raw_value": raw_value,
         "interpretation": interpretation,
