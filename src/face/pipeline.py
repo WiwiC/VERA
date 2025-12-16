@@ -31,9 +31,6 @@ def run_face_pipeline(video_path, output_dir=None):
     # Determine output directory
     if output_dir is None:
         # Default: data/processed/<video_stem>
-        # Assuming project root is 2 levels up from src/face/pipeline.py?
-        # Safer to just use relative path from CWD or absolute path provided.
-        # Let's assume CWD is project root.
         output_dir = Path("data/processed") / video_path.stem
     else:
         output_dir = Path(output_dir)

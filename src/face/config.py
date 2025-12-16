@@ -38,14 +38,12 @@ COLOR_SMILE  = (0,   0,   255) # Red
 # Head Stability (IOD/sec)
 # RECALIBRATED: Previous optimal=0.90 was too low (data median=1.89)
 # Calibration data: "stable"/"optimal" samples = 0.72-2.02 (WIDE RANGE!)
-# Video 63 (optimal)=0.72, Video 67 (optimal)=2.02 → need VERY wide variance
 BASELINE_HEAD_STABILITY_OPTIMAL = 1.30   # IOD/sec (center of range)
 BASELINE_HEAD_STABILITY_VAR     = 1.00   # (1.0)² - very wide to accommodate range
 
 # Gaze Stability (variance of per-second gaze changes)
 # RECALIBRATED: Previous midpoint=0.10 was too low (data median=0.133)
 # Calibration data: "good"/"optimal" samples = 0.05-0.17, mean=0.10
-# All data: mean=0.174, std=0.12
 # Lower jitter = better (inverted logistic)
 BASELINE_GAZE_MIDPOINT = 0.15   # Logistic inflection point (was 0.10)
 BASELINE_GAZE_SCALE    = 0.08   # Logistic scale - widened from 0.03 for softer transition
@@ -53,7 +51,6 @@ BASELINE_GAZE_SCALE    = 0.08   # Logistic scale - widened from 0.03 for softer 
 # Smile Activation (normalized by IOD - NOT fps-dependent)
 # RECALIBRATED: Data range is narrow (0.74-0.82), need wider variance
 # Calibration data: all samples mean=0.769, std=0.022
-# Previous variance=0.0064 was too tight for this narrow range
 BASELINE_SMILE_OPTIMAL = 0.77   # (was 0.82)
 BASELINE_SMILE_VAR     = 0.001  # (0.032)² - widened significantly
 SMILE_PROBABILITY_THRESHOLD = 0.75 # Raised from 0.5 to kill ghost smiles
@@ -61,7 +58,7 @@ SMILE_PROBABILITY_THRESHOLD = 0.75 # Raised from 0.5 to kill ghost smiles
 # Head Down Ratio (head pitch angle in degrees)
 # Positive pitch = head tilted down
 # Based on FACS research: +10-15° = obvious head-down# Head Pose Thresholds
-HEAD_DOWN_ANGLE_THRESHOLD = 20.0  # Degrees (increased from 17.0 to 20.0 to reduce sensitivity)
+HEAD_DOWN_ANGLE_THRESHOLD = 20.0  # Degrees
 
 
 # =========================================================

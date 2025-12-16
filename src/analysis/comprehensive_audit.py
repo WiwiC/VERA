@@ -99,10 +99,8 @@ def main():
         report_lines.append(f"**Traits:** {', '.join(cluster_traits)}")
 
         # Verify traits against metrics (Simple heuristic check)
-        # e.g. if "Low pitchd" in traits, check if pitch_dynamic score is low?
-        # Or check if raw value is low?
-        # For now, just listing them is enough for the user to judge,
-        # but I'll add a note if I spot a blatant contradiction.
+        # e.g. if "Low pitchd" in traits, check if pitch_dynamic score is low
+        # Or check if raw value is low
 
         report_lines.append("")
         report_lines.append("| Metric | Manifest Label | New Label | New Score | Old Score | Delta | Match? |")
@@ -130,7 +128,7 @@ def main():
             delta = new_score - old_score
 
             # Match Check (Loose string matching)
-            # Handle "optimal" vs "good" etc if needed, but strict for now
+            # Handle "optimal" vs "good" etc
             match = "✅" if manifest_label in new_label or new_label in manifest_label else "❌"
             if manifest_label == "nan" or manifest_label == "n/a":
                 match = "⚪"

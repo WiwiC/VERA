@@ -55,12 +55,12 @@ BASELINE_GESTURE_JITTER_RANGE   = 8.0    # (was 4.5) - widened scale
 # Previous optimal=0.45 was too low (favored unnaturally still speakers)
 BASELINE_BODY_SWAY_OPTIMAL = 0.75   # SW/sec (was 0.45)
 BASELINE_BODY_SWAY_VAR     = 0.06   # (0.24)² - based on IQR/1.35
+
 # Posture Openness (arms-based with midplane normalization)
 # REFACTORED: Shoulder angle in raw output, but NOT used for scoring.
 # Scoring based purely on arm position + wrist depth (midplane-normalized).
 
 # --- Posture Openness Scoring (2-component, arms-based) ---
-# State machine:
 #   - "closed" = arms_close AND wrists_forward (defensive barrier)
 #   - "neutral" = arms_close AND NOT wrists_forward (hands at rest/behind)
 #   - "open" = NOT arms_close (gesturing)

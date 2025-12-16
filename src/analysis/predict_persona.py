@@ -80,8 +80,7 @@ def predict_persona(global_results):
 
         if val is None:
             print(f"⚠️ Missing feature for prediction: {module}.{key}")
-            # Fallback: Use 0 or mean?
-            # Since we use StandardScaler, 0 is the mean of the training set.
+            # Fallback: dince we use StandardScaler, 0 is the mean of the training set.
             # So 0 is a safe neutral fallback.
             val = 0.0
 
