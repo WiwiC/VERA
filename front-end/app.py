@@ -394,7 +394,7 @@ def render_dashboard():
                 type=["mp4", "mov", "avi"],
                 label_visibility="collapsed"
             )
-            st.markdown("<p style='font-size: 0.8rem; color: #6b7280; margin-top: 0.5rem;'>* Make sure your body is visible from the hips to the head</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size: rem; color: #6b7280; margin-top: 0.5rem;'>* Make sure your body is visible from the hips to the head</p>", unsafe_allow_html=True)
 
             if uploaded_file:
                 # Save file locally
@@ -553,7 +553,8 @@ def render_dashboard():
 
     # 5. RESULTS SECTION (3 Columns: Audio, Face, Body)
     if st.session_state.show_results:
-        st.markdown("---")
+        #st.markdown("<hr style='margin: 8px 0; border: none; border-top: 1px solid rgba(49, 51, 63, 0.2);' />", unsafe_allow_html=True)
+        st.markdown("<h2 style='margin-top: 12px; margin-bottom: 20px; font-weight: 600; color: #111827;'>Detailed analysis</h2>", unsafe_allow_html=True)
 
         analysis_data = st.session_state.analysis_results
 
