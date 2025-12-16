@@ -318,12 +318,27 @@ def render_history():
 
                     with col_scores:
                         st.markdown(f"""
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
-                            <span style="background:#eff6ff; color:#1e40af; padding:4px 8px; border-radius:4px; font-size:0.8rem;">🎤 Audio: <b>{audio_score}</b></span>
-                            <span style="background:#f3e8ff; color:#6b21a8; padding:4px 8px; border-radius:4px; font-size:0.8rem;">😊 Face: <b>{face_score}</b></span>
-                            <span style="background:#d1fae5; color:#065f46; padding:4px 8px; border-radius:4px; font-size:0.8rem;">🤸 Body: <b>{body_score}</b></span>
-                        </div>
-                        """, unsafe_allow_html=True)
+<div style="display: flex; gap: 12px; align-items: center; margin-top: 10px;">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+<div style="background: #2563eb; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+{audio_score}
+</div>
+<span style="font-size: 0.75rem; color: #1e40af; font-weight: 500;">Audio</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+<div style="background: #7c3aed; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+{face_score}
+</div>
+<span style="font-size: 0.75rem; color: #6b21a8; font-weight: 500;">Face</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+<div style="background: #059669; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+{body_score}
+</div>
+<span style="font-size: 0.75rem; color: #065f46; font-weight: 500;">Body</span>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
                     with col_action:
                         st.write("") # Spacer
@@ -335,6 +350,7 @@ def render_history():
                             st.session_state.show_results = True
                             st.session_state.processing = False
                             st.session_state.current_page = "Dashboard"
+                            st.query_params["page"] = "Dashboard"
                             st.rerun()
 
                     st.markdown("---")
