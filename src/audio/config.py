@@ -11,13 +11,11 @@ Baselines derived from human-labeled "optimal" samples.
 # =========================================================
 
 # 1. Speech Rate (WPM)
-# Calibration data: optimal samples = 122-167 WPM
 # Plateau: 120 - 170 WPM (Score 1.0)
 BASELINE_WPM_RANGE = (120, 170)
 BASELINE_WPM_VAR   = 400  # (20)² - balanced sensitivity
 
 # 2. Pause Ratio
-# CRITICAL FIX: Original plateau (0.10-0.25) was inverted vs data (0.01-0.08)
 # Calibration data: "optimal" samples = 0.01-0.04, all data = 0.01-0.18
 # WIDER Gaussian to accommodate Video 63 (0.01) and Video 67 (0.04)
 BASELINE_PAUSE_OPTIMAL = 0.04   # Center of "optimal" labeled samples
@@ -26,13 +24,11 @@ PAUSE_MIN_DURATION     = 0.75   # Raised from 0.5s to 0.75s to ignore breaths
 
 # 3. Pitch Dynamic (Expressiveness)
 # Calibration data: mean=2.87 ST, range=2.0-5.1 ST
-# Original plateau (3.5-6.0) was too high for this data
 # Plateau: 2.0 - 4.5 Semitones (Score 1.0)
 BASELINE_PITCH_STD_RANGE = (2.0, 4.5)
 BASELINE_PITCH_STD_VAR   = 0.25  # (0.5)² - gentler falloff
 
 # 4. Volume Dynamic (Emotionality)
-# CRITICAL FIX: Original plateau (0.40-0.90) gave all videos score=1.0
 # Calibration data: mean=0.706, std=0.05, range=0.63-0.80
 # Using Gaussian scoring for discrimination
 BASELINE_VOLUME_CV_OPTIMAL = 0.70   # Calibration median
