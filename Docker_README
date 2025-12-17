@@ -1,16 +1,16 @@
-# Ce tutoriel montre comment l'on peut deployer le projet sur un VPS (AWS dans mon cas) avec Ubuntu dessus
-# Une fois connecté sur la machine, on peut lancer ces commandes (ligne par ligne):
+# This tutorial shows how to deploy the project on a VPS (AWS in my case) running Ubuntu
+# Once connected to the machine, run these commands (line by line):
 
-# Installer et mettre à jour les libraries sur la machine
+# Install and update libraries on the machine
 sudo apt update
 sudo apt -y upgrade
 sudo apt install unzip
 
-# J'ai prealablement importer le fichier .zip du projet sur la machine (en utilisant l'outil scp)
-unzip VERA-main.zip 
+# I previously imported the project .zip file to the machine (using the scp tool)
+unzip VERA-main.zip
 cd VERA-main
 
-# Installer Docker
+# Install Docker
 sudo apt install -y docker.io
 sudo systemctl enable --now docker
 
@@ -19,24 +19,24 @@ sudo usermod -aG docker $USER
 newgrp docker
 docker --version
 
-# Creer le container
-docker build -t vera . 
+# Create the container
+docker build -t vera .
 
-# Faire tourner le container
+# Run the container
 docker run -d --restart unless-stopped -p 8501:8501 --name vera vera
 
-# A partir d'ici, le docker sera deployé et si il n'y a pas eu de soucis, on se capable d'atteindre l'application depuis internet en utilisant l'addresse public du server. Ne pas oublier de mettre le port egalement
-# Example : 123.45.678.910:8501
-# Il ne faudra pas oublier d'ouvrir ce port au niveau du firewall du server.
+# From here, the docker will be deployed and if there are no issues, you should be able to reach the application from the internet using the server's public address. Don't forget to include the port as well
+# Example: 123.45.678.910:8501
+# Don't forget to open this port in the server's firewall.
 
-# Pour verifier si le container tourne bien
-docker ps 
+# To verify if the container is running correctly
+docker ps
 
-# Les logs (si jamais on a des print)
+# The logs (in case there are any prints)
 docker logs -f vera
 
-# Pour arreter le docker
+# To stop the docker
 docker stop vera
 
-# Pour effacer le container
+# To delete the container
 docker rm vera
