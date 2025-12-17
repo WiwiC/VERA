@@ -75,7 +75,7 @@ Unsupervised ML that automatically assigns a "Communication Persona" based on ra
 <div align="center">
   <br>
   <img src="assets/examples/K-mean_clustering_3D.gif" width="50%" alt="Clustering"/>
-  <p><i>7 features – 4 K-Means – n_init = 50 – run 30 times
+  <p><i>7 features – K=4 – n_init = 50 – run 30 times - 3D PCA projection (Explained variance: 80.4%)
 </i></p>
 </div>
 
