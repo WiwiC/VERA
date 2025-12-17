@@ -28,15 +28,38 @@ VERA solves this by providing:
 
 ## 🎥 Showcase & Examples
 
-We provide sample outputs in the `assets/examples/` directory to demonstrate VERA's capabilities:
+### 🔍 Visual Intelligence
+VERA sees what you can't. Our computer vision pipelines track micro-expressions and skeletal dynamics in real-time.
 
-| File | Description |
-| :--- | :--- |
-| **`debug_face.mp4`** | Visualizes 468 facial landmarks, gaze tracking vectors, and head pose estimation. |
-| **`debug_pose.mp4`** | Shows skeletal tracking (33 keypoints), gesture amplitude, and posture analysis overlay. |
-| **`analysis_results.json`** | Full JSON output containing all 14 metrics, scores, and coaching tips. |
+<div align="center">
+  <img src="assets/examples/Mediapipe_facemesh_debug.gif" width="45%" alt="Face Mesh Debug"/>
+  <img src="assets/examples/Mediapipe_holistic_debug.gif" width="45%" alt="Holistic Pose Debug"/>
+  <p><i>Left: 13 landmarks out of the 468 from Mediapipe Face Mesh for Face analysis | Right: MediapipeHolistic Body landmarks for Gesture Analysis</i></p>
+</div>
 
-*(Note: To view these, navigate to the `assets/examples/` folder)*
+### 📊 Interactive Dashboard
+A minimal, high-impact dashboard gives you instant feedback on your communication skills.
+
+<div align="center">
+  <img src="assets/examples/1_interface_home.png" width="33%" alt="Dashboard Home"/>
+  <img src="assets/examples/2_video_upload.png" width="33%" alt="Video Upload"/>
+  <img src="assets/examples/3_analysis.png" width="33%" alt="Video Analysis"/>
+  <p><i>VERA Dashboard: Video upload and analysis</i></p>
+</div>
+
+<div align="center">
+  <br>
+  <img src="assets/examples/4_detailed_analysis_global_score.png" width="45%" alt="Global Score Breakdown"/>
+  <img src="assets/examples/6_detailed_analysis_global_score.png" width="45%" alt="Global Score Breakdown"/>
+  <p><i>VERA Dashboard: Real-time analysis with global scoring</i></p>
+  <p><i>Deep Dive: Granular metrics and actionable coaching tips</i></p>
+</div>
+
+<div align="center">
+  <br>
+  <img src="assets/examples/6_history_page.png" width="50%" alt="History Page"/>
+  <p><i>History Page to revisit your past coaching sessions</i></p>
+</div>
 
 ---
 
