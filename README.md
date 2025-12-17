@@ -37,7 +37,7 @@ VERA sees what you can't. Our computer vision pipelines track micro-expressions 
 
 <div align="center">
   <img src="assets/examples/Mediapipe_facemesh_debug.gif" width="45%" alt="Face Mesh Debug"/>
-  <img src="assets/examples/Mediapipe_holistic_debug.gif" width="45%" alt="Holistic Pose Debug"/>
+  <img src="assets/examples/Mediapipe_holistic_debug_8.gif" width="45%" alt="Holistic Pose Debug"/>
   <p><i>Left: Mediapipe FaceMesh - 13 facial landmarks out of the 468 for Face analysis</i></p>
   <p><i>Right: MediapipeHolistic - 6 body landmarks out of the 33for Gesture Analysis</i></p>
 </div>
