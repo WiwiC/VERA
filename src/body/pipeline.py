@@ -12,7 +12,7 @@ from src.body.extraction import process_video
 from src.body.scoring import compute_scores
 from src.body.visualization import create_debug_video
 
-def run_body_pipeline(video_path, output_dir=None):
+def run_body_pipeline(video_path, output_dir=None, progress_callback=None):
     """
     Run the full body analysis pipeline on a video.
 
@@ -40,7 +40,8 @@ def run_body_pipeline(video_path, output_dir=None):
 
     # 1. Extraction
     print("--- Step 1: Extraction ---")
-    raw_df = process_video(str(video_path))
+    print("--- Step 1: Extraction ---")
+    raw_df = process_video(str(video_path), progress_callback=progress_callback)
 
     # 2. Scoring
     print("--- Step 2: Scoring ---")
@@ -85,6 +86,8 @@ def run_body_pipeline(video_path, output_dir=None):
 
     # 4. Visualization
     print("--- Step 4: Visualization ---")
+    if progress_callback:
+        progress_callback(1.0, "Processing - Body debug file creation")
     debug_video_path = output_dir / "debug_pose.mp4"
     create_debug_video(str(video_path), str(debug_video_path))
     print(f"✅ Saved debug video to: {debug_video_path}")

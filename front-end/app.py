@@ -131,6 +131,22 @@ st.markdown("""
         text-decoration: none;
     }
 
+    /* --- PRIMARY BUTTON OVERRIDE --- */
+    div.stButton > button[kind="primary"] {
+        background-color: #245EDF !important;
+        border-color: #245EDF !important;
+        color: white !important;
+    }
+    div.stButton > button[kind="primary"]:hover {
+        background-color: #1a4bbd !important;
+        border-color: #1a4bbd !important;
+        color: white !important;
+    }
+    div.stButton > button[kind="primary"]:focus:not(:active) {
+        border-color: #245EDF !important;
+        color: white !important;
+    }
+
     /* --- HERO BANNER --- */
     .banner {
         width: 100vw;
@@ -452,7 +468,7 @@ def render_dashboard():
                 # Display video
                 st.video(preview_source)
 
-                if st.button("▶️ Start Analysis", key="start_btn", disabled=st.session_state.processing, use_container_width=True):
+                if st.button("▶️ Start Analysis", key="start_btn", disabled=st.session_state.processing, use_container_width=True, type="primary"):
                     st.session_state.processing = True
                     st.session_state.show_results = False
                     st.rerun()
@@ -497,35 +513,40 @@ def render_dashboard():
             body_status = st.empty()
 
             # Helper for inline status
-            def show_inline_status(name, state):
-                icons = {"waiting": "⏳", "processing": "🔄", "done": "✅", "error": "❌"}
-                colors = {"waiting": "#94a3b8", "processing": "#3b82f6", "done": "#10b981", "error": "#ef4444"}
-                bg_colors = {"waiting": "#f8fafc", "processing": "#eff6ff", "done": "#f0fdf4", "error": "#fef2f2"}
-                border_colors = {"waiting": "#e2e8f0", "processing": "#bfdbfe", "done": "#bbf7d0", "error": "#fecaca"}
-
-                # Auto-scroll script injection
-                scroll_script = """
-                <script>
-                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                </script>
-                """
+            def show_inline_status(name, state, custom_text=None):
+                colors = {
+                    "waiting": "#94a3b8",
+                    "processing": "#3b82f6",
+                    "done": "#10b981",
+                    "error": "#ef4444"
+                }
+                icons = {
+                    "waiting": "⏳",
+                    "processing": "🔄",
+                    "done": "✅",
+                    "error": "❌"
+                }
+                display_text = custom_text if custom_text else state
 
                 return f"""
-                {scroll_script}
                 <div style="
-                    display: flex; align-items: center; justify-content: space-between;
-                    padding: 10px 14px; margin-bottom: 8px;
-                    background-color: {bg_colors[state]};
-                    border: 1px solid {border_colors[state]};
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 12px 16px;
+                    background-color: white;
+                    border: 1px solid #e2e8f0;
+                    border-left: 4px solid {colors.get(state, "#94a3b8")};
                     border-radius: 8px;
                     transition: all 0.3s ease;
+                    margin-bottom: 8px;
                 ">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="font-size: 1.1em;">{icons[state]}</span>
+                        <span style="font-size: 1.1em;">{icons.get(state, "ℹ️")}</span>
                         <span style="font-weight: 500; color: #334155;">{name}</span>
                     </div>
-                    <span style="color: {colors[state]}; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px;">
-                        {state}
+                    <span style="color: {colors.get(state, "#334155")}; font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px;">
+                        {display_text}
                     </span>
                 </div>
                 """
@@ -536,32 +557,47 @@ def render_dashboard():
             body_status.markdown(show_inline_status("Body Pipeline", "waiting"), unsafe_allow_html=True)
 
             # Run Backend Pipeline
-            iterator = run_pipelines_iterator(st.session_state.video_path, output_base_dir=str(PROCESSED_DIR))
+            def update_bar(p, status_text=None):
+                # Clamp to 0-100
+                val = max(0, min(100, int(p * 100)))
+                progress_bar.progress(val, text=f"Analyzing... {val}%")
+
+                # Update status cards based on progress phase (heuristic) or explicit status
+                if status_text:
+                    if p <= 0.05:
+                         audio_status.markdown(show_inline_status("Audio Pipeline", "processing", custom_text=status_text), unsafe_allow_html=True)
+                    elif p < 0.60:
+                        # Audio done, Face processing
+                        audio_status.markdown(show_inline_status("Audio Pipeline", "done"), unsafe_allow_html=True)
+                        face_status.markdown(show_inline_status("Face Pipeline", "processing", custom_text=status_text), unsafe_allow_html=True)
+                    else:
+                        # Face done, Body processing
+                        face_status.markdown(show_inline_status("Face Pipeline", "done"), unsafe_allow_html=True)
+                        body_status.markdown(show_inline_status("Body Pipeline", "processing", custom_text=status_text), unsafe_allow_html=True)
+
+            iterator = run_pipelines_iterator(st.session_state.video_path, output_base_dir=str(PROCESSED_DIR), progress_callback=update_bar)
             final_results = {}
             output_dir = None
 
             for event_type, *args in iterator:
                 if event_type == "start":
                     output_dir = args[0]
-                    progress_bar.progress(10, text="Starting Video Processing...")
+                    # progress_bar handled by callback
 
                 elif event_type == "progress":
                     module, _ = args
                     if module == "audio":
                         audio_status.markdown(show_inline_status("Audio Pipeline", "done"), unsafe_allow_html=True)
-                        progress_bar.progress(40, text="Audio Analysis Complete")
                         # Start Face (implied next)
                         face_status.markdown(show_inline_status("Face Pipeline", "processing"), unsafe_allow_html=True)
 
                     elif module == "face":
                         face_status.markdown(show_inline_status("Face Pipeline", "done"), unsafe_allow_html=True)
-                        progress_bar.progress(70, text="Face Analysis Complete")
                         # Start Body (implied next)
                         body_status.markdown(show_inline_status("Body Pipeline", "processing"), unsafe_allow_html=True)
 
                     elif module == "body":
                         body_status.markdown(show_inline_status("Body Pipeline", "done"), unsafe_allow_html=True)
-                        progress_bar.progress(95, text="Body Analysis Complete")
 
                 elif event_type == "error":
                     module, err = args

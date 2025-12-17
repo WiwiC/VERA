@@ -26,6 +26,20 @@ VERA solves this by providing:
 
 ---
 
+## 🎥 Showcase & Examples
+
+We provide sample outputs in the `assets/examples/` directory to demonstrate VERA's capabilities:
+
+| File | Description |
+| :--- | :--- |
+| **`debug_face.mp4`** | Visualizes 468 facial landmarks, gaze tracking vectors, and head pose estimation. |
+| **`debug_pose.mp4`** | Shows skeletal tracking (33 keypoints), gesture amplitude, and posture analysis overlay. |
+| **`analysis_results.json`** | Full JSON output containing all 14 metrics, scores, and coaching tips. |
+
+*(Note: To view these, navigate to the `assets/examples/` folder)*
+
+---
+
 ## 📂 Project Structure
 
 ```text
@@ -216,8 +230,8 @@ We prioritize metrics that show strong correlation with communication effectiven
 ## 📜 License
 
 MIT License
+Copyright (c) 2025 WiwiC
 
-Copyright (c) 2024 William Chalons
 ---
 
 ## ✍️ Credits

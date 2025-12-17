@@ -33,7 +33,7 @@ def run_wrapper(pipeline_func, video_path, output_dir):
         return {}
 
 
-def run_pipelines_iterator(video_path, output_base_dir="data/processed"):
+def run_pipelines_iterator(video_path, output_base_dir="data/processed", progress_callback=None):
     """
     Generator that yields progress updates during pipeline execution.
     Yields:
@@ -58,25 +58,79 @@ def run_pipelines_iterator(video_path, output_base_dir="data/processed"):
     start_time = time.time()
     results = {}
 
-    # Run pipelines in parallel
-    with ProcessPoolExecutor(max_workers=3) as executor:
-        futures = {
-            executor.submit(run_wrapper, run_audio_pipeline, str(video_path), str(output_dir)): "audio",
-            executor.submit(run_wrapper, run_body_pipeline, str(video_path), str(output_dir)): "body",
-            executor.submit(run_wrapper, run_face_pipeline, str(video_path), str(output_dir)): "face",
-        }
+    # Run pipelines
+    if progress_callback:
+        # SEQUENTIAL MODE (for real-time progress updates)
+        # Weights: Audio 5%, Face 60%, Body 100%
 
-        for future in as_completed(futures):
-            module = futures[future]
-            try:
-                res = future.result()
-                results[module] = res
-                print(f"✅ {module.capitalize()} module finished.")
-                yield ("progress", module, res)
-            except Exception as e:
-                print(f"❌ {module.capitalize()} module failed: {e}")
-                results[module] = {}
-                yield ("error", module, e)
+        # 1. Audio (0-5%)
+        progress_callback(0.0, "Processing - Audio analysis")
+        try:
+            res_audio = run_wrapper(run_audio_pipeline, str(video_path), str(output_dir))
+            results["audio"] = res_audio or {}
+            print("✅ Audio module finished.")
+            yield ("progress", "audio", results["audio"])
+        except Exception as e:
+            print(f"❌ Audio module failed: {e}")
+            results["audio"] = {}
+            yield ("error", "audio", e)
+        progress_callback(0.05, "Processing - Audio debug file creation") # Simulated since audio is fast
+
+        # 2. Face (5-59%)
+        def face_cb(p, msg=None):
+            # Map 0-1 to 0.05-0.59
+            # If msg is provided, pass it through. Otherwise default.
+            global_p = 0.05 + (p * 0.54)
+            progress_callback(global_p, msg)
+
+        try:
+            res_face = run_face_pipeline(str(video_path), str(output_dir), progress_callback=face_cb)
+            results["face"] = res_face or {}
+            print("✅ Face module finished.")
+            yield ("progress", "face", results["face"])
+        except Exception as e:
+            print(f"❌ Face module failed: {e}")
+            results["face"] = {}
+            yield ("error", "face", e)
+        progress_callback(0.60)
+
+        # 3. Body (60-99%)
+        def body_cb(p, msg=None):
+            # Map 0-1 to 0.60-0.99
+            global_p = 0.60 + (p * 0.39)
+            progress_callback(global_p, msg)
+
+        try:
+            res_body = run_body_pipeline(str(video_path), str(output_dir), progress_callback=body_cb)
+            results["body"] = res_body or {}
+            print("✅ Body module finished.")
+            yield ("progress", "body", results["body"])
+        except Exception as e:
+             print(f"❌ Body module failed: {e}")
+             results["body"] = {}
+             yield ("error", "body", e)
+        progress_callback(1.0, "Done.")
+
+    else:
+        # PARALLEL MODE (Standard)
+        with ProcessPoolExecutor(max_workers=3) as executor:
+            futures = {
+                executor.submit(run_wrapper, run_audio_pipeline, str(video_path), str(output_dir)): "audio",
+                executor.submit(run_wrapper, run_body_pipeline, str(video_path), str(output_dir)): "body",
+                executor.submit(run_wrapper, run_face_pipeline, str(video_path), str(output_dir)): "face",
+            }
+
+            for future in as_completed(futures):
+                module = futures[future]
+                try:
+                    res = future.result()
+                    results[module] = res
+                    print(f"✅ {module.capitalize()} module finished.")
+                    yield ("progress", module, res)
+                except Exception as e:
+                    print(f"❌ {module.capitalize()} module failed: {e}")
+                    results[module] = {}
+                    yield ("error", module, e)
 
     # Build global results (flat structure)
     global_results = {
