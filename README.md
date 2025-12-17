@@ -31,44 +31,41 @@ VERA solves this by providing:
 ### 🔍 Visual Intelligence
 VERA sees what you can't. Our computer vision pipelines track micro-expressions and skeletal dynamics in real-time.
 
-<div align="left">
+<div align="center">
   <img src="assets/examples/Mediapipe_facemesh_debug.gif" width="45%" alt="Face Mesh Debug"/>
-  <p><i>Mediapipe FaceMesh:</br>13 facial landmarks out of the 468 for Face analysis</i></p>
-</div>
-
-<div align="right">
   <img src="assets/examples/Mediapipe_holistic_debug.gif" width="45%" alt="Holistic Pose Debug"/>
-  <p><i>MediapipeHolistic:</br>6 body landmarks out of the 33for Gesture Analysis</i></p>
+  <p><i>Left: Mediapipe FaceMesh - 13 facial landmarks out of the 468 for Face analysis</i></p>
+  <p><i>Right: MediapipeHolistic - 6 body landmarks out of the 33for Gesture Analysis</i></p>
 </div>
 
 ### 📊 Interactive Dashboard
 A minimal, high-impact dashboard gives you instant feedback on your communication skills.
 
 <div align="center">
-  <img src="assets/examples/2_video_upload.png" width="80%" alt="Video Upload"/>
+  <img src="assets/examples/2_video_upload.png" width="100%" alt="Video Upload"/>
   <p><i>VERA Dashboard: Video upload</i></p>
 </div>
 
 <div align="center">
-  <img src="assets/examples/3_analysis.png" width="80%" alt="Video Analysis"/>
+  <img src="assets/examples/3_analysis.png" width="100%" alt="Video Analysis"/>
   <p><i>VERA Dashboard: Video analysis</i></p>
 </div>
 
 <div align="center">
   <br>
-  <img src="assets/examples/4_detailed_analysis_global_score.png" width="80%" alt="Global Score Breakdown"/>
+  <img src="assets/examples/4_detailed_analysis_global_score.png" width="100%" alt="Global Score Breakdown"/>
   <p><i>VERA Dashboard: Real-time analysis with global scoring</i></p>
 </div>
 
 <div align="center">
   <br>
-  <img src="assets/examples/5_detailed_metrics.png" width="80%" alt="Global Score Breakdown"/>
+  <img src="assets/examples/5_detailed_metrics.png" width="100%" alt="Global Score Breakdown"/>
   <p><i>Deep Dive: Granular metrics and actionable coaching tips</i></p>
 </div>
 
 <div align="center">
   <br>
-  <img src="assets/examples/6_history_page.png" width="80%" alt="History Page"/>
+  <img src="assets/examples/6_history_page.png" width="100%" alt="History Page"/>
   <p><i>History Page to revisit your past coaching sessions</i></p>
 </div>
 
