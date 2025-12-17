@@ -1,1 +1,24 @@
 file_video_name;head_stability;gaze_stability;smile_activation;head_down_ratio;gesture_magnitude;gesture_activity;gesture_stability;body_sway;posture_openess;speech_rate;pause_ratio;pitch_dynamic;volume_dynamic;vocal_punch;notes
+60;stable;good;flat;frequent_down;very_low;low;good;stable;closed;slow;low_pauses;flat;reserved;muffled;shy position, monotone, almost no body movement except balancing, gaze often on the ground
+61;rigid;good;neutral;forward;very_low;very_low;optimal;rigid;open;very_slow;low_pauses;robotic;monotone;muffled;shy position, monotone, no body movement, no head movement, gaze mainly looking at the camera
+62;distracting;poor;neutral;occasional_down;very_high;very_high;very_high;distracting;open;overwhelming;no_pauses;exaggerated;unstable;strong;too dynamic presentation with a lot of movements and gesture and walking back and forth
+63;stable;optimal;optimal;forward;optimal ;optimal;optimal;stable;open;optimal;low_pauses;flat;optimal;soft;trying to reflect a good and balanced pitch presentation
+64;high;weak;excessive;occasional_down;low;low;high;unstable;neutral;slow;disjointed;flat;expressive;strong;very slow pitch, reflecting a person not very sure of what he says. the gaze is unstable and the hands stay in front of the body
+65;distracting;poor;neutral;forward;very_high;very_high;very_high;distracting;neutral;overwhelming;low_pauses;theatrical;expressive;strong;very dynamic pitch with the person going back and forth with fast movement and looking everywhere
+66;high;good;flat;mostly_down;very_low;very_low;good;distracting;closed;slow;low_pauses;robotic;monotone;muffled;very shy person in a closed body language swinging the body with crossed arms and looking down
+67;optimal;optimal;neutral;forward;optimal ;optimal;optimal;unstable;open;optimal;low_pauses;optimal;optimal;optimal;trying to reflect a good and balanced pitch presentation
+16;stable;good;excessive;forward;optimal ;optimal;optimal;optimal;neutral;optimal;low_pauses;flat;reserved;soft;
+11;stable;good;neutral;forward;high;optimal;optimal;optimal;open;optimal;optimal;theatrical;expressive;optimal;
+18;high;good;excessive;forward;very_high;optimal;good;optimal;open;slow;optimal;reserved;reserved;soft;
+24;optimal;optimal;neutral;forward;optimal;optimal;optimal;stable;open;optimal;optimal;flat;reserved;optimal;
+25;optimal;weak;neutral;forward;high;optimal;optimal;stable;open;optimal;optimal;optimal;optimal;optimal;
+58;high;weak;flat;forward;optimal;high;good;optimal;open;fast;low_pauses;optimal;optimal;strong;
+59;stable;optimal;optimal;forward;optimal;high;good;stable;open;fast;low_pauses;optimal;optimal;strong;
+23;stable;good;neutral;forward;high;high;good;stable;open;optimal;optimal;theatrical;expressive;strong;
+6;stable;weak;Flat;forward;optimal;optimal;good;stable;open;optimal;optimal;flat;reserved;soft;
+70;optimal;good;neutral;forward;optimal;optimal;good;optimal;neutral;rushed;no_pauses;robotic;optimal;muffled;
+71;optimal;optimal;neutral;forward;optimal;optimal;good;optimal;neutral;optimal;low_pauses;flat;reserved;soft;
+72;optimal;optimal;flat;forward;optimal;optimal;good;optimal;neutral;very_slow;optimal;robotic;monotone;soft;
+73;high;good;optimal;forward;very_high;very_high;high;distracting;open;optimal;optimal;optimal;optimal;optimal;
+74;stable;optimal;flat;forward;very_low;very_low;good;rigid;closed;slow;disjointed;robotic;monotone;muffled;
+75;stable;good;flat;forward;very_low;very_low;good;rigid;open;rushed;no_pauses;optimal;reserved;muffled;
