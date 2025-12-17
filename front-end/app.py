@@ -441,10 +441,10 @@ def render_dashboard():
             st.markdown("### Upload your video")
             uploaded_file = st.file_uploader(
                 "Drag & Drop your video here or click to browse",
-                type=["mp4", "mov", "avi"],
+                type=["mp4", "mov"],
                 label_visibility="collapsed"
             )
-            st.markdown("<p style='font-size: rem; color: #6b7280; margin-top: 0.5rem;'>* Make sure your body is visible from the hips to the head</p>", unsafe_allow_html=True)
+            st.markdown("<p style='font-size: 0.9rem; color: #6b7280; margin-top: 0.5rem;'>* <b>Recommended:</b> 1:00 - 2:00 min video max! Make sure your body is visible from the hips to the head.</p>", unsafe_allow_html=True)
 
             if uploaded_file:
                 # Save file locally
