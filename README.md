@@ -88,27 +88,40 @@ Unsupervised ML that automatically assigns a "Communication Persona" based on ra
 
 ## 📂 Project Structure
 
-```text
+```bash
 VERA/
-├── data/
-│   ├── clustering_dataset/      # ML dataset for persona clustering
-│   ├── processed/               # Pipeline output for CLI runs
-│   └── raw/                     # Input videos
-├── front-end/
-│   ├── app.py                   # Streamlit Dashboard application
-│   └── processed/               # Pipeline output for UI runs
-├── notebooks/                   # Jupyter notebooks for experimentation & viz
-├── reports/                     # Calibration manifests and analysis reports
-├── src/
-│   ├── analysis/                # Data enrichment, scoring, and prediction logic
-│   ├── audio/                   # Audio extraction & processing (Librosa)
-│   ├── body/                    # Body pose extraction (MediaPipe Pose)
-│   ├── face/                    # Facial landmark extraction (MediaPipe FaceMesh)
-│   ├── presentation/            # Result formatting and enrichment
-│   ├── schemas/                 # JSON schemas (single source of truth for text)
-│   ├── utils/                   # Shared utilities (IO, logging)
-│   └── main.py                  # CLI Entry point & Orchestrator
-└── README.md
+├── assets/                 # Project assets (logo, example outputs)
+│   └── examples/           # Sample videos, GIFs, and screenshots
+├── data/                   # Data storage for analysis
+│   ├── clustering_dataset/ # Master dataset (master_vector_data_set.csv)
+│   ├── clustering_results/ # Generated K-Means plots
+│   ├── models/             # Serialized ML models (scaler.pkl, kmeans_model.pkl)
+│   ├── processed/          # Intermediate CSV outputs (CLI)
+│   └── raw/                # Source videos (CLI)
+├── docs/                   # Documentation resources
+│   └── metrics_reference_guide.md # Detailed metrics guide
+├── front-end/              # Streamlit Web Application
+│   ├── app.py              # Main dashboard application
+│   ├── processed/          # Session-specific analysis outputs
+│   └── uploaded/           # Temporary user uploads
+├── notebooks/              # Jupyter notebooks for exploration
+├── reports/                # Calibration and audit reports
+├── src/                    # Source Code
+│   ├── analysis/           # Analytics, Calibration, Clustering logic
+│   ├── api/                # API Logic
+│   ├── audio/              # Audio module (Whisper/Librosa)
+│   ├── body/               # Body module (MediaPipe Pose)
+│   ├── face/               # Face module (MediaPipe FaceMesh)
+│   ├── presentation/       # Presentation logic
+│   ├── schemas/            # Config and Metric Specs (JSON)
+│   ├── utils/              # Shared utilities
+│   └── main.py             # CLI Entry point
+├── tests/                  # Unit tests
+├── .gitignore              # Git configuration
+├── Docker_README           # Docker documentation
+├── Dockerfile              # Container configuration
+├── requirements.txt        # Python dependencies
+└── README.md               # Main documentation
 ```
 
 ---
