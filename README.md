@@ -151,14 +151,6 @@ pip install -r requirements.txt
 
 ## 💻 Usage
 
-### 0. Create, activate VERA-Environment and install dependencies
-
-```bash
-python -m venv VERA-env
-source VERA-env/bin/activate
-pip install -r requirements.txt
-```
-
 ### 1. Run Analysis (CLI)
 To analyze a single video file directly from the terminal:
 
