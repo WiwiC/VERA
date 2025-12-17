@@ -69,6 +69,17 @@ A minimal, high-impact dashboard gives you instant feedback on your communicatio
   <p><i>History Page to revisit your past coaching sessions</i></p>
 </div>
 
+### K-means Clustering - unsupervised ML
+Unsupervised ML that automatically assigns a "Communication Persona" based on raw high-dimensional extracted metrics. e.g:
+
+<div align="center">
+  <br>
+  <img src="assets/examples/K-mean_clustering_3D.gif" width="50%" alt="Clustering"/>
+  <p><i>7 features – 4 K-Means – n_init = 50 – run 30 times
+</i></p>
+</div>
+
+
 ---
 
 ## 📂 Project Structure
