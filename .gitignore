@@ -31,7 +31,8 @@ reports/*
 !reports/.gitkeep
 
 # Clustering Results
-data/clustering_results/
+data/clustering_results/*
+!data/clustering_results/.gitkeep
 
 # Docs
 docs/*
