@@ -34,10 +34,8 @@ reports/*
 data/clustering_results/*
 !data/clustering_results/.gitkeep
 
-# Docs
-docs/*
-!docs/.gitkeep
-
 # Frontend Data
-front-end/uploaded/
-front-end/processed/
+front-end/uploaded/*
+!front-end/uploaded/.gitkeep
+front-end/processed/*
+!front-end/processed/.gitkeep

@@ -172,6 +172,9 @@ All text definitions, coaching tips, and interpretation labels are centralized i
 
 **Important:** This file is the "Source of Truth". It should be kept in synchronization with the numerical thresholds defined in `src/*/config.py`.
 
+A more readable reference file constructed from `src/schemas/metrics_spec.json` list the metrics guide (both should be keep in synch as much as possible):
+> **`docs/metrics_reference_guide.md`**
+
 | Module | Metric | Description |
 | :--- | :--- | :--- |
 | **Face** | `head_stability` | Measures head steadiness (nodding vs. frozen). |

@@ -177,21 +177,20 @@ This ensures that if you receive an "Optimal" label, your score is guaranteed to
 ---
 
 ### 9. Posture Openness
+
 | Property | Value |
 |----------|-------|
-| **What it measures** | How open and confident your posture is. Captures whether your shoulders are rolled back and open versus hunched forward and closed. |
-| **How it's measured** | Measures the angle formed by your shoulders relative to your chest — a wider angle means a more open posture. |
-| **Unit** | Degrees |
-| **Ideal range** | 50° - 58° |
+| **What it measures** | How open and confident your posture is. This captures whether your arms are open and natural versus closed and defensive. |
+| **How it's measured** | A composite score based on arm position and wrist depth. We detect "barrier postures" (arms crossed or close to body with hands forward) vs. open, expressive postures. |
+| **Unit** | State (Score 0.2, 0.6, or 1.0) |
+| **Ideal range** | Open (Score 1.0) |
 
 **Labels (in order):**
-| Label | Raw Range | Score Tier | Description |
-|-------|-----------|------------|-------------|
-| `closed` | < 46° | 0% - 40% | Closed, collapsed posture. Strong inward rotation. |
-| `constricted` | 46° - 50° | 40% - 60% | Slightly constricted posture. Shoulders rolled forward. |
-| `optimal` | 50° - 58° | 80% - 100% | Optimal posture. Confident and approachable. |
-| `good` | 58° - 65° | 60% - 80% | Open posture. Slightly expansive. |
-| `exaggerated` | > 65° | 0% - 40% | Exaggerated openness. May look unnatural or stiff. |
+| Label | Score | Description |
+|-------|-------|-------------|
+| `closed` | 0.2 | Closed, defensive posture. Arms close to body with hands forward. |
+| `neutral` | 0.6 | Neutral posture. Arms at rest, hands at sides or behind. |
+| `open` | 1.0 | Open, expressive posture. Good use of gestures. |
 
 ---
 
