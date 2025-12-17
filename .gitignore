@@ -4,9 +4,6 @@ __pycache__/
 
 # Virtual Envs
 VERA-env/
-VERA-FaceMesh/
-VERA-WhisperAudio/
-VERA-PoseBody/
 
 # OS
 .DS_Store
@@ -15,6 +12,7 @@ VERA-PoseBody/
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb
+notebooks/
 
 # Data
 data/clustering_dataset/*
@@ -23,8 +21,6 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
-video-analyzer-app/data/processed/*
-!video-analyzer-app/data/processed/.gitkeep
 
 # Models
 models/*

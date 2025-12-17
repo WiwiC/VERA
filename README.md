@@ -4,23 +4,27 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Status](https://img.shields.io/badge/status-active-success)
 
-**VERA** is an advanced multi-modal AI pipeline designed to analyze communication performance. It processes video input to evaluate **Face** (micro-expressions, gaze), **Body** (posture, gestures), and **Audio** (tonality, pacing) metrics. By leveraging computer vision and audio signal processing, VERA provides objective, data-driven feedback to help users improve their communication skills.
+**VERA** is an advanced multi-modal AI pipeline designed to analyze communication performance. It processes video input to evaluate **Face** (micro-expressions, gaze...), **Body** (posture, gestures...), and **Audio** (tonality, pacing...) metrics. By leveraging computer vision and audio signal processing, VERA provides objective, data-driven feedback to help users improve their communication skills.
+
+**Disclaimer:**
+* VERA is a prototype and we recommend to not upload videos longer than **1 to 2 minutes** (e.g. elevator pitch).
+* Some metrics are under fine-tuning and may not be as accurate as others.
 
 ## 🌟 Why VERA?
 
-Public speaking and communication are critical soft skills for **Founders, Students, and Executives**. Yet, feedback is often subjective and scarce.
+Public speaking and communication are critical soft skills for **Founders, Students, Executives...**. Yet, feedback is often subjective and scarce.
 
 VERA solves this by providing:
 *   **Scientific Objectivity:** Moving beyond "you look nervous" to "your gaze stability dropped by 20%".
-*   **Holistic Feedback:** Analyzing not just what you say, but *how* you say it (Face, Body, Voice).
-*   **Automated Coaching:** offering actionable tips based on your specific communication persona.
+*   **Holistic Feedback:** Analyzing not just what you say, but *how* you say it through your non-verbal communication (Face, Body, Voice).
+*   **Automated Coaching:** offering actionable tips.
 
 ---
 
 ## 🚀 Key Features
 
-*   **Multi-Modal Analysis:** Parallel processing of visual signals (using MediaPipe) and auditory signals (using Librosa).
-*   **14 Core Metrics:** Comprehensive tracking of engagement indicators (e.g., Gaze Stability, Gesture Magnitude, Vocal Punch).
+*   **Multi-Modal Analysis:** Parallel processing of visual signals (using MediaPipe) and auditory signals (using Whisper and Librosa).
+*   **14 Core Metrics:** Comprehensive tracking of engagement indicators (e.g., Gaze Stability, Gesture Magnitude, Vocal dynamic).
 *   **Persona K-means Clustering:** Unsupervised ML that automatically assigns a "Communication Persona" based on high-dimensional metric clusters.
 *   **Rich Visualization:** Generates debug videos with skeletal overlays to visualize exactly what the AI sees.
 
@@ -192,12 +196,12 @@ All text definitions, coaching tips, and interpretation labels are centralized i
 To ensure scientific rigor, VERA uses a calibration system to fine-tune scoring thresholds.
 
 ### How it works
-1.  **Labeled Data:** We maintain a `reports/calibration_manifest.csv` containing videos labeled by human experts (scores 0-100).
-2.  **Analysis Scripts:** Scripts in `src/analysis/` (e.g., `generate_calibration_report.py`) compare VERA's raw outputs against these human labels.
+1.  **Labeled Data:** We maintained a `reports/calibration_manifest.csv` containing IDs of videos (contained in data/raw folder) labeled by human (scores 0-100).
+2.  **Analysis Scripts:** Scripts in `src/analysis/` (e.g., `generate_calibration_report.py`) compare VERA's outputs results against these human labels.
 3.  **Threshold Tuning:** We use `final_calibration_search.py` to find the optimal parabolic thresholds that maximize correlation with human judgment.
 
 ### Workflow
-*   **Add Labeled Videos:** Update `calibration_manifest.csv` with new video paths and manual scores.
+*   **Add Labeled Videos:** Update `calibration_manifest.csv` with new video IDs and manual labels. (For labels list check: **`src/schemas/metrics_spec.json`**)
 *   **Run Analysis:** Execute `python src/analysis/generate_calibration_report.py` to see current performance.
 *   **Update Thresholds:** Adjust `BASELINE_*` constants in `src/*/config.py` based on the report.
 *   **Validate:** Re-run the report to confirm Spearman correlation improvements.
@@ -210,9 +214,9 @@ VERA uses **K-means clustering** to identify "Communication Personas" without ex
 
 *   **Dataset:** `data/clustering_dataset/master_vector_data_set.csv`. This file accumulates feature vectors from all processed videos.
 *   **Mechanism:**
-    1.  Each analysis extracts a high-dimensional feature vector (all 14 metrics).
+    1.  Each analysis extracts a rawhigh-dimensional feature vector (all 14 metrics).
     2.  This vector is added to the master dataset.
-    3.  We run K-Means to find natural groupings (e.g., "The Orator", "The Jittery Speaker").
+    3.  We run K-Means to find natural groupings.
     4.  New users are assigned to the nearest cluster center to predict their persona.
 
 ---
@@ -244,8 +248,56 @@ graph LR
 We prioritize metrics that show strong correlation with communication effectiveness. Based on our latest calibration:
 
 *   **Strong Signals:** `speech_rate`, `gaze_stability`, `gesture_magnitude` show high Spearman correlation (>0.7) with human expertise.
-*   **Noisy Signals:** `micro_expression_energy` was removed due to low reliability in uncontrolled lighting.
 *   **Calibration:** The tiered parabolic scoring helps normalize differences between webcam hardware.
+
+**Note:** Based on our last calibration report:
+
+1. **Global accuracy:**
+
+| Metric | N | Exact Match (%) | Within ±1 Bucket (%) |
+| :--- | :---: | :---: | :---: |
+| **gesture_activity** | 322 | 78.3% | **100.0%** |
+| **speech_rate** | 322 | 78.3% | **95.7%** |
+| **posture_openness** | 322 | 52.2% | **91.3%** |
+| **gesture_magnitude** | 322 | 39.1% | 87.0% |
+| **body_sway** | 322 | 21.7% | 87.0% |
+| **gesture_stability** | 322 | 39.1% | 87.0% |
+| **head_stability** | 322 | 26.1% | 78.3% |
+| **pause_ratio** | 322 | 34.8% | 78.3% |
+| **gaze_stability** | 322 | 17.4% | 78.3% |
+| **pitch_dynamic** | 322 | 39.1% | 73.9% |
+| **volume_dynamic** | 322 | 8.7% | 73.9% |
+| **smile_activation** | 322 | 13.0% | 69.6% |
+| **vocal_punch** | 322 | 34.8% | 65.2% |
+| **head_down_ratio** | 322 | 0.0% | 65.2% |
+| **AVERAGE** | **322** | **34.5%** | **80.8%** |
+
+*(Calibration Report 2025-12-11).*
+
+2. **Accuracy per metric:**
+
+- Strong, reliable metrics (high exact AND high within-1 step):
+
+* gesture_activity
+* speech_rate
+* posture_openness
+* gesture_magnitude
+* body_sway
+* gesture_stability
+
+- Moderately noisy but still directionally useful:
+
+* head_stability
+* gaze_stability
+* pause_ratio
+* pitch_dynamic
+* volume_dynamic
+
+- Noisiest / Further calibration needed:
+
+* smile_activation
+* vocal_punch
+* head_down_ratio
 
 ---
 
@@ -254,7 +306,7 @@ We prioritize metrics that show strong correlation with communication effectiven
 | Issue | Solution |
 | :--- | :--- |
 | **`ffmpeg` not installed** | Install FFmpeg system-wide. Audio processing will fail without it. |
-| **MediaPipe failing** | Ensure good lighting and that the face is fully visible/unobstructed. |
+| **MediaPipe failing** | Ensure good lighting and that the face is fully visible/unobstructed. Zoom your video if needed but try to keep the body visible from hips to head. Debugged videos are here to see if everything was correctly captured |
 | **Missing folders** | Run `python src/main.py` once to auto-generate `data/processed`. |
 | **CUDA error** | VERA defaults to CPU to ensure compatibility. If verifying CUDA, check torch version. |
 
@@ -284,3 +336,4 @@ Copyright (c) 2025 WiwiC
     *   [Librosa](https://librosa.org/) (Audio)
     *   [Streamlit](https://streamlit.io/) (UI)
     *   [Pandas/Numpy](https://pandas.pydata.org/) (Data)
+    *   [Scikit-learn](https://scikit-learn.org/stable/) (Clustering)
