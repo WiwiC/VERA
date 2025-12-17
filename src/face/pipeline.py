@@ -12,7 +12,7 @@ from src.face.extraction import process_video
 from src.face.scoring import compute_scores
 from src.face.visualization import create_debug_video
 
-def run_face_pipeline(video_path, output_dir=None):
+def run_face_pipeline(video_path, output_dir=None, progress_callback=None):
     """
     Run the full face analysis pipeline on a video.
 
@@ -41,7 +41,8 @@ def run_face_pipeline(video_path, output_dir=None):
 
     # 1. Extraction
     print("--- Step 1: Extraction ---")
-    raw_df = process_video(str(video_path))
+    print("--- Step 1: Extraction ---")
+    raw_df = process_video(str(video_path), progress_callback=progress_callback)
 
     # 2. Scoring
     print("--- Step 2: Scoring ---")
@@ -83,6 +84,8 @@ def run_face_pipeline(video_path, output_dir=None):
 
     # 4. Visualization
     print("--- Step 4: Visualization ---")
+    if progress_callback:
+        progress_callback(1.0, "Processing - Face debug file creation")
     debug_video_path = output_dir / "debug_face.mp4"
     create_debug_video(str(video_path), str(debug_video_path))
     print(f"✅ Saved debug video to: {debug_video_path}")

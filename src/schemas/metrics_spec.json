@@ -239,7 +239,7 @@
       "metric_type": "raw_derived_metric",
       "display_name": "Head Down Ratio",
       "what_is_measured": "How much time your head is tilted downward during your presentation. This captures whether you maintain forward-facing posture or spend time looking at notes, the floor, or avoiding the audience.",
-      "how_it_is_measured": "We use 3D head pose estimation (solvePnP) to calculate your head pitch angle. When your head pitch exceeds 14°, you are considered to be looking down. The ratio is the percentage of time spent in this position.",
+      "how_it_is_measured": "We use 3D head pose estimation (solvePnP) to calculate your head pitch angle. When your head pitch exceeds 20°, you are considered to be looking down. The ratio is the percentage of time spent in this position.",
       "why_it_matters": "Looking down too much signals nervousness, lack of preparation, or avoidance. Maintaining forward posture builds connection and projects confidence.",
       "raw_value_unit": "ratio (0-1)",
       "raw_value_directionality": "lower_is_better",

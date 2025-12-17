@@ -17,7 +17,7 @@ from src.body.geometry import (
     compute_midplane_depth_normalized
 )
 
-def process_video(video_path):
+def process_video(video_path, progress_callback=None):
     """
     Process a video file to extract body metrics frame by frame.
 
@@ -58,6 +58,9 @@ def process_video(video_path):
     print(f"Processing video: {video_path}")
 
     for idx in tqdm(range(frame_count), desc="Body Analysis"):
+        if progress_callback:
+            progress_callback(idx / frame_count, "Processing - Body analysis")
+
         ret, frame = cap.read()
         if not ret:
             break
