@@ -341,6 +341,7 @@ We prioritize metrics that show strong correlation with communication effectiven
 
 MIT License
 Copyright (c) 2025 WiwiC
+Commercial use prohibited without explicit permission
 
 ---
 
